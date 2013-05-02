@@ -61,24 +61,69 @@ int main(void)
        system_stm32f0xx.c file
      */
 
+	 /* GPIOA Periph clock enable */
+	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
   /* GPIOC Periph clock enable */
-  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+  /* GPIOA Periph clock enable */
+	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+  /* GPIOA Periph clock enable */
+	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
 
-  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
+/*
+ * Outputs:
+ * PA4 - Digit 0
+ * PA5 - Digit 1
+ * PA6 - DIGIT 2
+ * PB0,PB1 - a
+ * PB11,PB12 - b
+ * PC0,PC1 - c
+ * PF0,PF1 - d
+ * PC13, PC14 - e
+ * PB2,PB10 - f
+ * PC2,PC3 - g
+ * PC15 - DP
+ *
+ *
+ *    A
+ *  F   B
+ *    G
+ *  E   C
+ *    D
+ *        DP
+ */
 
-  /* Configure PA4 -  PA6 in output push-pull mode (for segment e )*/
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
+	  /* Configure PA4 -  PA6 in output push-pull mode (for Digits 0-2 )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;//GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	  /* Configure PB0 -  PB3 in output push-pull mode (for segment e )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	  /* Configure PF0 -  PF1 in output push-pull mode (for segment d )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 |GPIO_Pin_1;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOF, &GPIO_InitStructure);
 
   /* To achieve GPIO toggling maximum frequency, the following  sequence is mandatory. 
      You can monitor PC8 and PC9 on the scope to measure the output signal. 
@@ -91,6 +136,8 @@ int main(void)
     GPIOA->BRR = BSRR_VAL;
     /* Reset PC8 and PC9 */
     GPIOC->BRR = BSRR_VAL;
+    /* Set PC8 and PC9 */
+    GPIOB->BRR = BSRR_VAL;
   }
   {
     /* Set PC8 and PC9 */
