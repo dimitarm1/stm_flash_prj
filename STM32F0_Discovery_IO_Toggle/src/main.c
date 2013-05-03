@@ -53,6 +53,7 @@ static int start_note = 0; // Or current note
 static int end_note = 0;
 
 
+
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
 /* Private functions ---------------------------------------------------------*/
