@@ -27,6 +27,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx.h"
+#include "pitches.h"
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{
@@ -40,11 +41,20 @@
 /* Private define ------------------------------------------------------------*/
 #define BSRR_VAL        0x0300
 
+
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
+static long buzz_counter = 0;
+static long pitches[255];
+static long durations[255];
+static int start_note = 0; // Or current note
+static int end_note = 0;
+
 
 /* Private function prototypes -----------------------------------------------*/
+void push_note(int pitch, int duration);
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -117,7 +127,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-	  /* Configure PF0 -  PF1 in output push-pull mode (for segment d )*/
+	  /* Configure PF0 -  PF1 in output open drain mode (for segment d )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 |GPIO_Pin_1;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
@@ -125,67 +135,75 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOF, &GPIO_InitStructure);
 
-  /* To achieve GPIO toggling maximum frequency, the following  sequence is mandatory. 
-     You can monitor PC8 and PC9 on the scope to measure the output signal. 
-     If you need to fine tune this frequency, you can add more GPIO set/reset 
-     cycles to minimize more the infinite loop timing.
-     This code needs to be compiled with high speed optimization option.  */
+	  /* Configure PF5 in output push-pull mode (for buzzer )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOF, &GPIO_InitStructure);
+
+
+
+	  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
+	  TIM6->PSC = 41; // Set prescaler to 41999
+	  TIM6->ARR = 599; // Set auto-reload to 5999
+//	  TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
+	  TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
+	  TIM6->EGR |= TIM_EGR_UG; // Force update
+	  TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
+	  TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
+	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
+
+	  push_note(G2,3);
+	  push_note(E2,3);
+	  push_note(C2,3);
+
+
   while (1)
   {
     /* Set PC8 and PC9 */
     GPIOA->BRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
     /* Set PC8 and PC9 */
     GPIOB->BRR = BSRR_VAL;
-  }
-  {
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-
-    /* Set PC8 and PC9 */
-    GPIOC->BSRR = BSRR_VAL;
     /* Reset PC8 and PC9 */
     GPIOC->BRR = BSRR_VAL;
   }
 }
+
+void push_note(int pitch, int duration){
+	pitches[++end_note] = pitch;
+	durations[end_note] = duration;
+	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+}
+
+void get_next_note(){
+
+	if(start_note == end_note){
+		TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
+	} else {
+		start_note ++;
+		TIM6->ARR = pitches[start_note];
+		buzz_counter = durations[start_note]*20000/ pitches[start_note];
+	}
+}
+
+void TIM6_DAC_IRQHandler() {
+	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
+		if(buzz_counter){
+			buzz_counter--;
+			if(buzz_counter & 1)
+				GPIOF->BSRR = GPIO_BSRR_BS_5; // Set F5 high
+			else
+				GPIOF->BRR = GPIO_BSRR_BS_5; // Set F5 low
+		}
+	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+	if(!buzz_counter )	get_next_note();
+}
+
+
+
 
 #ifdef  USE_FULL_ASSERT
 
