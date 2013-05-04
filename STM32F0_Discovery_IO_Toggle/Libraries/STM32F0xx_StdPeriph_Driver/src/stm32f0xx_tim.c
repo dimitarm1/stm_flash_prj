@@ -116,6 +116,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_tim.h"
 #include "stm32f0xx_rcc.h"
+#include "stm32f0xx_conf.h"
+
 
 /** @addtogroup STM32F0xx_StdPeriph_Driver
   * @{

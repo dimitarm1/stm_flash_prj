@@ -29,6 +29,7 @@
 #include "tsl_time.h"
 #include "tsl_globals.h"
 
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
@@ -40,6 +41,10 @@
   * @param  None
   * @retval None
   */
+
+void TSL_CallBack_TimerTick(void){
+	int i = 0;
+}
 void TSL_tim_ProcessIT(void)
 {
   static TSL_tTick_ms_T count_1s = 0;

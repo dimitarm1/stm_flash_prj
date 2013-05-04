@@ -27,7 +27,9 @@
   */
   
 /* Includes ------------------------------------------------------------------*/
+
 #include "stm32f0_discovery.h"
+
 
 /** @addtogroup Utilities
   * @{

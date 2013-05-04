@@ -36,6 +36,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx.h"
+#include "stm32f0xx_syscfg.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx_rcc.h"
+#include "stm32f0xx_exti.h"
+#include "stm32f0xx_misc.h"
+
 
 /** @addtogroup Utilities
   * @{

@@ -27,7 +27,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx.h"
+#include "/usr/include/stdint.h"
 #include "pitches.h"
+#include "tsl_types.h"
+#include "tsl_touchkey.h"
+#include "tsl_user.h"
+#include "tsl_conf_stm32f0xx.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx_rcc.h"
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{
@@ -42,7 +49,6 @@
 #define BSRR_VAL        0x0300
 
 
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
@@ -52,11 +58,40 @@ static long durations[255];
 static int start_note = 0; // Or current note
 static int end_note = 0;
 
-
+static __IO uint32_t TimingDelay;
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
+void TSL_tkey_Init(void); /**< Used to initialize the TouchKey sensor */
+void TSL_tkey_Process(void); /**< Used to execute the TouchKey sensor state machine */
+
+//const TSL_TouchKeyMethods_T MyTKeys_Methods =
+//{
+//  TSL_tkey_Init,
+//  TSL_tkey_Process
+//};
+
+TSL_TouchKeyData_T           MyTKeys_Data[3];    /**< Data (state id, counter, flags, ...) */
+ TSL_TouchKeyParam_T         MyTKeys_Param[3];   /**< Parameters (thresholds, debounce, ...) */
+ TSL_ChannelData_T           MyChannels_Data[3];     /**< Channel Data (Meas, Ref, Delta, ...) */
+//// "basic" touchkeys: Always placed in ROM
+//const TSL_TouchKeyB_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
+//{
+//  { &MyTKeys_Data[0], &MyTKeys_Param[0], &MyChannels_Data[0] },
+//  { &MyTKeys_Data[1], &MyTKeys_Param[1], &MyChannels_Data[1] },
+//  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[2] }
+//};
+
+
 /* Private functions ---------------------------------------------------------*/
+void Delay(__IO uint32_t nTime)
+{
+  TimingDelay = nTime;
+
+  while(TimingDelay != 0);
+}
+
+
 
 /**
   * @brief  Main program.
@@ -160,17 +195,39 @@ int main(void)
 	  push_note(G2,3);
 	  push_note(E2,3);
 	  push_note(C2,3);
+	  //============================================================================
+	  // Init STMTouch driver
+	  //============================================================================
+
+	  TSL_user_Init();
 
 
-  while (1)
-  {
-    /* Set PC8 and PC9 */
-    GPIOA->BRR = BSRR_VAL;
-    /* Set PC8 and PC9 */
-    GPIOB->BRR = BSRR_VAL;
-    /* Reset PC8 and PC9 */
-    GPIOC->BRR = BSRR_VAL;
-  }
+
+
+	  TSL_acq_BankConfig(0);
+	  TSL_acq_BankStartAcq();
+	  TSL_acq_BankWaitEOC();
+	  TSL_acq_GetMeas(0);
+
+	  while (1)
+	  {
+		  /* Set PC8 and PC9 */
+		  GPIOA->BRR = BSRR_VAL;
+		  /* Set PC8 and PC9 */
+		  GPIOB->BRR = BSRR_VAL;
+		  /* Reset PC8 and PC9 */
+		  GPIOC->BRR = BSRR_VAL;
+		  // Execute STMTouch Driver state machine
+		  if (TSL_user_Action() == TSL_STATUS_OK)
+		  {
+			  //ProcessSensors(); // Execute sensors related tasks
+		  }
+		  else
+		  {
+			  // Execute other tasks...
+		  }
+
+	  }
 }
 
 void push_note(int pitch, int duration){
@@ -202,7 +259,6 @@ void TIM6_DAC_IRQHandler() {
 	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 	if(!buzz_counter )	get_next_note();
 }
-
 
 
 
