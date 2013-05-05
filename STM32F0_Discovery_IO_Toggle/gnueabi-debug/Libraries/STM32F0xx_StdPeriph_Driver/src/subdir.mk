@@ -77,7 +77,7 @@ C_DEPS += \
 Libraries/STM32F0xx_StdPeriph_Driver/src/%.o: ../Libraries/STM32F0xx_StdPeriph_Driver/src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
-	/opt/gcc-arm-none-eabi-4_6-2012q1/bin/arm-none-eabi-gcc -DSTM32F0XX -I/opt/gcc-arm-none-eabi-4_6-2012q1/arm-none-eabi/include -I"/home/tate/stm32f4/stm_flash_prj/STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc" -I"/home/tate/stm32f4/stm_flash_prj/STM32F0_Discovery_IO_Toggle/Libraries/STMTouch_Driver/inc" -I"/home/tate/stm32f4/stm_flash_prj/STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include" -I"/home/tate/stm32f4/stm_flash_prj/STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Device/ST/STM32F0xx/Include" -I"/home/tate/stm32f4/stm_flash_prj/STM32F0_Discovery_IO_Toggle/src" -O2 -g -Wall -c -fmessage-length=0  -mcpu=cortex-m0 -mthumb -mno-thumb-interwork -mfpu=vfp -msoft-float -mlittle-endian  -march=armv6-m -ffunction-sections -fdata-sections -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	E:\Program Files\gcc-arm-none-eabi\bin\arm-none-eabi-gcc.exe -DSTM32F0XX -DUSE_STM32F0_DISCOVERY -DHSI_VALUE=8000000 -DUSE_STDPERIPH_DRIVER -I../src -I"..\Libraries\CMSIS\Include" -I"..\Libraries\CMSIS\Device\ST\STM32F0xx\Include" -I"..\Libraries\STM32F0xx_StdPeriph_Driver\inc" -I"..\Utilities\STM32F0-Discovery" -O0 -ffunction-sections -fdata-sections -g -Wall -c -fmessage-length=0 -mthumb -mcpu=cortex-m0 -std=gnu90 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

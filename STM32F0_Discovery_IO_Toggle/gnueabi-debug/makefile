@@ -32,7 +32,7 @@ all: STM32F0_Discovery_IO_Toggle.elf
 STM32F0_Discovery_IO_Toggle.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	/opt/gcc-arm-none-eabi-4_6-2012q1/bin/arm-none-eabi-gcc  -o "STM32F0_Discovery_IO_Toggle.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	E:\Program Files\gcc-arm-none-eabi\bin\arm-none-eabi-gcc.exe -lm -o STM32F0_Discovery_IO_Toggle.elf -mthumb -mcpu=cortex-m0 -Wl,--start-group -lc -lm -Wl,--end-group -static -Wl,-cref,-u,Reset_Handler -Wl,-Map=STM32F0_Discovery_IO_Toggle.map -Wl,--gc-sections -Wl,--defsym=malloc_getpagesize_P=0x1000 -Xlinker -T..\stm32_flash.ld -o "STM32F0_Discovery_IO_Toggle.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

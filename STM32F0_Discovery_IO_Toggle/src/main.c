@@ -27,7 +27,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx.h"
-#include "/usr/include/stdint.h"
 #include "pitches.h"
 #include "tsl_types.h"
 #include "tsl_touchkey.h"
