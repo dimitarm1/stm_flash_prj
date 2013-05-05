@@ -14,7 +14,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="arm gnueabi-debug" id="com.atollic.truestudio.exe.debug.250675032.27485740" name="gnueabi-debug" parent="com.atollic.truestudio.exe.debug.250675032">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="arm gnueabi-debug" id="com.atollic.truestudio.exe.debug.250675032.27485740" name="gnueabi-debug" parent="com.atollic.truestudio.exe.debug.250675032.27485740">
 					<folderInfo id="com.atollic.truestudio.exe.debug.250675032.27485740." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.base.1834536137" name="Linux GCC" nonInternalBuilderId="cdt.managedbuild.target.gnu.builder.base" superClass="cdt.managedbuild.toolchain.gnu.base">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.gnu.platform.base.2106281087" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
