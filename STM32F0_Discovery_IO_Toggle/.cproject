@@ -21,7 +21,7 @@
 							<builder autoBuildTarget="all" buildPath="${workspace_loc:/STM32F0_Discovery_IO_Toggle}/gnueabi-debug" cleanBuildTarget="clean" id="org.eclipse.cdt.build.core.internal.builder.1910265536" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CDT Internal Builder" superClass="org.eclipse.cdt.build.core.internal.builder"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1038227769" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1642382164" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base"/>
-							<tool command="E:\ProgramFiles\gcc-arm-none-eabi\bin\arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.compiler.base.391347697" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+							<tool command="arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.compiler.base.391347697" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
 								<option id="gnu.c.compiler.option.include.paths.500506512" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../src"/>
 									<listOptionValue builtIn="false" value="&quot;..\Libraries\CMSIS\Include&quot;"/>
@@ -41,7 +41,7 @@
 								<option id="gnu.c.compiler.option.optimization.flags.878949188" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-ffunction-sections -fdata-sections" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1864229254" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
-							<tool command="E:\ProgramFiles\gcc-arm-none-eabi\bin\arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.linker.base.364472985" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base">
+							<tool command="arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.linker.base.364472985" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base">
 								<option id="gnu.c.link.option.libs.431547591" name="Libraries (-l)" superClass="gnu.c.link.option.libs"/>
 								<option id="gnu.c.link.option.ldflags.1311512986" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="-lm -o STM32F0_Discovery_IO_Toggle.elf -mthumb -mcpu=cortex-m0 -Wl,--start-group -lc -lm -Wl,--end-group -static -Wl,-cref,-u,Reset_Handler -Wl,-Map=STM32F0_Discovery_IO_Toggle.map -Wl,--gc-sections -Wl,--defsym=malloc_getpagesize_P=0x1000 " valueType="string"/>
 								<option id="gnu.c.link.option.other.1875033011" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">
@@ -53,7 +53,7 @@
 								</inputType>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1740878957" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base"/>
-							<tool command="E:\ProgramFiles\gcc-arm-none-eabi\bin\arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.assembler.base.652852400" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
+							<tool command="arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.assembler.base.652852400" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
 								<option id="gnu.both.asm.option.flags.1111641142" name="Assembler flags" superClass="gnu.both.asm.option.flags" value="-c -mthumb -mcpu=cortex-m0 -g -Wa,--warn -x assembler-with-cpp" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1482179264" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -92,6 +92,16 @@
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.debug.250675032.27485740;com.atollic.truestudio.exe.debug.250675032.27485740.;cdt.managedbuild.tool.gnu.c.compiler.base.391347697;cdt.managedbuild.tool.gnu.c.compiler.input.1864229254">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath="E:/Documents and Settings/didi/Atollic/TrueSTUDIO/stm_flash_prj/STM32F0_Discovery_IO_Toggle/gnueabi-debug/STM32F0_Discovery_IO_Toggle.elf"/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD &quot;${plugin_state_location}/specs.c&quot;" command="arm-none-eabi-gcc.exe" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
 		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
