@@ -59,7 +59,7 @@ static long pitches[255];
 static long durations[255];
 static int start_note = 0; // Or current note
 static int end_note = 0;
-
+static char digits[3];
 static __IO uint32_t TimingDelay;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,7 +101,78 @@ void Delay(__IO uint32_t nTime)
   while(TimingDelay != 0);
 }
 
-
+void show_digit(int digit){
+	digit = digit & 0x0F;
+	GPIOB->BSRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+	GPIOC->BSRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14|GPIO_Pin_15 ;
+	switch (digit) {
+	case 0:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14;
+		break;
+	case 1:
+		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1 ;
+		break;
+	case 2:
+		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 3:
+		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7 ;
+		break;
+	case 4:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 ;
+		break;
+	case 5:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 |GPIO_Pin_6|GPIO_Pin_7;
+		break;
+	case 6:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 7:
+		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1 ;
+		break;
+	case 8:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 9:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 ;
+		break;
+	case 0x0A:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 0x0B:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 0x0C:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 0x0D:
+		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12 ;
+		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 0x0E:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	case 0x0F:
+	default:
+		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOC->BRR = GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_13|GPIO_Pin_14 ;
+		break;
+	}
+}
 
 /**
   * @brief  Main program.
@@ -130,11 +201,11 @@ int main(void)
  * Outputs:
  * PA4 - Digit 0
  * PA5 - Digit 1
- * PA6 - DIGIT 2
- * PB0,PB1 - a
+ * PA6 - Digit 2
+ * PB13,PB14 - a
  * PB11,PB12 - b
  * PC0,PC1 - c
- * PF0,PF1 - d
+ * PC6,PC7 - d
  * PC13, PC14 - e
  * PB2,PB10 - f
  * PC2,PC3 - g
@@ -148,9 +219,12 @@ int main(void)
  *    D
  *        DP
  */
+	  /*
+	   *
+	   * */
 
 	  /* Configure PA4 -  PA6 in output push-pull mode (for Digits 0-2 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;//GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -166,20 +240,12 @@ int main(void)
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_7|GPIO_Pin_7 |GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-	  /* Configure PF0 -  PF1 in output open drain mode (for segment d )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 |GPIO_Pin_1;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOF, &GPIO_InitStructure);
 
 	  /* Configure PF5 in output push-pull mode (for buzzer )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
@@ -217,15 +283,34 @@ int main(void)
 	  TSL_acq_BankStartAcq();
 	  TSL_acq_BankWaitEOC();
 	  TSL_acq_GetMeas(0);
+	  digits[0] = 0;
+	  digits[1] = 1;
+	  digits[2] = 2;
+
 
 	  while (1)
 	  {
-		  /* Set PC8 and PC9 */
-		  GPIOA->BRR = BSRR_VAL;
-		  /* Set PC8 and PC9 */
-		  GPIOB->BRR = BSRR_VAL;
-		  /* Reset PC8 and PC9 */
-		  GPIOC->BRR = BSRR_VAL;
+		  static int led_counter = 0;
+		  int digit_num = (led_counter>>9)%3;
+		  switch (digit_num){
+		  case 0:
+			  GPIOA->BRR = GPIO_Pin_4 ;
+			  GPIOA->BSRR = GPIO_Pin_5 | GPIO_Pin_6;
+			  break;
+
+		  case 1:
+			  GPIOA->BRR = GPIO_Pin_5 ;
+ 			  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_6;
+			  break;
+		  case 2:
+		  default:
+			  GPIOA->BRR = GPIO_Pin_6 ;
+			  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5;
+			  break;
+		  }
+//		  show_digit(digits[digit_num]);
+		  show_digit(led_counter>>16);
+
 		  // Execute STMTouch Driver state machine
 		  if (TSL_user_Action() == TSL_STATUS_OK)
 		  {
@@ -235,6 +320,7 @@ int main(void)
 		  {
 			  // Execute other tasks...
 		  }
+		  led_counter++;
 
 	  }
 }

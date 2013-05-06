@@ -38,12 +38,11 @@
 // LED1 = PC8
 #define LED1_TOGGLE {GPIOC->ODR ^= 0x0200;}
 #define LED1_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)8);}
-#define LED1_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)8 + 16));}
+#define LED1_ON     {GPIOC->BRR = (uint32_t)((uint32_t)1 << ((uint32_t)8 ));}
 // LED2 = PC9
 #define LED2_TOGGLE {GPIOC->ODR ^= 0x0400;}
 #define LED2_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)9);}
-#define LED2_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)9 + 16));}
-
+#define LED2_ON     {GPIOC->BRR = (uint32_t)((uint32_t)1 << ((uint32_t)9 ));}
 //=======================
 // Channel IOs definition
 //=======================
