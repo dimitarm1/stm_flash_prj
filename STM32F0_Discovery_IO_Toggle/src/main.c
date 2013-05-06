@@ -48,7 +48,10 @@
 #define BSRR_VAL        0x0300
 
 
-/* Private macro -------------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+
+#define TEST_TKEY(NB) (MyTKeys[(NB)].p_Data->StateId == TSL_STATEID_DETECT)
+
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
 static long buzz_counter = 0;
@@ -63,6 +66,14 @@ static __IO uint32_t TimingDelay;
 void push_note(int pitch, int duration);
 void TSL_tkey_Init(void); /**< Used to initialize the TouchKey sensor */
 void TSL_tkey_Process(void); /**< Used to execute the TouchKey sensor state machine */
+void ProcessSensors(void);
+void SystickDelay(__IO uint32_t nTime);
+
+
+/* Global variables ----------------------------------------------------------*/
+
+__IO uint32_t Gv_SystickCounter;
+
 
 //const TSL_TouchKeyMethods_T MyTKeys_Methods =
 //{
@@ -147,7 +158,7 @@ int main(void)
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	  /* Configure PB0 -  PB3 in output push-pull mode (for segment e )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12| GPIO_Pin_13| GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -191,7 +202,7 @@ int main(void)
 	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
 	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
-	  push_note(G2,3);
+	  push_note(F2,3);
 	  push_note(E2,3);
 	  push_note(C2,3);
 	  //============================================================================
@@ -199,7 +210,6 @@ int main(void)
 	  //============================================================================
 
 	  TSL_user_Init();
-
 
 
 
@@ -219,7 +229,7 @@ int main(void)
 		  // Execute STMTouch Driver state machine
 		  if (TSL_user_Action() == TSL_STATUS_OK)
 		  {
-			  //ProcessSensors(); // Execute sensors related tasks
+			  ProcessSensors(); // Execute sensors related tasks
 		  }
 		  else
 		  {
@@ -281,6 +291,136 @@ void assert_failed(uint8_t* file, uint32_t line)
   }
 }
 #endif
+
+
+/**
+  * @brief  Manage the activity on sensors when touched/released (example)
+  * @param  None
+  * @retval None
+  */
+void ProcessSensors(void)
+{
+  // TKEY 0
+  if (TEST_TKEY(0))
+  {
+    LED1_ON;
+  }
+  else
+  {
+    LED1_OFF;
+  }
+
+  // TKEY 1
+  if (TEST_TKEY(1))
+  {
+    LED2_ON;
+  }
+  else
+  {
+    LED2_OFF;
+  }
+
+  // TKEY 2
+  if (TEST_TKEY(2))
+  {
+    LED1_ON;
+  }
+  else
+  {
+    LED1_OFF;
+  }
+
+#if USE_LCD > 0
+  LcdDisplayStatus();
+#endif
+}
+
+
+
+/**
+  * @brief  Executed when a sensor is in Error state
+  * @param  None
+  * @retval None
+  */
+void MyTKeys_ErrorStateProcess(void)
+{
+  // Add here your own processing when a sensor is in Error state
+  TSL_tkey_SetStateOff();
+  LED1_ON;
+  LED2_OFF;
+  for (;;)
+  {
+    LED1_TOGGLE;
+    SystickDelay(100);
+  }
+}
+
+
+/**
+  * @brief  Executed when a sensor is in Off state
+  * @param  None
+  * @retval None
+  */
+void MyTKeys_OffStateProcess(void)
+{
+  // Add here your own processing when a sensor is in Off state
+}
+
+
+//-------------------
+// CallBack functions
+//-------------------
+
+/**
+  * @brief  Executed at each timer interruption (option must be enabled)
+  * @param  None
+  * @retval None
+  */
+void TSL_CallBack_TimerTick(void)
+{
+}
+
+
+#ifdef USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t* file, uint32_t line)
+{
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+
+  /* Infinite loop */
+  LED1_OFF;
+  LED2_ON;
+  for (;;)
+  {
+    LED1_TOGGLE;
+    LED2_TOGGLE;
+    SystickDelay(100);
+  }
+}
+#endif
+
+
+/**
+  * @brief  Add a delay using the Systick
+  * @param  nTime Delay in milliseconds.
+  * @retval None
+  */
+void SystickDelay(__IO uint32_t nTime)
+{
+  Gv_SystickCounter = nTime;
+  while (Gv_SystickCounter != 0)
+  {
+    // The Gv_SystickCounter variable is decremented every ms by the Systick interrupt routine
+  }
+}
+
 
 /**
   * @}

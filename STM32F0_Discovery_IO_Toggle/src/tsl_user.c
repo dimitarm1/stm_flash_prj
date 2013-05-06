@@ -73,8 +73,8 @@ TSL_TouchKeyParam_T MyTKeys_Param[TSLPRM_TOTAL_TKEYS];
 
 // State Machine (ROM)
 
-void MyTKeys_ErrorStateProcess(void){}
-void MyTKeys_OffStateProcess(void){}
+void MyTKeys_ErrorStateProcess(void);
+void MyTKeys_OffStateProcess(void);
 
 CONST TSL_State_T MyTKeys_StateMachine[] =
 {
@@ -257,11 +257,11 @@ TSL_Status_enum_T TSL_user_Action(void)
     {
       if (TSL_ecs_Process(&MyObjGroup) == TSL_STATUS_OK)
       {
-        LED4_TOGGLE;
+        LED2_TOGGLE;
       }
       else
       {
-        LED4_OFF;
+        LED2_OFF;
       }
     }
     

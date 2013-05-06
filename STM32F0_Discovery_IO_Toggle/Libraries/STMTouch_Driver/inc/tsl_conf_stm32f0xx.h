@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file    tsl_conf_stm32f0xx.h
+  * @file    STM32F0518_Ex01_3TKeys_EVAL\inc\tsl_conf_stm32f0xx.h
   * @author  MCD Application Team
-  * @version V1.3.3
-  * @date    11-February-2013
+  * @version V1.0.1
+  * @date    22-February-2013
   * @brief   Acquisition parameters for STM32F0xx products.
   * @note    This file must be copied in the application project and values
   *          changed for the application.
@@ -51,15 +51,15 @@
 
 /** Total number of banks in application (range=1..255)
 */
-#define TSLPRM_TOTAL_BANKS (1)
+#define TSLPRM_TOTAL_BANKS (3)
 
 /** Total number of "Extended" TouchKeys in application (range=0..255)
 */
-#define TSLPRM_TOTAL_TOUCHKEYS (0)
+#define TSLPRM_TOTAL_TOUCHKEYS (3)
 
 /** Total number of "Basic" TouchKeys in application (range=0..255)
 */
-#define TSLPRM_TOTAL_TOUCHKEYS_B (3)
+#define TSLPRM_TOTAL_TOUCHKEYS_B (0)
 
 /** Total number of "Extended" Linear and Rotary sensors in application (range=0..255)
   - Count also the 1-channel linear sensor used as TouchKey
@@ -92,23 +92,23 @@
 
 /** Zone management usage (0=No, 1=Yes)
 */
-#define TSLPRM_USE_ZONE (1)
+#define TSLPRM_USE_ZONE (0)
 
 /** Proximity detection usage (0=No, 1=Yes)
 */
-#define TSLPRM_USE_PROX (1)
+#define TSLPRM_USE_PROX (0)
 
 /** Use the Timer tick callback (0=No, 1=Yes)
   - When equal to 1, the function TSL_CallBack_TimerTick must be defined in
     the application code. It is called for each timer interruption.
 */
-#define TSLPRM_USE_TIMER_CALLBACK (1)
+#define TSLPRM_USE_TIMER_CALLBACK (0)
 
 /** Acquisition interrupt mode (0=No, 1=Yes)
   - If No the TS interrupt is not used.
   - If Yes the TS interrupt is used.
 */
-#define TSLPRM_USE_ACQ_INTERRUPT (1)
+#define TSLPRM_USE_ACQ_INTERRUPT (0)
 
 /** @} Common_Parameters_Options */
 
@@ -144,13 +144,13 @@
   - Low value = faster calibration but less precision.
   - High value = slower calibration but more precision.
 */
-#define TSLPRM_CALIB_SAMPLES (8)
+#define TSLPRM_CALIB_SAMPLES (4)
 
 /** Delay in measurement samples before starting the calibration (range=0..40)
   - This is usefull if a noise filter is used.
   - Write 0 to disable the delay.
 */
-#define TSLPRM_CALIB_DELAY (10)
+#define TSLPRM_CALIB_DELAY (0)
 
 /** @} Common_Parameters_Calibration */
 
@@ -195,7 +195,7 @@
   - 3: thresholds x 8
   - 4: thresholds x 16
 */
-#define TSLPRM_COEFF_TH (1)
+#define TSLPRM_COEFF_TH (0)
 
 /** @} Common_Parameters_TouchKey_Thresholds */
 
@@ -250,7 +250,7 @@
       0x01 to the MSB
       0x00 to the LSB
 */
-#define TSLPRM_LINROT_USE_NORMDELTA (1)
+#define TSLPRM_LINROT_USE_NORMDELTA (0)
 
 /** @} Common_Parameters_LinRot_Thresholds */
 
@@ -407,7 +407,7 @@
 @note The DTO can be changed in run-time by the application only if the
       default value is between 1 and 63.
 */
-#define TSLPRM_DTO (5)
+#define TSLPRM_DTO (0)
 
 /** @} Common_Parameters_DTO */
 
@@ -420,7 +420,7 @@
 
 /** Detection Exclusion System (0=No, 1=Yes)
 */
-#define TSLPRM_USE_DXS (1)
+#define TSLPRM_USE_DXS (0)
 
 /** @} Common_Parameters_DXS */
 
@@ -472,18 +472,18 @@
 // If TSLPRM_TSC_GPIO_CONFIG=1 assign each TSLPRM_TSC_GROUPx_IOy parameters below.
 // If TSLPRM_TSC_GPIO_CONFIG=0 these parameters are ignored.
 
-#define TSLPRM_TSC_GROUP1_IO1  NU       // PA0
-#define TSLPRM_TSC_GROUP1_IO2  NU       // PA1
-#define TSLPRM_TSC_GROUP1_IO3  NU       // PA2
-#define TSLPRM_TSC_GROUP1_IO4  NU       // PA3
+#define TSLPRM_TSC_GROUP1_IO1  SAMPCAP  // PA0
+#define TSLPRM_TSC_GROUP1_IO2  CHANNEL  // PA1
+#define TSLPRM_TSC_GROUP1_IO3  CHANNEL  // PA2
+#define TSLPRM_TSC_GROUP1_IO4  CHANNEL  // PA3
 
 #define TSLPRM_TSC_GROUP2_IO1  NU       // PA4
 #define TSLPRM_TSC_GROUP2_IO2  NU       // PA5
 #define TSLPRM_TSC_GROUP2_IO3  NU       // PA6
 #define TSLPRM_TSC_GROUP2_IO4  NU       // PA7
 
-#define TSLPRM_TSC_GROUP3_IO1  NU       // PC5
-#define TSLPRM_TSC_GROUP3_IO2  NU       // PB0
+#define TSLPRM_TSC_GROUP3_IO1  SHIELD   // PC5
+#define TSLPRM_TSC_GROUP3_IO2  SAMPCAP  // PB0
 #define TSLPRM_TSC_GROUP3_IO3  NU       // PB1
 #define TSLPRM_TSC_GROUP3_IO4  NU       // PB2
 

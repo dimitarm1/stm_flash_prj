@@ -32,42 +32,34 @@
 #include "tsl.h"
 
 // Select to use or not the LCD
-#define USE_LCD (1) // 0=No, 1=Yes
+#define USE_LCD (0) // 0=No, 1=Yes
 
-// LEDs definition on STM320518-EVAL board
-// LED1 = PC10
-#define LED1_TOGGLE {GPIOC->ODR ^= 0x0400;}
-#define LED1_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)10);}
-#define LED1_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)10 + 16));}
-// LED2 = PC11
-#define LED2_TOGGLE {GPIOC->ODR ^= 0x0800;}
-#define LED2_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)11);}
-#define LED2_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)11 + 16));}
-// LED3 = PC12
-#define LED3_TOGGLE {GPIOC->ODR ^= 0x1000;}
-#define LED3_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)12);}
-#define LED3_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)12 + 16));}
-// LED4 = PD2
-#define LED4_TOGGLE {GPIOD->ODR ^= 0x0004;}
-#define LED4_OFF    {GPIOD->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)2);}
-#define LED4_ON     {GPIOD->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)2 + 16));}
+// LEDs definition on STM32F0-Discovery board
+// LED1 = PC8
+#define LED1_TOGGLE {GPIOC->ODR ^= 0x0200;}
+#define LED1_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)8);}
+#define LED1_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)8 + 16));}
+// LED2 = PC9
+#define LED2_TOGGLE {GPIOC->ODR ^= 0x0400;}
+#define LED2_OFF    {GPIOC->BSRR = (uint32_t)((uint32_t)1 << (uint32_t)9);}
+#define LED2_ON     {GPIOC->BSRR = (uint32_t)((uint32_t)1 << ((uint32_t)9 + 16));}
 
 //=======================
 // Channel IOs definition
 //=======================
 
-#define CHANNEL_0_IO_MSK    (TSL_GROUP6_IO2)
-#define CHANNEL_0_GRP_MSK   (TSL_GROUP6)
+#define CHANNEL_0_IO_MSK    (TSL_GROUP1_IO2)
+#define CHANNEL_0_GRP_MSK   (TSL_GROUP1)
 #define CHANNEL_0_SRC       (5) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_0_DEST      (0) // Index in destination result array
 
-#define CHANNEL_1_IO_MSK    (TSL_GROUP6_IO3)
-#define CHANNEL_1_GRP_MSK   (TSL_GROUP6)
+#define CHANNEL_1_IO_MSK    (TSL_GROUP1_IO3)
+#define CHANNEL_1_GRP_MSK   (TSL_GROUP1)
 #define CHANNEL_1_SRC       (5) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_1_DEST      (1) // Index in destination result array
 
-#define CHANNEL_2_IO_MSK    (TSL_GROUP6_IO4)
-#define CHANNEL_2_GRP_MSK   (TSL_GROUP6)
+#define CHANNEL_2_IO_MSK    (TSL_GROUP1_IO4)
+#define CHANNEL_2_GRP_MSK   (TSL_GROUP1)
 #define CHANNEL_2_SRC       (5) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_2_DEST      (2) // Index in destination result array
 
