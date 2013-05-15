@@ -472,9 +472,9 @@
 // If TSLPRM_TSC_GPIO_CONFIG=1 assign each TSLPRM_TSC_GROUPx_IOy parameters below.
 // If TSLPRM_TSC_GPIO_CONFIG=0 these parameters are ignored.
 
-#define TSLPRM_TSC_GROUP1_IO1  SAMPCAP  // PA0
+#define TSLPRM_TSC_GROUP1_IO1  CHANNEL  // PA0 //Not used - there is a button there
 #define TSLPRM_TSC_GROUP1_IO2  CHANNEL  // PA1
-#define TSLPRM_TSC_GROUP1_IO3  CHANNEL  // PA2
+#define TSLPRM_TSC_GROUP1_IO3  SAMPCAP  // PA2
 #define TSLPRM_TSC_GROUP1_IO4  CHANNEL  // PA3
 
 #define TSLPRM_TSC_GROUP2_IO1  NU       // PA4

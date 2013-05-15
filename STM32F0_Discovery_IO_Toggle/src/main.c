@@ -240,9 +240,17 @@ int main(void)
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_7|GPIO_Pin_7 |GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_7|GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 |GPIO_Pin_9 ;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -286,7 +294,7 @@ int main(void)
 	  digits[0] = 0;
 	  digits[1] = 1;
 	  digits[2] = 2;
-
+	  TSL_acq_BankCalibrate(0);
 
 	  while (1)
 	  {
@@ -316,10 +324,12 @@ int main(void)
 		  {
 			  ProcessSensors(); // Execute sensors related tasks
 		  }
+
 		  else
 		  {
 			  // Execute other tasks...
 		  }
+		  TSC->ISR ^= 0x02;
 		  led_counter++;
 
 	  }
