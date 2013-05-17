@@ -61,6 +61,7 @@ static int start_note = 0; // Or current note
 static int end_note = 0;
 static char digits[3];
 static __IO uint32_t TimingDelay;
+TSL_tMeas_T measurment;
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
@@ -68,6 +69,7 @@ void TSL_tkey_Init(void); /**< Used to initialize the TouchKey sensor */
 void TSL_tkey_Process(void); /**< Used to execute the TouchKey sensor state machine */
 void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
+void TSL_tim_ProcessIT(void);
 
 
 /* Global variables ----------------------------------------------------------*/
@@ -282,22 +284,26 @@ int main(void)
 	  //============================================================================
 	  // Init STMTouch driver
 	  //============================================================================
-
+	  if (SysTick_Config(SystemCoreClock / 1000))
+	  {
+		  /* Capture error */
+		  while (1);
+	  }
 	  TSL_user_Init();
 
-
-
 	  TSL_acq_BankConfig(0);
+	  TSL_acq_BankCalibrate(0);
 	  TSL_acq_BankStartAcq();
 	  TSL_acq_BankWaitEOC();
-	  TSL_acq_GetMeas(0);
+	  measurment = TSL_acq_GetMeas(0);
 	  digits[0] = 0;
 	  digits[1] = 1;
 	  digits[2] = 2;
-	  TSL_acq_BankCalibrate(0);
+
 
 	  while (1)
 	  {
+		  TSL_Status_enum_T sts = 0;
 		  static int led_counter = 0;
 		  int digit_num = (led_counter>>9)%3;
 		  switch (digit_num){
@@ -318,9 +324,10 @@ int main(void)
 		  }
 //		  show_digit(digits[digit_num]);
 		  show_digit(led_counter>>16);
+		  show_digit(TSL_Globals.Bank_Array[0].p_chData->Meas);
 
 		  // Execute STMTouch Driver state machine
-		  if (TSL_user_Action() == TSL_STATUS_OK)
+		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 		  {
 			  ProcessSensors(); // Execute sensors related tasks
 		  }
@@ -329,7 +336,6 @@ int main(void)
 		  {
 			  // Execute other tasks...
 		  }
-		  TSC->ISR ^= 0x02;
 		  led_counter++;
 
 	  }
@@ -444,7 +450,7 @@ void MyTKeys_ErrorStateProcess(void)
   TSL_tkey_SetStateOff();
   LED1_ON;
   LED2_OFF;
-  for (;;)
+  //for (;;)
   {
     LED1_TOGGLE;
     SystickDelay(100);
@@ -515,6 +521,15 @@ void SystickDelay(__IO uint32_t nTime)
   {
     // The Gv_SystickCounter variable is decremented every ms by the Systick interrupt routine
   }
+}
+
+void TimingDelay_Decrement(void)
+{
+  if (Gv_SystickCounter != 0x00)
+  {
+	  Gv_SystickCounter--;
+  }
+  TSL_tim_ProcessIT();
 }
 
 

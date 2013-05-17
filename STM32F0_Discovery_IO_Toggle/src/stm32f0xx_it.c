@@ -29,7 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_it.h"
-
+void TimingDelay_Decrement(void); // Defined externally
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{
   */
@@ -96,6 +96,7 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
+	 TimingDelay_Decrement();
 }
 
 /******************************************************************************/
