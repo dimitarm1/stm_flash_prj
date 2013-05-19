@@ -30,6 +30,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_it.h"
 void TimingDelay_Decrement(void); // Defined externally
+void Process_TS_Int(void);  // Defined externally
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{
   */
@@ -98,6 +99,13 @@ void SysTick_Handler(void)
 {
 	 TimingDelay_Decrement();
 }
+
+void TS_IRQHandler(void)
+{
+	Process_TS_Int();
+	TSC->ICR = 03;
+}
+
 
 /******************************************************************************/
 /*                 STM32F0xx Peripherals Interrupt Handlers                   */

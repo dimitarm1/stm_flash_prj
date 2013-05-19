@@ -108,7 +108,7 @@
   - If No the TS interrupt is not used.
   - If Yes the TS interrupt is used.
 */
-#define TSLPRM_USE_ACQ_INTERRUPT (0)
+#define TSLPRM_USE_ACQ_INTERRUPT (1)
 
 /** @} Common_Parameters_Options */
 
@@ -164,28 +164,28 @@
 /** TouchKeys Proximity state input threshold (range=0..255)
   - Enter Proximity state if delta is above
 */
-#define TSLPRM_TKEY_PROX_IN_TH (10)
+#define TSLPRM_TKEY_PROX_IN_TH (6)//(10)
 
 /** TouchKeys Proximity state output threshold (range=0..255)
   - Exit Proximity state if delta is below
 */
-#define TSLPRM_TKEY_PROX_OUT_TH (5)
+#define TSLPRM_TKEY_PROX_OUT_TH (3) //(5)
 
 /** TouchKeys Detect state input threshold (range=0..255)
   - Enter Detect state if delta is above
 */
-#define TSLPRM_TKEY_DETECT_IN_TH (20)
+#define TSLPRM_TKEY_DETECT_IN_TH (10) //(20)
 
 /** TouchKeys Detect state output threshold (range=0..255)
   - Exit Detect state if delta is below
 */
-#define TSLPRM_TKEY_DETECT_OUT_TH (15)
+#define TSLPRM_TKEY_DETECT_OUT_TH (7) //(15)
 
 /** TouchKeys re-Calibration threshold (range=0..255)
   - @warning The value is inverted in the sensor state machine
   - Enter Calibration state if delta is below
 */
-#define TSLPRM_TKEY_CALIB_TH (20)
+#define TSLPRM_TKEY_CALIB_TH (4) //(20)
 
 /** TouchKey, Linear and Rotary sensors thresholds coefficient (range=0..4)
     This multiplier coefficient is applied on Detect thresholds only.

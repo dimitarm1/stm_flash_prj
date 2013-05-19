@@ -696,11 +696,7 @@ TSL_Status_enum_T TSL_acq_BankWaitEOC(void)
     // Check MCEF flag
     if (TSC->ISR & 0x02)
     {
-    	// DEBUG:
-    	TSC->ICR  = 3; // CLEAR ERROR
-//      retval = TSL_STATUS_ERROR;
-        retval = TSL_STATUS_OK;
-
+      retval = TSL_STATUS_ERROR;
     }
     else
     {

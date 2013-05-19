@@ -75,6 +75,8 @@ void TSL_tim_ProcessIT(void);
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
+extern __IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition
+
 
 
 //const TSL_TouchKeyMethods_T MyTKeys_Methods =
@@ -342,7 +344,7 @@ int main(void)
 //		  if(sts == TSL_STATUS_OK) measurment = TSL_acq_GetMeas(0);
 //		  show_digit(TSL_Globals.Bank_Array[0].p_chData->Meas);
 
-		  measurment = TSL_Globals.Bank_Array[0].p_chData->Meas;
+		  measurment = MyChannels_Data[1].Meas;
 		  // Execute STMTouch Driver state machine
 		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 		  {
@@ -430,7 +432,7 @@ void ProcessSensors(void)
   }
 
   // TKEY 1
-  if (TEST_TKEY(1))
+  if (TEST_TKEY(2))
   {
     LED2_ON;
   }
@@ -439,15 +441,7 @@ void ProcessSensors(void)
     LED2_OFF;
   }
 
-  // TKEY 2
-  if (TEST_TKEY(2))
-  {
-    LED1_ON;
-  }
-  else
-  {
-    LED1_OFF;
-  }
+
 
 #if USE_LCD > 0
   LcdDisplayStatus();
@@ -547,6 +541,11 @@ void TimingDelay_Decrement(void)
 	  Gv_SystickCounter--;
   }
   TSL_tim_ProcessIT();
+}
+
+void Process_TS_Int(void){
+	Gv_EOA = 1;
+
 }
 
 
