@@ -79,6 +79,10 @@ void MyTKeys_ErrorStateProcess(void);
 void MyTKeys_OffStateProcess(void);
 
 void key_pressed_event(void); // Declared in main.c
+void KeyPressed_0(void); // Declared externally)
+void KeyPressed_1(void); // Declared externally)
+void KeyPressed_2(void); // Declared externally)
+void KeyPressed_3(void); // Declared externally)
 
 
 CONST TSL_State_T MyTKeys_StateMachine[] =
@@ -124,19 +128,38 @@ CONST TSL_State_T MyTKeys_StateMachine[] =
 };
 
 // Methods for "extended" type (ROM)
-CONST TSL_TouchKeyMethods_T MyTKeys_Methods =
+CONST TSL_TouchKeyMethods_T MyTKeys_Methods_0 =
 {
   TSL_tkey_Init,
-  TSL_tkey_Process
+  TSL_tkey_Process,
+  KeyPressed_0
+};
+CONST TSL_TouchKeyMethods_T MyTKeys_Methods_1 =
+{
+  TSL_tkey_Init,
+  TSL_tkey_Process,
+  KeyPressed_1
+};
+CONST TSL_TouchKeyMethods_T MyTKeys_Methods_2 =
+{
+  TSL_tkey_Init,
+  TSL_tkey_Process,
+  KeyPressed_2
+};
+CONST TSL_TouchKeyMethods_T MyTKeys_Methods_3 =
+{
+  TSL_tkey_Init,
+  TSL_tkey_Process,
+  KeyPressed_3
 };
 
 // TouchKeys list (ROM)
 CONST TSL_TouchKey_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
 {
-  { &MyTKeys_Data[0], &MyTKeys_Param[0], &MyChannels_Data[CHANNEL_0_DEST], MyTKeys_StateMachine, &MyTKeys_Methods },
-  { &MyTKeys_Data[1], &MyTKeys_Param[1], &MyChannels_Data[CHANNEL_1_DEST], MyTKeys_StateMachine, &MyTKeys_Methods },
-  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[CHANNEL_2_DEST], MyTKeys_StateMachine, &MyTKeys_Methods },
-  { &MyTKeys_Data[3], &MyTKeys_Param[3], &MyChannels_Data[CHANNEL_3_DEST], MyTKeys_StateMachine, &MyTKeys_Methods }
+  { &MyTKeys_Data[0], &MyTKeys_Param[0], &MyChannels_Data[CHANNEL_0_DEST], MyTKeys_StateMachine, &MyTKeys_Methods_0 },
+  { &MyTKeys_Data[1], &MyTKeys_Param[1], &MyChannels_Data[CHANNEL_1_DEST], MyTKeys_StateMachine, &MyTKeys_Methods_1 },
+  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[CHANNEL_2_DEST], MyTKeys_StateMachine, &MyTKeys_Methods_2 },
+  { &MyTKeys_Data[3], &MyTKeys_Param[3], &MyChannels_Data[CHANNEL_3_DEST], MyTKeys_StateMachine, &MyTKeys_Methods_3 }
 };
 
 //==============================================================================
@@ -174,7 +197,7 @@ TSL_Params_T TSL_Params =
   TSLPRM_DTO,
 #if TSLPRM_TOTAL_TKEYS > 0  
   MyTKeys_StateMachine,   // Default state machine for TKeys
-  &MyTKeys_Methods,       // Default methods for TKeys
+  &MyTKeys_Methods_0,       // Default methods for TKeys
 #endif
 #if TSLPRM_TOTAL_LNRTS > 0
   MyLinRots_StateMachine, // Default state machine for LinRots

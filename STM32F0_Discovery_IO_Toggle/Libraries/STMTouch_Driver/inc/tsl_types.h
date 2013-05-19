@@ -199,6 +199,7 @@ typedef struct
 {
   void(* Init)(void); /**< Used to initialize the TouchKey sensor */
   void(* Process)(void); /**< Used to execute the TouchKey sensor state machine */
+  void(* Callback)(void); /**< Used to execute on KeyPress event */
 }
 TSL_TouchKeyMethods_T;
 

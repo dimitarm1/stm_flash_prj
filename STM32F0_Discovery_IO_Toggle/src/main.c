@@ -62,6 +62,10 @@ static int end_note = 0;
 static char digits[3];
 static __IO uint32_t TimingDelay;
 TSL_tMeas_T measurment;
+static int display_data=0;
+static int set_time;
+static int current_time;
+
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
@@ -517,7 +521,7 @@ void TimingDelay_Decrement(void)
 		digit_num++;
 		if(digit_num>2) digit_num = 0;
 		GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6; // Turn off the lights while changing them
-		show_digit(((measurment & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
 		switch (digit_num){
 		case 2:
 			GPIOA->BRR = GPIO_Pin_4 ;
@@ -544,10 +548,30 @@ void Process_TS_Int(void){
 void key_pressed_event(void){
 	TSL_tkey_DetectStateProcess();
 	 if(TSL_Globals.This_TKey->p_Data->Change == TSL_STATE_CHANGED){
-	    	  push_note(F2,3);
-	    	  push_note(E2,3);
+	    	  push_note(C3,2);
+	    	  push_note(F2,2);
+	    	  TSL_Globals.This_TKey->p_Methods->Callback();
 	      }
 }
+
+void KeyPressed_0(void){
+	if (display_data)display_data--;
+	if((display_data & 0x0F)>9) display_data -=6;
+}
+void KeyPressed_1(void){
+	if(display_data < 0x99){
+		display_data = (display_data +1);
+		if((display_data & 0x0F)>9) display_data +=6;
+	}
+}
+void KeyPressed_2(void){
+
+}
+void KeyPressed_3(void){
+
+}
+
+
 
 
 /**
