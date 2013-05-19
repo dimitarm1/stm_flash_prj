@@ -47,15 +47,15 @@
 
 /** Total number of channels in application (range=1..255)
 */
-#define TSLPRM_TOTAL_CHANNELS (3)
+#define TSLPRM_TOTAL_CHANNELS (4)
 
 /** Total number of banks in application (range=1..255)
 */
-#define TSLPRM_TOTAL_BANKS (1)
+#define TSLPRM_TOTAL_BANKS (2)
 
 /** Total number of "Extended" TouchKeys in application (range=0..255)
 */
-#define TSLPRM_TOTAL_TOUCHKEYS (3)
+#define TSLPRM_TOTAL_TOUCHKEYS (4)
 
 /** Total number of "Basic" TouchKeys in application (range=0..255)
 */
@@ -74,7 +74,7 @@
 /** Total number of sensors/objects in application (range=1..255)
   - Count all TouchKeys, Linear and Rotary sensors
 */
-#define TSLPRM_TOTAL_OBJECTS (3)
+#define TSLPRM_TOTAL_OBJECTS (4)
 
 /** @} Common_Parameters_Number_Of_Elements */
 
@@ -123,7 +123,7 @@
   - This is the minimum acceptable value for the acquisition measure.
   - The acquisition will be in error if the measure is below this value.
 */
-#define TSLPRM_ACQ_MIN (10)
+#define TSLPRM_ACQ_MIN (1) //(10) // DEBUG is 1
 
 /** Maximum acquisition measurement (range=255, 511, 1023, 2047, 8191, 16383)
   - This is the maximum acceptable value for the acquisition measure.
@@ -472,7 +472,7 @@
 // If TSLPRM_TSC_GPIO_CONFIG=1 assign each TSLPRM_TSC_GROUPx_IOy parameters below.
 // If TSLPRM_TSC_GPIO_CONFIG=0 these parameters are ignored.
 
-#define TSLPRM_TSC_GROUP1_IO1  CHANNEL  // PA0 //Not used - there is a button there
+#define TSLPRM_TSC_GROUP1_IO1  NU       // PA0 //Not used - there is a button there
 #define TSLPRM_TSC_GROUP1_IO2  CHANNEL  // PA1
 #define TSLPRM_TSC_GROUP1_IO3  SAMPCAP  // PA2
 #define TSLPRM_TSC_GROUP1_IO4  CHANNEL  // PA3
@@ -482,8 +482,8 @@
 #define TSLPRM_TSC_GROUP2_IO3  NU       // PA6
 #define TSLPRM_TSC_GROUP2_IO4  NU       // PA7
 
-#define TSLPRM_TSC_GROUP3_IO1  SHIELD   // PC5
-#define TSLPRM_TSC_GROUP3_IO2  SAMPCAP  // PB0
+#define TSLPRM_TSC_GROUP3_IO1  NU       // PC5
+#define TSLPRM_TSC_GROUP3_IO2  NU       // PB0
 #define TSLPRM_TSC_GROUP3_IO3  NU       // PB1
 #define TSLPRM_TSC_GROUP3_IO4  NU       // PB2
 
@@ -492,10 +492,10 @@
 #define TSLPRM_TSC_GROUP4_IO3  NU       // PA11
 #define TSLPRM_TSC_GROUP4_IO4  NU       // PA12
 
-#define TSLPRM_TSC_GROUP5_IO1  NU       // PB3
-#define TSLPRM_TSC_GROUP5_IO2  NU       // PB4
-#define TSLPRM_TSC_GROUP5_IO3  NU       // PB6
-#define TSLPRM_TSC_GROUP5_IO4  NU       // PB7
+#define TSLPRM_TSC_GROUP5_IO1  SAMPCAP  // PB3
+#define TSLPRM_TSC_GROUP5_IO2  CHANNEL  // PB4
+#define TSLPRM_TSC_GROUP5_IO3  CHANNEL  // PB6
+#define TSLPRM_TSC_GROUP5_IO4  SHIELD   // PB7
 
 #define TSLPRM_TSC_GROUP6_IO1  NU       // PB11
 #define TSLPRM_TSC_GROUP6_IO2  NU       // PB12

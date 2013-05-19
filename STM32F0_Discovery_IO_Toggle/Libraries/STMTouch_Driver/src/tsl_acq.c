@@ -236,7 +236,7 @@ TSL_Status_enum_T TSL_acq_BankCalibrate(TSL_tIndex_T idx_bk)
         new_meas = TSL_acq_GetMeas(pchSrc->IdxSrc);
 
         // Check min/max and set status flag
-        if ((new_meas < TSL_Params.AcqMin) || (new_meas > TSL_Params.AcqMax))
+        if (0 &&((new_meas < TSL_Params.AcqMin) || (new_meas > TSL_Params.AcqMax))) // DEBUG
         {
           // Stop calibration
           // Clear data for all channels of the bank

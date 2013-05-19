@@ -183,6 +183,7 @@ void show_digit(int digit){
   */
 int main(void)
 {
+	 TSL_Status_enum_T sts = 0;
   /*!< At this stage the microcontroller clock setting is already configured, 
        this is done through SystemInit() function which is called from startup
        file (startup_stm32f0xx.s) before to branch to application main.
@@ -290,12 +291,12 @@ int main(void)
 		  while (1);
 	  }
 	  TSL_user_Init();
-
-	  TSL_acq_BankConfig(0);
-	  TSL_acq_BankCalibrate(0);
-	  TSL_acq_BankStartAcq();
-	  TSL_acq_BankWaitEOC();
-	  measurment = TSL_acq_GetMeas(0);
+//	  TSL_acq_BankConfig(0);
+//	  sts = TSL_acq_BankCalibrate(0);
+//	  sts = TSL_acq_BankCalibrate(0);
+//	  TSL_acq_BankStartAcq();
+//	  TSL_acq_BankWaitEOC();
+//	  measurment = TSL_acq_GetMeas(0);
 	  digits[0] = 0;
 	  digits[1] = 1;
 	  digits[2] = 2;
@@ -303,29 +304,45 @@ int main(void)
 
 	  while (1)
 	  {
-		  TSL_Status_enum_T sts = 0;
+		  static int prev_digit_num;
 		  static int led_counter = 0;
-		  int digit_num = (led_counter>>9)%3;
-		  switch (digit_num){
-		  case 0:
-			  GPIOA->BRR = GPIO_Pin_4 ;
-			  GPIOA->BSRR = GPIO_Pin_5 | GPIO_Pin_6;
-			  break;
+		  static int digit_num = 0;
 
-		  case 1:
-			  GPIOA->BRR = GPIO_Pin_5 ;
- 			  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_6;
-			  break;
-		  case 2:
-		  default:
-			  GPIOA->BRR = GPIO_Pin_6 ;
-			  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5;
-			  break;
+		  digit_num = (led_counter>>5)%3;
+		  if(digit_num != prev_digit_num){
+			  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6; // Turn off the lights while changing them
+			  show_digit(((measurment & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+			  prev_digit_num = digit_num;
+			  switch (digit_num){
+			  case 2:
+				  GPIOA->BRR = GPIO_Pin_4 ;
+				  GPIOA->BSRR = GPIO_Pin_5 | GPIO_Pin_6;
+				  break;
+
+			  case 1:
+				  GPIOA->BRR = GPIO_Pin_5 ;
+				  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_6;
+				  break;
+			  case 0:
+			  default:
+				  GPIOA->BRR = GPIO_Pin_6 ;
+				  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5;
+				  break;
+			  }
 		  }
 //		  show_digit(digits[digit_num]);
-		  show_digit(led_counter>>16);
-		  show_digit(TSL_Globals.Bank_Array[0].p_chData->Meas);
+		 //show_digit(led_counter>>16);
+//		  if((led_counter & 0xFF) == 0x80){
+//			  // Start acquisition
+//
+//			  TSL_acq_BankStartAcq();
+//
+//		  }
+//		  sts = TSL_acq_BankWaitEOC();
+//		  if(sts == TSL_STATUS_OK) measurment = TSL_acq_GetMeas(0);
+//		  show_digit(TSL_Globals.Bank_Array[0].p_chData->Meas);
 
+		  measurment = TSL_Globals.Bank_Array[0].p_chData->Meas;
 		  // Execute STMTouch Driver state machine
 		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 		  {
@@ -450,7 +467,7 @@ void MyTKeys_ErrorStateProcess(void)
   TSL_tkey_SetStateOff();
   LED1_ON;
   LED2_OFF;
-  //for (;;)
+  for (;;)
   {
     LED1_TOGGLE;
     SystickDelay(100);

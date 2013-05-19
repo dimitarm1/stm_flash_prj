@@ -36,7 +36,8 @@ CONST TSL_ChannelSrc_T MyChannels_Src[TSLPRM_TOTAL_CHANNELS] =
 {
   { CHANNEL_0_SRC, CHANNEL_0_IO_MSK, CHANNEL_0_GRP_MSK },
   { CHANNEL_1_SRC, CHANNEL_1_IO_MSK, CHANNEL_1_GRP_MSK },
-  { CHANNEL_2_SRC, CHANNEL_2_IO_MSK, CHANNEL_2_GRP_MSK }
+  { CHANNEL_2_SRC, CHANNEL_2_IO_MSK, CHANNEL_2_GRP_MSK },
+  { CHANNEL_3_SRC, CHANNEL_3_IO_MSK, CHANNEL_3_GRP_MSK }
 };
 
 // Destination (ROM)
@@ -44,7 +45,8 @@ CONST TSL_ChannelDest_T MyChannels_Dest[TSLPRM_TOTAL_CHANNELS] =
 {
   { CHANNEL_0_DEST },
   { CHANNEL_1_DEST },
-  { CHANNEL_2_DEST }
+  { CHANNEL_2_DEST },
+  { CHANNEL_3_DEST }
 };
 
 // Data (RAM)
@@ -57,8 +59,7 @@ TSL_ChannelData_T MyChannels_Data[TSLPRM_TOTAL_CHANNELS];
 // List (ROM)
 CONST TSL_Bank_T MyBanks[TSLPRM_TOTAL_BANKS] = {
   {&MyChannels_Src[0], &MyChannels_Dest[0], MyChannels_Data, BANK_0_NBCHANNELS, BANK_0_MSK_CHANNELS, BANK_0_MSK_GROUPS},
-  {&MyChannels_Src[1], &MyChannels_Dest[1], MyChannels_Data, BANK_1_NBCHANNELS, BANK_1_MSK_CHANNELS, BANK_1_MSK_GROUPS},
-  {&MyChannels_Src[2], &MyChannels_Dest[2], MyChannels_Data, BANK_2_NBCHANNELS, BANK_2_MSK_CHANNELS, BANK_2_MSK_GROUPS}
+  {&MyChannels_Src[2], &MyChannels_Dest[2], MyChannels_Data, BANK_1_NBCHANNELS, BANK_1_MSK_CHANNELS, BANK_1_MSK_GROUPS}
 };
 
 //==============================================================================
@@ -130,7 +131,8 @@ CONST TSL_TouchKey_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
 {
   { &MyTKeys_Data[0], &MyTKeys_Param[0], &MyChannels_Data[CHANNEL_0_DEST], MyTKeys_StateMachine, &MyTKeys_Methods },
   { &MyTKeys_Data[1], &MyTKeys_Param[1], &MyChannels_Data[CHANNEL_1_DEST], MyTKeys_StateMachine, &MyTKeys_Methods },
-  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[CHANNEL_2_DEST], MyTKeys_StateMachine, &MyTKeys_Methods }  
+  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[CHANNEL_2_DEST], MyTKeys_StateMachine, &MyTKeys_Methods },
+  { &MyTKeys_Data[3], &MyTKeys_Param[3], &MyChannels_Data[CHANNEL_3_DEST], MyTKeys_StateMachine, &MyTKeys_Methods }
 };
 
 //==============================================================================
@@ -142,7 +144,8 @@ CONST TSL_Object_T MyObjects[TSLPRM_TOTAL_OBJECTS] =
 {
   { TSL_OBJ_TOUCHKEY, (TSL_TouchKey_T *)&MyTKeys[0] },
   { TSL_OBJ_TOUCHKEY, (TSL_TouchKey_T *)&MyTKeys[1] },
-  { TSL_OBJ_TOUCHKEY, (TSL_TouchKey_T *)&MyTKeys[2] }
+  { TSL_OBJ_TOUCHKEY, (TSL_TouchKey_T *)&MyTKeys[2] },
+  { TSL_OBJ_TOUCHKEY, (TSL_TouchKey_T *)&MyTKeys[3] }
 };
 
 // Group (RAM)
@@ -230,12 +233,14 @@ TSL_Status_enum_T TSL_user_Action(void)
 #if TSLPRM_USE_ACQ_INTERRUPT > 0
   if (Gv_EOA) // Set by the TS interrupt routine
 #else
-  if (TSL_acq_BankWaitEOC() == TSL_STATUS_OK)
+  if ((status = TSL_acq_BankWaitEOC()) == TSL_STATUS_OK)
 #endif
   {
     TSL_acq_BankGetResult(idx_bank, 0, 0); // Get Bank Result
     idx_bank++; // Next bank
     config_done = 0;
+  } else if (status == TSL_STATUS_ERROR){
+	  for(;;){} // DEBUG
   }
 
   // Process objects, DxS and ECS
