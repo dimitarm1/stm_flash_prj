@@ -28,6 +28,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "tsl_touchkey.h"
 #include "tsl_globals.h"
+#include "pitches.h"
+void push_note(int pitch, int duration); //defined externally
 
 #if TSLPRM_TOTAL_TKEYS > 0
 
@@ -159,6 +161,7 @@ void TSL_tkey_Process(void)
     else
     {
       THIS_CHANGE = TSL_STATE_CHANGED;
+
     }
 
 #if TSLPRM_USE_DXS > 0
@@ -980,6 +983,7 @@ void TSL_tkey_TouchStateProcess(void)
         }
       }
 #endif
+
       return; // Normal operation, stay in Touch state
     }
 

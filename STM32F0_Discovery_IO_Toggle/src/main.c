@@ -310,40 +310,6 @@ int main(void)
 		  static int led_counter = 0;
 		  static int digit_num = 0;
 
-		  digit_num = (led_counter>>5)%3;
-		  if(digit_num != prev_digit_num){
-			  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6; // Turn off the lights while changing them
-			  show_digit(((measurment & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
-			  prev_digit_num = digit_num;
-			  switch (digit_num){
-			  case 2:
-				  GPIOA->BRR = GPIO_Pin_4 ;
-				  GPIOA->BSRR = GPIO_Pin_5 | GPIO_Pin_6;
-				  break;
-
-			  case 1:
-				  GPIOA->BRR = GPIO_Pin_5 ;
-				  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_6;
-				  break;
-			  case 0:
-			  default:
-				  GPIOA->BRR = GPIO_Pin_6 ;
-				  GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5;
-				  break;
-			  }
-		  }
-//		  show_digit(digits[digit_num]);
-		 //show_digit(led_counter>>16);
-//		  if((led_counter & 0xFF) == 0x80){
-//			  // Start acquisition
-//
-//			  TSL_acq_BankStartAcq();
-//
-//		  }
-//		  sts = TSL_acq_BankWaitEOC();
-//		  if(sts == TSL_STATUS_OK) measurment = TSL_acq_GetMeas(0);
-//		  show_digit(TSL_Globals.Bank_Array[0].p_chData->Meas);
-
 		  measurment = MyChannels_Data[1].Meas;
 		  // Execute STMTouch Driver state machine
 		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
@@ -361,7 +327,8 @@ int main(void)
 }
 
 void push_note(int pitch, int duration){
-	pitches[++end_note] = pitch;
+	end_note = (end_note + 1)&0x3F;
+	pitches[end_note] = pitch;
 	durations[end_note] = duration;
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 }
@@ -371,7 +338,7 @@ void get_next_note(){
 	if(start_note == end_note){
 		TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
 	} else {
-		start_note ++;
+		start_note = (start_note + 1)&0x3F;
 		TIM6->ARR = pitches[start_note];
 		buzz_counter = durations[start_note]*20000/ pitches[start_note];
 	}
@@ -527,25 +494,59 @@ void assert_failed(uint8_t* file, uint32_t line)
   */
 void SystickDelay(__IO uint32_t nTime)
 {
+
   Gv_SystickCounter = nTime;
   while (Gv_SystickCounter != 0)
   {
     // The Gv_SystickCounter variable is decremented every ms by the Systick interrupt routine
   }
+
 }
 
 void TimingDelay_Decrement(void)
 {
-  if (Gv_SystickCounter != 0x00)
-  {
-	  Gv_SystickCounter--;
-  }
-  TSL_tim_ProcessIT();
+	if (Gv_SystickCounter != 0x00)
+	{
+		Gv_SystickCounter--;
+	}
+	TSL_tim_ProcessIT();
+	static int led_counter = 0;
+	static int digit_num = 0;
+	if(++led_counter>6){
+		led_counter = 0;
+		digit_num++;
+		if(digit_num>2) digit_num = 0;
+		GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6; // Turn off the lights while changing them
+		show_digit(((measurment & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+		switch (digit_num){
+		case 2:
+			GPIOA->BRR = GPIO_Pin_4 ;
+			GPIOA->BSRR = GPIO_Pin_5 | GPIO_Pin_6;
+			break;
+
+		case 1:
+			GPIOA->BRR = GPIO_Pin_5 ;
+			GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_6;
+			break;
+		case 0:
+		default:
+			GPIOA->BRR = GPIO_Pin_6 ;
+			GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5;
+			break;
+		}
+	}
 }
 
 void Process_TS_Int(void){
 	Gv_EOA = 1;
+}
 
+void key_pressed_event(void){
+	TSL_tkey_DetectStateProcess();
+	 if(TSL_Globals.This_TKey->p_Data->Change == TSL_STATE_CHANGED){
+	    	  push_note(F2,3);
+	    	  push_note(E2,3);
+	      }
 }
 
 

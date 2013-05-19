@@ -78,6 +78,9 @@ TSL_TouchKeyParam_T MyTKeys_Param[TSLPRM_TOTAL_TKEYS];
 void MyTKeys_ErrorStateProcess(void);
 void MyTKeys_OffStateProcess(void);
 
+void key_pressed_event(void); // Declared in main.c
+
+
 CONST TSL_State_T MyTKeys_StateMachine[] =
 {
   // Calibration states
@@ -105,7 +108,7 @@ CONST TSL_State_T MyTKeys_StateMachine[] =
   /*  9 */ { TSL_STATEMASK_DEB_PROX_TOUCH,     0 },
 #endif
   // Detect states
-  /* 10 */ { TSL_STATEMASK_DETECT,             TSL_tkey_DetectStateProcess },
+  /* 10 */ { TSL_STATEMASK_DETECT,             key_pressed_event}, //TSL_tkey_DetectStateProcess },
   /* 11 */ { TSL_STATEMASK_DEB_DETECT,         TSL_tkey_DebDetectStateProcess },
   // Touch state
   /* 12 */ { TSL_STATEMASK_TOUCH,              TSL_tkey_TouchStateProcess },
@@ -240,8 +243,6 @@ TSL_Status_enum_T TSL_user_Action(void)
     TSL_acq_BankGetResult(idx_bank, 0, 0); // Get Bank Result
     idx_bank++; // Next bank
     config_done = 0;
-  } else if (status == TSL_STATUS_ERROR){
-	  for(;;){} // DEBUG
   }
 
   // Process objects, DxS and ECS

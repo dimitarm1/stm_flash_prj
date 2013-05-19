@@ -174,12 +174,12 @@
 /** TouchKeys Detect state input threshold (range=0..255)
   - Enter Detect state if delta is above
 */
-#define TSLPRM_TKEY_DETECT_IN_TH (10) //(20)
+#define TSLPRM_TKEY_DETECT_IN_TH (16) //(20)
 
 /** TouchKeys Detect state output threshold (range=0..255)
   - Exit Detect state if delta is below
 */
-#define TSLPRM_TKEY_DETECT_OUT_TH (7) //(15)
+#define TSLPRM_TKEY_DETECT_OUT_TH (10) //(15)
 
 /** TouchKeys re-Calibration threshold (range=0..255)
   - @warning The value is inverted in the sensor state machine
@@ -343,25 +343,25 @@
   - A Low value will result in a higher sensitivity during the detection but with less noise filtering.
   - A High value will result in improving the system noise immunity but will increase the system response time.
 */
-#define TSLPRM_DEBOUNCE_DETECT (3)
+#define TSLPRM_DEBOUNCE_DETECT (6)
 
 /** Release state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the end-detection but with less noise filtering.
   - A High value will result in a lower sensitivity during the end-detection but with more noise filtering.
 */
-#define TSLPRM_DEBOUNCE_RELEASE (3)
+#define TSLPRM_DEBOUNCE_RELEASE (6)
 
 /** Re-calibration state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the recalibration but with less noise filtering.
   - A High value will result in a lower sensitivity during the recalibration but with more noise filtering.
 */
-#define TSLPRM_DEBOUNCE_CALIB (3)
+#define TSLPRM_DEBOUNCE_CALIB (6)
 
 /** Error state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity to enter in error state.
   - A High value will result in a lower sensitivity to enter in error state.
 */
-#define TSLPRM_DEBOUNCE_ERROR (3)
+#define TSLPRM_DEBOUNCE_ERROR (6)
 
 /** @} Common_Parameters_Debounce */
 
