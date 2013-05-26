@@ -83,9 +83,9 @@
 #define BANK_0_MSK_GROUPS    (CHANNEL_0_GRP_MSK | CHANNEL_2_GRP_MSK ) // Only these groups will be acquired
 
 
-#define BANK_1_NBCHANNELS    (2)
-#define BANK_1_MSK_CHANNELS  (CHANNEL_1_IO_MSK  | CHANNEL_3_IO_MSK )
-#define BANK_1_MSK_GROUPS    (CHANNEL_1_GRP_MSK | CHANNEL_3_GRP_MSK ) // Only these groups will be acquired
+#define BANK_1_NBCHANNELS    (1)
+#define BANK_1_MSK_CHANNELS  (CHANNEL_1_IO_MSK   )
+#define BANK_1_MSK_GROUPS    (CHANNEL_1_GRP_MSK  ) // Only these groups will be acquired
 
 //#define BANK_2_NBCHANNELS    (0)
 //#define BANK_2_MSK_CHANNELS  (0)

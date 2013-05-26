@@ -34,6 +34,8 @@
 #include "tsl_conf_stm32f0xx.h"
 #include "stm32f0xx_gpio.h"
 #include "stm32f0xx_rcc.h"
+#include "stm32f0xx_usart.h"
+
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{
@@ -65,6 +67,8 @@ TSL_tMeas_T measurment;
 static int display_data=0;
 static int set_time;
 static int current_time;
+USART_InitTypeDef* USART_InitStruct;
+USART_ClockInitTypeDef* USART_ClockInitStruct;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -303,6 +307,14 @@ int main(void)
 //	  TSL_acq_BankStartAcq();
 //	  TSL_acq_BankWaitEOC();
 //	  measurment = TSL_acq_GetMeas(0);
+	  USART_StructInit(&USART_InitStruct);
+	  USART_InitStruct->USART_BaudRate = 1200;
+	  USART_Init(USART1,&USART_InitStruct);
+	  USART_ClockInitStruct->USART_Clock = USART_Clock_Disable;
+	  USART_ClockInitStruct->USART_CPOL =  USART_CPOL_Low;
+	  USART_ClockInitStruct->USART_CPHA = USART_CPHA_1Edge;
+	  USART_ClockInitStruct->USART_LastBit = USART_LastBit_Disable;
+	  USART_ClockInit();
 	  digits[0] = 0;
 	  digits[1] = 1;
 	  digits[2] = 2;
