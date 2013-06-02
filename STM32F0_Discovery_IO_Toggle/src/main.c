@@ -67,8 +67,12 @@ TSL_tMeas_T measurment;
 static int display_data=0;
 static int set_time;
 static int current_time;
-USART_InitTypeDef* USART_InitStruct;
-USART_ClockInitTypeDef* USART_ClockInitStruct;
+USART_InitTypeDef USART_InitStructure;
+USART_ClockInitTypeDef USART_ClockInitStruct;
+
+typedef enum states {free,waiting,working,cooling,seting_time, clear_hours,address,pre_time,cool_time,ext_mode}states;
+static states state;
+static int controller_address= 0x10;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -186,6 +190,42 @@ void show_digit(int digit){
 	}
 }
 
+int get_controller_status(int n){
+	int counter = 10000;
+	static int sts, data,delta;
+	// clear in fifo
+	// send conmmand
+	while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	data =  USART_ReceiveData(USART1); // Flush input
+    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//	USART_SendData(USART1,0x80 | ((n & 0x0f)<<3) | 1);
+    delta = (delta + 1)& 0xff;
+	USART_SendData(USART1,delta);
+
+//	USART_SendData(USART1,0x0f);
+	while(counter){
+		//read Rx buffer
+		sts = USART_GetFlagStatus(USART1,USART_FLAG_RXNE);
+		data =  USART_ReceiveData(USART1);
+		if(sts) {
+			while(1);
+			return (data);
+			break;
+		}
+		counter--;
+	}
+	return -1;
+}
+// Function to get controller's address
+void get_address(void){
+	int i, result;
+	for (i = 0; i<16; i++){
+		result = get_controller_status(8);
+		if (result!=-1) break;
+	}
+	controller_address = 8;//i;
+}
+
+
 /**
   * @brief  Main program.
   * @param  None
@@ -193,6 +233,7 @@ void show_digit(int digit){
   */
 int main(void)
 {
+	state = free;
 	 TSL_Status_enum_T sts = 0;
   /*!< At this stage the microcontroller clock setting is already configured, 
        this is done through SystemInit() function which is called from startup
@@ -209,6 +250,52 @@ int main(void)
 	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
   /* GPIOA Periph clock enable */
 	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
+ /* UART1 Clock enable */
+	  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
+
+
+
+	  ///////////////////////////////////////// UART TEST
+	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+	    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
+
+	    GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
+	    GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
+
+	    //Configure USART2 pins:  Rx and Tx ----------------------------
+	    GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
+	    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	    USART_InitStructure.USART_BaudRate = 1200;
+	    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+	    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+	    USART_InitStructure.USART_Parity = USART_Parity_No;
+	    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	    USART_Init(USART1, &USART_InitStructure);
+
+	    USART_Cmd(USART1,ENABLE);
+
+
+	    while(1)
+	    {
+	    	static int counter;
+	    	int data = 0;
+	     while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+	     counter = (counter +1)&0xff;
+	     USART_SendData(USART1, 0x05);
+	     data =  USART_ReceiveData(USART1);
+	     while (data>0);
+	    }
+
+
+
+
 
 /*
  * Outputs:
@@ -251,6 +338,16 @@ int main(void)
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	  /* Configure PB6 -  PB7 for UART*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
+	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
 	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_7|GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
@@ -307,19 +404,37 @@ int main(void)
 //	  TSL_acq_BankStartAcq();
 //	  TSL_acq_BankWaitEOC();
 //	  measurment = TSL_acq_GetMeas(0);
-	  USART_StructInit(&USART_InitStruct);
-	  USART_InitStruct->USART_BaudRate = 1200;
-	  USART_Init(USART1,&USART_InitStruct);
-	  USART_ClockInitStruct->USART_Clock = USART_Clock_Disable;
-	  USART_ClockInitStruct->USART_CPOL =  USART_CPOL_Low;
-	  USART_ClockInitStruct->USART_CPHA = USART_CPHA_1Edge;
-	  USART_ClockInitStruct->USART_LastBit = USART_LastBit_Disable;
-	  USART_ClockInit();
+
+
+
+//	  USART_StructInit(&USART_InitStructure);
+//	  USART_InitStructure.USART_BaudRate = 1200;
+//	  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+//	  USART_InitStructure.USART_StopBits = USART_StopBits_1;
+//	  USART_InitStructure.USART_Parity = USART_Parity_No;
+//	  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+//	  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+//
+//	  USART_Init(USART1,&USART_InitStructure);
+//	  USART_ClockInitStruct.USART_Clock = USART_Clock_Enable;
+//	  USART_ClockInitStruct.USART_CPOL =  USART_CPOL_Low;
+//	  USART_ClockInitStruct.USART_CPHA = USART_CPHA_1Edge;
+//	  USART_ClockInitStruct.USART_LastBit = USART_LastBit_Disable;
+//	  USART_ClockInit(USART1,&USART_ClockInitStruct);
+//	  USART_Cmd(USART1,ENABLE);
+
 	  digits[0] = 0;
 	  digits[1] = 1;
 	  digits[2] = 2;
 
-
+//	  while (1){
+//		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) != RESET)
+//			  USART_SendData(USART1,0x80 );
+//	  }
+	  while(1){
+		  get_controller_status(8);
+	  }
+	  get_address();
 	  while (1)
 	  {
 		  static int prev_digit_num;
@@ -336,6 +451,10 @@ int main(void)
 		  else
 		  {
 			  // Execute other tasks...
+			  if(controller_address>15){
+				  // Try to get controller address continuously
+				  get_address();
+			  }
 		  }
 		  led_counter++;
 
@@ -373,7 +492,20 @@ void TIM6_DAC_IRQHandler() {
 	if(!buzz_counter )	get_next_note();
 }
 
-
+int ToBCD(int value){
+	int result = value & 0x0f;
+	if(result > 9){
+		result = result -9;
+		value = value + 6;
+	}
+	result = result | (value & 0xf0);
+	if(result > 0x99){
+			result = result -0x90;
+			value = value + 0x60;
+	}
+	result = result | (value & 0xf00);
+	return result;
+}
 
 #ifdef  USE_FULL_ASSERT
 
@@ -528,6 +660,7 @@ void TimingDelay_Decrement(void)
 	TSL_tim_ProcessIT();
 	static int led_counter = 0;
 	static int digit_num = 0;
+	static int ping_counter = 0;
 	if(++led_counter>6){
 		led_counter = 0;
 		digit_num++;
@@ -551,6 +684,20 @@ void TimingDelay_Decrement(void)
 			break;
 		}
 	}
+	// Ping solarium for status
+	if(++ping_counter>60){
+		ping_counter = 0;
+		if(controller_address >15){
+			display_data = 0xEEE;
+		} else {
+			int curr_status;
+			curr_status = get_controller_status(controller_address);
+			if(curr_status != -1){
+				display_data = ToBCD(curr_status);
+			}
+		}
+	}
+
 }
 
 void Process_TS_Int(void){
