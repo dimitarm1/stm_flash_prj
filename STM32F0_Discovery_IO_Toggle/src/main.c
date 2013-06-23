@@ -119,73 +119,107 @@ void Delay(__IO uint32_t nTime)
 
 void show_digit(int digit){
 	digit = digit & 0x0F;
-	GPIOB->BSRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-	GPIOC->BSRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14|GPIO_Pin_15 ;
+	GPIOA->BSRR = GPIO_BSRR_BR_3 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_7;
+	GPIOB->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2 | GPIO_BSRR_BR_10 | GPIO_BSRR_BR_11;
+	GPIOC->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
+	GPIOF->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5;
 	switch (digit) {
 	case 0:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 1:
-		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 2:
-		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 3:
-		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 4:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 5:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 |GPIO_Pin_6|GPIO_Pin_7;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 6:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 7:
-		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 8:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 9:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0A:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0B:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0C:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0D:
-		GPIOB->BRR = GPIO_Pin_11|GPIO_Pin_12 ;
-		GPIOC->BRR = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0E:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0F:
 	default:
-		GPIOB->BRR = GPIO_Pin_2|GPIO_Pin_10|GPIO_Pin_13|GPIO_Pin_14 ;
-		GPIOC->BRR = GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_13|GPIO_Pin_14 ;
+		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	}
 }
@@ -282,13 +316,13 @@ int main(void)
 	    USART_Cmd(USART1,ENABLE);
 
 
-	    while(1)
+	    while(0)
 	    {
 	    	static int counter;
 	    	int data = 0;
 	     while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
 	     counter = (counter +1)&0xff;
-	     USART_SendData(USART1, 0x05);
+	     USART_SendData(USART1, counter);
 	     data =  USART_ReceiveData(USART1);
 	     while (data>0);
 	    }
@@ -299,17 +333,17 @@ int main(void)
 
 /*
  * Outputs:
- * PA4 - Digit 0
- * PA5 - Digit 1
- * PA6 - Digit 2
- * PB13,PB14 - a
- * PB11,PB12 - b
- * PC0,PC1 - c
- * PC6,PC7 - d
- * PC13, PC14 - e
- * PB2,PB10 - f
- * PC2,PC3 - g
- * PC15 - DP
+ * PA2 - Digit 0
+ * PA1 - Digit 1
+ * PA0 - Digit 2
+ * PB2,PB1 - a
+ * PC6,PC7 - b
+ * PC4,PA7 - c
+ * PA4,PF5 - d
+ * PF4, PA3 - e
+ * PB11,PB10 - f
+ * PB0,PC5 - g
+ * PA6,PA5 - DP
  *
  *
  *    A
@@ -323,18 +357,27 @@ int main(void)
 	   *
 	   * */
 
-	  /* Configure PA4 -  PA6 in output push-pull mode (for Digits 0-2 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
+	  /* Configure PA in output push-pull mode (for segments)*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5| GPIO_Pin_6|GPIO_Pin_7;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PB0 -  PB3 in output push-pull mode (for segment e )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12| GPIO_Pin_13| GPIO_Pin_14;
+	  /* Configure PA0 -  PA2 in output push-pull mode (for Digits 0-2 )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 |GPIO_Pin_1 |GPIO_Pin_2 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+
+	  /* Configure PB in output push-pull mode (for segments  )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -349,24 +392,24 @@ int main(void)
 	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
 	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
-	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0| GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3 | GPIO_Pin_7|GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-	  /* Configure PC13 -  PC15 in output open drain mode (for segment e )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 |GPIO_Pin_9 ;
+	  /* Configure PC in output push-pull mode (for segments )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5 | GPIO_Pin_6|GPIO_Pin_7;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-	  /* Configure PF5 in output push-pull mode (for buzzer )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	  /* Configure PB9 in output push-pull mode (for buzzer )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 ;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	  /* Configure PF4 in output push-pull mode (for segments )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -431,10 +474,10 @@ int main(void)
 //		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) != RESET)
 //			  USART_SendData(USART1,0x80 );
 //	  }
-	  while(1){
+	  while(0){
 		  get_controller_status(8);
 	  }
-	  get_address();
+//	  get_address();
 	  while (1)
 	  {
 		  static int prev_digit_num;
@@ -453,7 +496,7 @@ int main(void)
 			  // Execute other tasks...
 			  if(controller_address>15){
 				  // Try to get controller address continuously
-				  get_address();
+//				  get_address();
 			  }
 		  }
 		  led_counter++;
@@ -484,9 +527,9 @@ void TIM6_DAC_IRQHandler() {
 		if(buzz_counter){
 			buzz_counter--;
 			if(buzz_counter & 1)
-				GPIOF->BSRR = GPIO_BSRR_BS_5; // Set F5 high
+				GPIOB->BSRR = GPIO_BSRR_BS_9; // Set F5 high
 			else
-				GPIOF->BRR = GPIO_BSRR_BS_5; // Set F5 low
+				GPIOB->BRR = GPIO_BSRR_BS_9; // Set F5 low
 		}
 	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 	if(!buzz_counter )	get_next_note();
@@ -665,22 +708,22 @@ void TimingDelay_Decrement(void)
 		led_counter = 0;
 		digit_num++;
 		if(digit_num>2) digit_num = 0;
-		GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6; // Turn off the lights while changing them
+		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2; // Turn off the lights while changing them
 		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
 		switch (digit_num){
 		case 2:
-			GPIOA->BRR = GPIO_Pin_4 ;
-			GPIOA->BSRR = GPIO_Pin_5 | GPIO_Pin_6;
+			GPIOA->BSRR = GPIO_BSRR_BS_2 ;
+			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
 			break;
 
 		case 1:
-			GPIOA->BRR = GPIO_Pin_5 ;
-			GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_6;
+			GPIOA->BSRR = GPIO_BSRR_BS_1 ;
+			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
 			break;
 		case 0:
 		default:
-			GPIOA->BRR = GPIO_Pin_6 ;
-			GPIOA->BSRR = GPIO_Pin_4 | GPIO_Pin_5;
+			GPIOA->BSRR = GPIO_BSRR_BS_0 ;
+			GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
 			break;
 		}
 	}
