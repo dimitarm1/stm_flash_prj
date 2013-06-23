@@ -473,9 +473,9 @@
 // If TSLPRM_TSC_GPIO_CONFIG=0 these parameters are ignored.
 
 #define TSLPRM_TSC_GROUP1_IO1  NU       // PA0 //Not used - there is a button there
-#define TSLPRM_TSC_GROUP1_IO2  CHANNEL  // PA1
-#define TSLPRM_TSC_GROUP1_IO3  SAMPCAP  // PA2
-#define TSLPRM_TSC_GROUP1_IO4  CHANNEL  // PA3
+#define TSLPRM_TSC_GROUP1_IO2  NU       // PA1
+#define TSLPRM_TSC_GROUP1_IO3  NU       // PA2
+#define TSLPRM_TSC_GROUP1_IO4  NU       // PA3
 
 #define TSLPRM_TSC_GROUP2_IO1  NU       // PA4
 #define TSLPRM_TSC_GROUP2_IO2  NU       // PA5
@@ -487,20 +487,20 @@
 #define TSLPRM_TSC_GROUP3_IO3  NU       // PB1
 #define TSLPRM_TSC_GROUP3_IO4  NU       // PB2
 
-#define TSLPRM_TSC_GROUP4_IO1  NU       // PA9
-#define TSLPRM_TSC_GROUP4_IO2  NU       // PA10
-#define TSLPRM_TSC_GROUP4_IO3  NU       // PA11
+#define TSLPRM_TSC_GROUP4_IO1  SAMPCAP  // PA9
+#define TSLPRM_TSC_GROUP4_IO2  CHANNEL  // PA10
+#define TSLPRM_TSC_GROUP4_IO3  CHANNEL  // PA11
 #define TSLPRM_TSC_GROUP4_IO4  NU       // PA12
 
-#define TSLPRM_TSC_GROUP5_IO1  SAMPCAP  // PB3
-#define TSLPRM_TSC_GROUP5_IO2  CHANNEL  // PB4
+#define TSLPRM_TSC_GROUP5_IO1  NU       // PB3
+#define TSLPRM_TSC_GROUP5_IO2  NU       // PB4
 #define TSLPRM_TSC_GROUP5_IO3  NU       // PB6
-#define TSLPRM_TSC_GROUP5_IO4  SHIELD   // PB7
+#define TSLPRM_TSC_GROUP5_IO4  NU       // PB7
 
 #define TSLPRM_TSC_GROUP6_IO1  NU       // PB11
-#define TSLPRM_TSC_GROUP6_IO2  NU       // PB12
-#define TSLPRM_TSC_GROUP6_IO3  NU       // PB13
-#define TSLPRM_TSC_GROUP6_IO4  NU       // PB14
+#define TSLPRM_TSC_GROUP6_IO2  SAMPCAP  // PB12
+#define TSLPRM_TSC_GROUP6_IO3  CHANNEL  // PB13
+#define TSLPRM_TSC_GROUP6_IO4  CHANNEL  // PB14
 
 /** @} STM32F0xx_Parameters_GPIO_Config */
 
