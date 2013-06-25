@@ -72,7 +72,7 @@ USART_ClockInitTypeDef USART_ClockInitStruct;
 
 typedef enum states {free,waiting,working,cooling,seting_time, clear_hours,address,pre_time,cool_time,ext_mode}states;
 static states state;
-static int controller_address= 0x10;
+static int controller_address = 8; //0x10;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -231,7 +231,7 @@ int get_controller_status(int n){
 	// send conmmand
 	while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	data =  USART_ReceiveData(USART1); // Flush input
     while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-	USART_SendData(USART1,0x80 | ((n & 0x0f)<<3) | 1);
+	USART_SendData(USART1,0x80 | ((n & 0x0f)<<3) | 0);
 //    delta = (delta + 1)& 0xff;
 //	USART_SendData(USART1,delta);
 
@@ -239,9 +239,9 @@ int get_controller_status(int n){
 	while(counter){
 		//read Rx buffer
 		sts = USART_GetFlagStatus(USART1,USART_FLAG_RXNE);
-		data =  USART_ReceiveData(USART1);
 		if(sts) {
-			while(1);
+			data =  USART_ReceiveData(USART1);
+//			while(1);
 			return (data);
 			break;
 		}
@@ -294,38 +294,7 @@ int main(void)
 
 	    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
 
-	    GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
-	    GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
-	    //Configure USART2 pins:  Rx and Tx ----------------------------
-	    GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
-	    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	    GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	    USART_InitStructure.USART_BaudRate = 1200;
-	    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-	    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-	    USART_InitStructure.USART_Parity = USART_Parity_No;
-	    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-	    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	    USART_Init(USART1, &USART_InitStructure);
-
-	    USART_Cmd(USART1,ENABLE);
-
-
-	    while(0)
-	    {
-	    	static int counter;
-	    	int data = 0;
-	     while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-	     counter = (counter +1)&0xff;
-	     USART_SendData(USART1, counter);
-	     data =  USART_ReceiveData(USART1);
-	     while (data>0);
-	    }
 
 
 
@@ -416,7 +385,54 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOF, &GPIO_InitStructure);
 
+	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
+	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
+	  //Configure USART2 pins:  Rx and Tx ----------------------------
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	  USART_InitStructure.USART_BaudRate = 1200;
+	  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+	  USART_InitStructure.USART_StopBits = USART_StopBits_1;
+	  USART_InitStructure.USART_Parity = USART_Parity_No;
+	  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	  USART_Init(USART1, &USART_InitStructure);
+	  USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
+
+	  USART_Cmd(USART1,ENABLE);
+
+/*
+ * commads:
+ * 0 - status 0-free, 1-Working, 2-COOLING, 3-WAITING
+ * 1 - start
+ * 2 - set pre-time
+ * 3 - set cool-time
+ * 4 - stop - may be not implemented in some controllers
+ * 5 - set main time
+ */
+	  while(0)
+	  {
+		  static int counter = 0xc0;
+		  int delay = 0;
+		  int data = 0;
+		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+		  counter = (counter +1)&0xff;
+		  counter = 0x80|(0x08<<3);
+		  USART_SendData(USART1, counter);
+		  delay = 1;
+		  while(delay--){
+			  delay--;
+			  delay ++;
+		  }
+		  data =  USART_ReceiveData(USART1);
+		  while (data>0);
+	  }
 
 	  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
 	  TIM6->PSC = 41; // Set prescaler to 41999
@@ -441,30 +457,7 @@ int main(void)
 		  while (1);
 	  }
 	  TSL_user_Init();
-//	  TSL_acq_BankConfig(0);
-//	  sts = TSL_acq_BankCalibrate(0);
-//	  sts = TSL_acq_BankCalibrate(0);
-//	  TSL_acq_BankStartAcq();
-//	  TSL_acq_BankWaitEOC();
-//	  measurment = TSL_acq_GetMeas(0);
 
-
-
-//	  USART_StructInit(&USART_InitStructure);
-//	  USART_InitStructure.USART_BaudRate = 1200;
-//	  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-//	  USART_InitStructure.USART_StopBits = USART_StopBits_1;
-//	  USART_InitStructure.USART_Parity = USART_Parity_No;
-//	  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-//	  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-//
-//	  USART_Init(USART1,&USART_InitStructure);
-//	  USART_ClockInitStruct.USART_Clock = USART_Clock_Enable;
-//	  USART_ClockInitStruct.USART_CPOL =  USART_CPOL_Low;
-//	  USART_ClockInitStruct.USART_CPHA = USART_CPHA_1Edge;
-//	  USART_ClockInitStruct.USART_LastBit = USART_LastBit_Disable;
-//	  USART_ClockInit(USART1,&USART_ClockInitStruct);
-//	  USART_Cmd(USART1,ENABLE);
 
 	  digits[0] = 0;
 	  digits[1] = 1;
@@ -736,7 +729,7 @@ void TimingDelay_Decrement(void)
 			int curr_status;
 			curr_status = get_controller_status(controller_address);
 			if(curr_status != -1){
-				display_data = ToBCD(curr_status);
+				display_data = ToBCD(curr_status&0x3F);
 			}
 		}
 	}
