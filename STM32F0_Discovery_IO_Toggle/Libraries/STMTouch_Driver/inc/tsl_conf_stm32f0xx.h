@@ -108,7 +108,7 @@
   - If No the TS interrupt is not used.
   - If Yes the TS interrupt is used.
 */
-#define TSLPRM_USE_ACQ_INTERRUPT (1)
+#define TSLPRM_USE_ACQ_INTERRUPT (0)
 
 /** @} Common_Parameters_Options */
 
@@ -129,7 +129,7 @@
   - This is the maximum acceptable value for the acquisition measure.
   - The acquisition will be in error if the measure is above this value.
 */
-#define TSLPRM_ACQ_MAX (8191)
+#define TSLPRM_ACQ_MAX (16384)
 
 /** @} Common_Parameters_Acquisition_Limits */
 
@@ -550,7 +550,7 @@
 @note To ensure a correct operation in noisy environment, this parameter should
 be configured to output push-pull low.
 */
-#define TSLPRM_TSC_IODEF (0)
+#define TSLPRM_TSC_IODEF (1)
 
 /** Acquisition Mode (range=0..1)
     - 0: Normal acquisition mode

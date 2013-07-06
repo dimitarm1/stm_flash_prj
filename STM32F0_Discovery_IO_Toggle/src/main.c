@@ -65,8 +65,6 @@ static char digits[3];
 static __IO uint32_t TimingDelay;
 TSL_tMeas_T measurment;
 static int display_data=0;
-static int set_time;
-static int current_time;
 USART_InitTypeDef USART_InitStructure;
 USART_ClockInitTypeDef USART_ClockInitStruct;
 
@@ -77,11 +75,10 @@ static int controller_address = 8; //0x10;
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
-void TSL_tkey_Init(void); /**< Used to initialize the TouchKey sensor */
-void TSL_tkey_Process(void); /**< Used to execute the TouchKey sensor state machine */
 void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
 void TSL_tim_ProcessIT(void);
+void ping_status(void);
 
 
 /* Global variables ----------------------------------------------------------*/
@@ -97,9 +94,9 @@ extern __IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End 
 //  TSL_tkey_Process
 //};
 
-TSL_TouchKeyData_T           MyTKeys_Data[3];    /**< Data (state id, counter, flags, ...) */
- TSL_TouchKeyParam_T         MyTKeys_Param[3];   /**< Parameters (thresholds, debounce, ...) */
- TSL_ChannelData_T           MyChannels_Data[3];     /**< Channel Data (Meas, Ref, Delta, ...) */
+TSL_TouchKeyData_T          MyTKeys_Data[4];        /**< Data (state id, counter, flags, ...) */
+TSL_TouchKeyParam_T         MyTKeys_Param[4];       /**< Parameters (thresholds, debounce, ...) */
+TSL_ChannelData_T           MyChannels_Data[4];     /**< Channel Data (Meas, Ref, Delta, ...) */
 //// "basic" touchkeys: Always placed in ROM
 //const TSL_TouchKeyB_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
 //{
@@ -416,23 +413,6 @@ int main(void)
  * 4 - stop - may be not implemented in some controllers
  * 5 - set main time
  */
-	  while(0)
-	  {
-		  static int counter = 0xc0;
-		  int delay = 0;
-		  int data = 0;
-		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-		  counter = (counter +1)&0xff;
-		  counter = 0x80|(0x08<<3);
-		  USART_SendData(USART1, counter);
-		  delay = 1;
-		  while(delay--){
-			  delay--;
-			  delay ++;
-		  }
-		  data =  USART_ReceiveData(USART1);
-		  while (data>0);
-	  }
 
 	  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
 	  TIM6->PSC = 41; // Set prescaler to 41999
@@ -473,11 +453,10 @@ int main(void)
 //	  get_address();
 	  while (1)
 	  {
-		  static int prev_digit_num;
 		  static int led_counter = 0;
-		  static int digit_num = 0;
 
-		  measurment = MyChannels_Data[1].Meas;
+		  measurment = MyChannels_Data[0].Meas;
+		  display_data = measurment;
 		  // Execute STMTouch Driver state machine
 		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 		  {
@@ -493,6 +472,7 @@ int main(void)
 			  }
 		  }
 		  led_counter++;
+//		  ping_status();
 
 	  }
 }
@@ -520,9 +500,9 @@ void TIM6_DAC_IRQHandler() {
 		if(buzz_counter){
 			buzz_counter--;
 			if(buzz_counter & 1)
-				GPIOB->BSRR = GPIO_BSRR_BS_9; // Set F5 high
+				GPIOB->BSRR = GPIO_BSRR_BS_9; // Set B9 high
 			else
-				GPIOB->BRR = GPIO_BSRR_BS_9; // Set F5 low
+				GPIOB->BRR = GPIO_BSRR_BS_9; // Set B9 low
 		}
 	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 	if(!buzz_counter )	get_next_note();
@@ -612,7 +592,7 @@ void MyTKeys_ErrorStateProcess(void)
   TSL_tkey_SetStateOff();
   LED1_ON;
   LED2_OFF;
-  for (;;)
+  //for (;;)
   {
     LED1_TOGGLE;
     SystickDelay(100);
@@ -696,7 +676,6 @@ void TimingDelay_Decrement(void)
 	TSL_tim_ProcessIT();
 	static int led_counter = 0;
 	static int digit_num = 0;
-	static int ping_counter = 0;
 	if(++led_counter>6){
 		led_counter = 0;
 		digit_num++;
@@ -720,19 +699,7 @@ void TimingDelay_Decrement(void)
 			break;
 		}
 	}
-	// Ping solarium for status
-	if(++ping_counter>60){
-		ping_counter = 0;
-		if(controller_address >15){
-			display_data = 0xEEE;
-		} else {
-			int curr_status;
-			curr_status = get_controller_status(controller_address);
-			if(curr_status != -1){
-				display_data = ToBCD(curr_status&0x3F);
-			}
-		}
-	}
+
 
 }
 
@@ -766,6 +733,22 @@ void KeyPressed_3(void){
 
 }
 
+void ping_status(void){
+	static int ping_counter=0;
+	// Ping solarium for status
+		if(++ping_counter>600){
+			ping_counter = 0;
+			if(controller_address >15){
+				display_data = 0xEEE;
+			} else {
+				int curr_status;
+				curr_status = get_controller_status(controller_address);
+				if(curr_status != -1){
+					display_data = ToBCD(curr_status&0x3F);
+				}
+			}
+		}
+}
 
 
 

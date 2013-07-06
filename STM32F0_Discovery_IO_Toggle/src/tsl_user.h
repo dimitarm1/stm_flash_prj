@@ -47,24 +47,24 @@
 // Channel IOs definition
 //=======================
 
-#define CHANNEL_0_IO_MSK    (TSL_GROUP1_IO2)
-#define CHANNEL_0_GRP_MSK   (TSL_GROUP1)
-#define CHANNEL_0_SRC       (0) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_0_IO_MSK    (TSL_GROUP4_IO2)
+#define CHANNEL_0_GRP_MSK   (TSL_GROUP4)
+#define CHANNEL_0_SRC       (4) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_0_DEST      (0) // Index in destination result array
 
-#define CHANNEL_1_IO_MSK    (TSL_GROUP1_IO4)
-#define CHANNEL_1_GRP_MSK   (TSL_GROUP1)
-#define CHANNEL_1_SRC       (0) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_1_IO_MSK    (TSL_GROUP4_IO3)
+#define CHANNEL_1_GRP_MSK   (TSL_GROUP4)
+#define CHANNEL_1_SRC       (4) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_1_DEST      (1) // Index in destination result array
 
-#define CHANNEL_2_IO_MSK    (TSL_GROUP5_IO2)
-#define CHANNEL_2_GRP_MSK   (TSL_GROUP5)
-#define CHANNEL_2_SRC       (4) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_2_IO_MSK    (TSL_GROUP6_IO3)
+#define CHANNEL_2_GRP_MSK   (TSL_GROUP6)
+#define CHANNEL_2_SRC       (6) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_2_DEST      (2) // Index in destination result array
 
-#define CHANNEL_3_IO_MSK    (TSL_GROUP5_IO3)
-#define CHANNEL_3_GRP_MSK   (TSL_GROUP5)
-#define CHANNEL_3_SRC       (4) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_3_IO_MSK    (TSL_GROUP6_IO4)
+#define CHANNEL_3_GRP_MSK   (TSL_GROUP6)
+#define CHANNEL_3_SRC       (6) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_3_DEST      (3) // Index in destination result array
 
 //======================
@@ -80,12 +80,12 @@
 
 #define BANK_0_NBCHANNELS    (2)
 #define BANK_0_MSK_CHANNELS  (CHANNEL_0_IO_MSK  | CHANNEL_2_IO_MSK )
-#define BANK_0_MSK_GROUPS    (CHANNEL_0_GRP_MSK | CHANNEL_2_GRP_MSK ) // Only these groups will be acquired
+#define BANK_0_MSK_GROUPS    (CHANNEL_0_GRP_MSK | CHANNEL_2_GRP_MSK) // Only these groups will be acquired
 
 
-#define BANK_1_NBCHANNELS    (1)
-#define BANK_1_MSK_CHANNELS  (CHANNEL_1_IO_MSK   )
-#define BANK_1_MSK_GROUPS    (CHANNEL_1_GRP_MSK  ) // Only these groups will be acquired
+#define BANK_1_NBCHANNELS    (2)
+#define BANK_1_MSK_CHANNELS  (CHANNEL_1_IO_MSK  | CHANNEL_3_IO_MSK )
+#define BANK_1_MSK_GROUPS    (CHANNEL_1_GRP_MSK | CHANNEL_3_GRP_MSK) // Only these groups will be acquired
 
 //#define BANK_2_NBCHANNELS    (0)
 //#define BANK_2_MSK_CHANNELS  (0)
