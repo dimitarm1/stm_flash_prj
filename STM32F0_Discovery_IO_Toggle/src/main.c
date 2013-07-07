@@ -53,6 +53,12 @@
 /* Private macros ------------------------------------------------------------*/
 
 #define TEST_TKEY(NB) (MyTKeys[(NB)].p_Data->StateId == TSL_STATEID_DETECT)
+#define GET_STATUS(ST) ( (ST&(0xC0))>>6)
+
+#define STATUS_FREE    (0)
+#define STATUS_WAITING (3)
+#define STATUS_WORKING (1)
+#define STATUS_COOLING (2)
 
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
@@ -68,10 +74,11 @@ static int display_data=0;
 USART_InitTypeDef USART_InitStructure;
 USART_ClockInitTypeDef USART_ClockInitStruct;
 
-typedef enum states {free,waiting,working,cooling,seting_time, clear_hours,address,pre_time,cool_time,ext_mode}states;
+typedef enum states {show_time,set_time,clear_hours,address,pre_time,cool_time,ext_mode}states;
 static states state;
 static int controller_address = 8; //0x10;
-
+static int curr_status;
+static int flash_mode = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
@@ -79,6 +86,7 @@ void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
 void TSL_tim_ProcessIT(void);
 void ping_status(void);
+int ToBCD(int value);
 
 
 /* Global variables ----------------------------------------------------------*/
@@ -116,7 +124,7 @@ void Delay(__IO uint32_t nTime)
 
 void show_digit(int digit){
 	digit = digit & 0x0F;
-	GPIOA->BSRR = GPIO_BSRR_BR_3 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_7;
+	GPIOA->BSRR = GPIO_BSRR_BR_3 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
 	GPIOB->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2 | GPIO_BSRR_BR_10 | GPIO_BSRR_BR_11;
 	GPIOC->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
 	GPIOF->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5;
@@ -264,7 +272,7 @@ void get_address(void){
   */
 int main(void)
 {
-	state = free;
+
 	 TSL_Status_enum_T sts = 0;
   /*!< At this stage the microcontroller clock setting is already configured, 
        this is done through SystemInit() function which is called from startup
@@ -453,10 +461,10 @@ int main(void)
 //	  get_address();
 	  while (1)
 	  {
-		  static int led_counter = 0;
-
-		  measurment = MyChannels_Data[0].Meas;
+		  int real_status;
+//		  measurment = MyChannels_Data[0].Meas;
 //		  display_data = measurment;
+
 		  // Execute STMTouch Driver state machine
 		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 		  {
@@ -471,8 +479,37 @@ int main(void)
 				  get_address();
 			  }
 		  }
-		  led_counter++;
-//		  ping_status();
+		  ping_status();
+		  real_status = GET_STATUS(curr_status);
+		  switch (state){
+		  case show_time:
+			  if(real_status == STATUS_FREE ){
+				  display_data = 0;
+				  flash_mode = 0;
+			  } else {
+				  display_data = ToBCD(curr_status & 0x3f);
+				  if(real_status == STATUS_WAITING ){
+					  flash_mode = 1; // DP flashing
+				  } else  if(real_status == STATUS_WORKING ){
+					  flash_mode = 2; // DP cycling
+				  } else  if(real_status == STATUS_COOLING ){
+					  flash_mode = 3; // All flashing
+				  }
+			  }
+			  break;
+		  case set_time:
+			  break;
+		  case clear_hours:
+		  	  break;
+		  case address:
+			  break;
+		  case pre_time:
+			  break;
+		  case cool_time:
+			  break;
+		  case ext_mode:
+			  break;
+		  }
 
 	  }
 }
@@ -552,30 +589,42 @@ void assert_failed(uint8_t* file, uint32_t line)
   */
 void ProcessSensors(void)
 {
-  // TKEY 0
-  if (TEST_TKEY(0))
-  {
-    LED1_ON;
-  }
-  else
-  {
-    LED1_OFF;
-  }
+	static int start_counter = 0;
+	// TKEY 0
+	if (TEST_TKEY(0))
+	{
+		if(start_counter<550){
+			start_counter++;
 
-  // TKEY 1
-  if (TEST_TKEY(2))
-  {
-    LED2_ON;
-  }
-  else
-  {
-    LED2_OFF;
-  }
+			// LED1_ON;
+			if(start_counter>500) {
+				start_counter = 560;
+				push_note(E2,3);
+				push_note(D2,3);
+				push_note(C2,3);
+			}
+		}
+	}
+	else
+	{
+		if(start_counter) start_counter--;
+		//    LED1_OFF;
+	}
+
+	// TKEY 1
+	if (TEST_TKEY(2))
+	{
+		LED2_ON;
+	}
+	else
+	{
+		LED2_OFF;
+	}
 
 
 
 #if USE_LCD > 0
-  LcdDisplayStatus();
+	LcdDisplayStatus();
 #endif
 }
 
@@ -679,32 +728,37 @@ void TimingDelay_Decrement(void)
 	}
 	TSL_tim_ProcessIT();
 	static int led_counter = 0;
+	static int flash_counter = 0;
 	static int digit_num = 0;
 	if(++led_counter>6){
 		led_counter = 0;
 		digit_num++;
+		flash_counter++;
 		if(digit_num>2) digit_num = 0;
 		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2; // Turn off the lights while changing them
 		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
-		switch (digit_num){
-		case 2:
-			GPIOA->BSRR = GPIO_BSRR_BS_2 ;
-			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
-			break;
+		if(flash_mode < 3 ||(flash_counter & 0x40)){
+			switch (digit_num){
+			case 2:
+				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
+				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+				break;
 
-		case 1:
-			GPIOA->BSRR = GPIO_BSRR_BS_1 ;
-			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
-			break;
-		case 0:
-		default:
-			GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-			GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
-			break;
+			case 1:
+				GPIOA->BSRR = GPIO_BSRR_BS_1 ;
+				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
+				break;
+			case 0:
+			default:
+				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
+				GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
+				break;
+			}
+		}
+		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
 		}
 	}
-
-
 }
 
 void Process_TS_Int(void){
@@ -752,24 +806,23 @@ void KeyPressed_3(void){ // -
 void ping_status(void){
 	static int ping_counter=0;
 	// Ping solarium for status
-		if(++ping_counter>600){
-			ping_counter = 0;
-			if(controller_address >15){
-				display_data = 0xEEE;
-			} else {
-				int curr_status;
-				curr_status = get_controller_status(controller_address);
-				if(curr_status != -1){
-					display_data = ToBCD(curr_status&0x3F);
-				}
+	if(++ping_counter>600){
+		ping_counter = 0;
+		if(controller_address >15){
+			display_data = 0xEEE;
+		} else {
+
+			curr_status = get_controller_status(controller_address);
+			if(curr_status != -1){
 			}
 		}
+	}
 }
 
 
 
 /**
-  * @}
+ * @}
   */
 
 /**
