@@ -456,7 +456,7 @@ int main(void)
 		  static int led_counter = 0;
 
 		  measurment = MyChannels_Data[0].Meas;
-		  display_data = measurment;
+//		  display_data = measurment;
 		  // Execute STMTouch Driver state machine
 		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 		  {
@@ -592,9 +592,13 @@ void MyTKeys_ErrorStateProcess(void)
   TSL_tkey_SetStateOff();
   LED1_ON;
   LED2_OFF;
-  //for (;;)
+
+  for (;;)
   {
+	display_data = 0xEEE;
     LED1_TOGGLE;
+    SystickDelay(100);
+    display_data = 0x000;
     SystickDelay(100);
   }
 }
@@ -704,33 +708,45 @@ void TimingDelay_Decrement(void)
 }
 
 void Process_TS_Int(void){
-	Gv_EOA = 1;
+	Gv_EOA = 1 +  (0!=(TSC->ISR & 0x02)); // Indicate Error also by MCEIF (MaxCount Error)
+
 }
 
 void key_pressed_event(void){
 	TSL_tkey_DetectStateProcess();
-	 if(TSL_Globals.This_TKey->p_Data->Change == TSL_STATE_CHANGED){
-	    	  push_note(C3,2);
-	    	  push_note(F2,2);
-	    	  TSL_Globals.This_TKey->p_Methods->Callback();
-	      }
+
+	if(TSL_Globals.This_TKey->p_Data->Change == TSL_STATE_CHANGED){
+		if(TSL_Globals.This_TKey->p_Data->StateId == TSL_STATEID_DETECT){
+			TSL_Globals.This_TKey->p_Methods->Callback();
+		}
+	}
 }
 
-void KeyPressed_0(void){
-	if (display_data)display_data--;
-	if((display_data & 0x0F)>9) display_data -=6;
+void KeyPressed_0(void){//START Key(Left)
+	push_note(C2,2);
+	push_note(E2,2);
+	push_note(G2,2);
+	push_note(C3,2);
 }
-void KeyPressed_1(void){
+void KeyPressed_1(void){// STAT Key (Right)
+	KeyPressed_0();
+}
+void KeyPressed_2(void){ // +
 	if(display_data < 0x99){
 		display_data = (display_data +1);
 		if((display_data & 0x0F)>9) display_data +=6;
+		push_note(D2,2);
+		push_note(G2,2);
 	}
 }
-void KeyPressed_2(void){
+void KeyPressed_3(void){ // -
 
-}
-void KeyPressed_3(void){
-
+	if (display_data){
+		display_data--;
+		push_note(G2,2);
+		push_note(D2,2);
+	}
+	if((display_data & 0x0F)>9) display_data -=6;
 }
 
 void ping_status(void){

@@ -210,7 +210,7 @@ TSL_Params_T TSL_Params =
 /* Global variables ----------------------------------------------------------*/
 
 __IO TSL_tTick_ms_T Gv_ECS_last_tick; // Hold the last time value for ECS
-__IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition
+__IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition and error status
 
 
 /**
@@ -248,8 +248,20 @@ TSL_Status_enum_T TSL_user_Action(void)
   // Configure bank
   if (!config_done)
   {
+	TSL_tMeas_T new_meas;
     TSL_acq_BankConfig(idx_bank); // Configure Bank
-    TSL_acq_BankStartAcq(); // Start Bank acquisition
+//    while(1){
+    	TSL_acq_BankStartAcq(); // Start Bank acquisition
+//    	while (!Gv_EOA);
+//    	new_meas = TSL_acq_GetMeas(1);
+//    	new_meas = TSL_acq_GetMeas(2);
+//    	new_meas = TSL_acq_GetMeas(3);
+//    	new_meas = TSL_acq_GetMeas(4);
+//    	new_meas = TSL_acq_GetMeas(5);
+//    	new_meas = TSL_acq_GetMeas(6);
+//
+//    	Gv_EOA = 0;
+//    }
     config_done = 1;
 #if TSLPRM_USE_ACQ_INTERRUPT > 0
     Gv_EOA = 0; // Will be set by the TS interrupt routine
@@ -258,6 +270,9 @@ TSL_Status_enum_T TSL_user_Action(void)
 
   // Check end of acquisition
 #if TSLPRM_USE_ACQ_INTERRUPT > 0
+  if( (Gv_EOA)== 2){
+	  while (1); // DEBUG Error here
+  }
   if (Gv_EOA) // Set by the TS interrupt routine
 #else
   if ((status = TSL_acq_BankWaitEOC()) == TSL_STATUS_OK)

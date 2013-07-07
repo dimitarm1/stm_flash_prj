@@ -108,7 +108,7 @@
   - If No the TS interrupt is not used.
   - If Yes the TS interrupt is used.
 */
-#define TSLPRM_USE_ACQ_INTERRUPT (0)
+#define TSLPRM_USE_ACQ_INTERRUPT (1)
 
 /** @} Common_Parameters_Options */
 
@@ -123,13 +123,13 @@
   - This is the minimum acceptable value for the acquisition measure.
   - The acquisition will be in error if the measure is below this value.
 */
-#define TSLPRM_ACQ_MIN (1) //(10) // DEBUG is 1
+#define TSLPRM_ACQ_MIN (10) //(10) // DEBUG is 1
 
 /** Maximum acquisition measurement (range=255, 511, 1023, 2047, 8191, 16383)
   - This is the maximum acceptable value for the acquisition measure.
   - The acquisition will be in error if the measure is above this value.
 */
-#define TSLPRM_ACQ_MAX (16384)
+#define TSLPRM_ACQ_MAX (1000)
 
 /** @} Common_Parameters_Acquisition_Limits */
 
@@ -150,7 +150,7 @@
   - This is usefull if a noise filter is used.
   - Write 0 to disable the delay.
 */
-#define TSLPRM_CALIB_DELAY (0)
+#define TSLPRM_CALIB_DELAY (2)
 
 /** @} Common_Parameters_Calibration */
 
@@ -164,28 +164,28 @@
 /** TouchKeys Proximity state input threshold (range=0..255)
   - Enter Proximity state if delta is above
 */
-#define TSLPRM_TKEY_PROX_IN_TH (6)//(10)
+#define TSLPRM_TKEY_PROX_IN_TH (10)//(10)
 
 /** TouchKeys Proximity state output threshold (range=0..255)
   - Exit Proximity state if delta is below
 */
-#define TSLPRM_TKEY_PROX_OUT_TH (3) //(5)
+#define TSLPRM_TKEY_PROX_OUT_TH (5) //(5)
 
 /** TouchKeys Detect state input threshold (range=0..255)
   - Enter Detect state if delta is above
 */
-#define TSLPRM_TKEY_DETECT_IN_TH (16) //(20)
+#define TSLPRM_TKEY_DETECT_IN_TH (25) //(20)
 
 /** TouchKeys Detect state output threshold (range=0..255)
   - Exit Detect state if delta is below
 */
-#define TSLPRM_TKEY_DETECT_OUT_TH (10) //(15)
+#define TSLPRM_TKEY_DETECT_OUT_TH (15) //(15)
 
 /** TouchKeys re-Calibration threshold (range=0..255)
   - @warning The value is inverted in the sensor state machine
   - Enter Calibration state if delta is below
 */
-#define TSLPRM_TKEY_CALIB_TH (4) //(20)
+#define TSLPRM_TKEY_CALIB_TH (15) //(20)
 
 /** TouchKey, Linear and Rotary sensors thresholds coefficient (range=0..4)
     This multiplier coefficient is applied on Detect thresholds only.
@@ -337,19 +337,19 @@
   - A Low value will result in a higher sensitivity during the Proximity detection but with less noise filtering.
   - A High value will result in improving the system noise immunity but will increase the system response time.
 */
-#define TSLPRM_DEBOUNCE_PROX (3)
+#define TSLPRM_DEBOUNCE_PROX (6)
 
 /** Detect state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the detection but with less noise filtering.
   - A High value will result in improving the system noise immunity but will increase the system response time.
 */
-#define TSLPRM_DEBOUNCE_DETECT (6)
+#define TSLPRM_DEBOUNCE_DETECT (20)
 
 /** Release state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the end-detection but with less noise filtering.
   - A High value will result in a lower sensitivity during the end-detection but with more noise filtering.
 */
-#define TSLPRM_DEBOUNCE_RELEASE (6)
+#define TSLPRM_DEBOUNCE_RELEASE (20)
 
 /** Re-calibration state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the recalibration but with less noise filtering.
@@ -407,7 +407,7 @@
 @note The DTO can be changed in run-time by the application only if the
       default value is between 1 and 63.
 */
-#define TSLPRM_DTO (0)
+#define TSLPRM_DTO (2)
 
 /** @} Common_Parameters_DTO */
 
@@ -550,7 +550,7 @@
 @note To ensure a correct operation in noisy environment, this parameter should
 be configured to output push-pull low.
 */
-#define TSLPRM_TSC_IODEF (1)
+#define TSLPRM_TSC_IODEF (0)
 
 /** Acquisition Mode (range=0..1)
     - 0: Normal acquisition mode

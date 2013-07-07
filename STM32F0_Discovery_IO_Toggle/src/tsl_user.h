@@ -49,22 +49,22 @@
 
 #define CHANNEL_0_IO_MSK    (TSL_GROUP4_IO2)
 #define CHANNEL_0_GRP_MSK   (TSL_GROUP4)
-#define CHANNEL_0_SRC       (4) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_0_SRC       (3) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_0_DEST      (0) // Index in destination result array
 
 #define CHANNEL_1_IO_MSK    (TSL_GROUP4_IO3)
 #define CHANNEL_1_GRP_MSK   (TSL_GROUP4)
-#define CHANNEL_1_SRC       (4) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_1_SRC       (3) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_1_DEST      (1) // Index in destination result array
 
 #define CHANNEL_2_IO_MSK    (TSL_GROUP6_IO3)
 #define CHANNEL_2_GRP_MSK   (TSL_GROUP6)
-#define CHANNEL_2_SRC       (6) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_2_SRC       (5) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_2_DEST      (2) // Index in destination result array
 
 #define CHANNEL_3_IO_MSK    (TSL_GROUP6_IO4)
 #define CHANNEL_3_GRP_MSK   (TSL_GROUP6)
-#define CHANNEL_3_SRC       (6) // Index in source register (TSC->IOGXCR[])
+#define CHANNEL_3_SRC       (5) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_3_DEST      (3) // Index in destination result array
 
 //======================
