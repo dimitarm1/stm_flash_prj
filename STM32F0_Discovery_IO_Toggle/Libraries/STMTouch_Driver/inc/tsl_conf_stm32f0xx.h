@@ -407,7 +407,7 @@
 @note The DTO can be changed in run-time by the application only if the
       default value is between 1 and 63.
 */
-#define TSLPRM_DTO (2)
+#define TSLPRM_DTO (62)
 
 /** @} Common_Parameters_DTO */
 

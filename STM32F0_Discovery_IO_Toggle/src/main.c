@@ -73,15 +73,27 @@ static int display_data=0;
 USART_InitTypeDef USART_InitStructure;
 USART_ClockInitTypeDef USART_ClockInitStruct;
 
-typedef enum states {show_time,set_time,show_hours,enter_service,clear_hours,address,pre_time,cool_time,ext_mode}states;
+typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,
+	state_pre_time,state_cool_time,state_ext_mode}states;
 static states state;
+typedef enum modes {mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
+static modes service_mode;
 static unsigned char controller_address = 8; //0x10;
 static int curr_status;
 static int curr_time;
 static int flash_mode = 0;
 static unsigned char  time_to_set = 0;
+static unsigned int   work_hours[3] = {9,10,30};
 static unsigned char  preset_pre_time = 7;
 static unsigned char  preset_cool_time = 3;
+static int start_counter = 0;
+static int counter_hours = 0;
+static int flash_counter_prev = 0;
+
+// for Display:
+static int led_counter = 0;
+static int flash_counter = 0;
+static int digit_num = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
@@ -91,6 +103,7 @@ void TSL_tim_ProcessIT(void);
 void ping_status(void);
 int ToBCD(int value);
 void send_time(void);
+void send_start(void);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -224,17 +237,18 @@ void show_digit(int digit){
 		break;
 	case 0x0F:
 	default:
-		GPIOA->BSRR = GPIO_BSRR_BS_3 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
-		GPIOC->BSRR = GPIO_BSRR_BS_5;
-		GPIOF->BSRR = GPIO_BSRR_BS_4;
+		//empty
+//		GPIOA->BSRR = GPIO_BSRR_BS_3 ;
+//		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+//		GPIOC->BSRR = GPIO_BSRR_BS_5;
+//		GPIOF->BSRR = GPIO_BSRR_BS_4;
 		break;
 	}
 }
 
 int get_controller_status(int n){
 	int counter = 10000;
-	static int sts, data,delta;
+	static int sts, data;
 	// clear in fifo
 	// send conmmand
 	while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	data =  USART_ReceiveData(USART1); // Flush input
@@ -484,14 +498,14 @@ int main(void)
 		  ping_status();
 
 		  switch (state){
-		  case show_time:
-		  case set_time:
+		  case state_show_time:
+		  case state_set_time:
 			  if(curr_status == STATUS_FREE ){
 				  flash_mode = 0;
-				  state = set_time;
+				  state = state_set_time;
 				  display_data = ToBCD(time_to_set);
 			  } else {
-				  state = show_time;
+				  state = state_show_time;
 				  time_to_set = 0;
 				  display_data = ToBCD(curr_time);
 				  if(curr_status == STATUS_WAITING ){
@@ -506,15 +520,40 @@ int main(void)
 				  }
 			  }
 			  break;
-		  case clear_hours:
+		  case state_show_hours:
+
+			  if( flash_mode != 3){
+				  flash_mode = 3; // All flashing
+				  flash_counter_prev = flash_counter = 0;
+			  }
+			  {
+				  int index = (counter_hours)%4;
+				  if(index<3){
+					  display_data = ToBCD(work_hours[index]);
+				  }
+				  else {
+					  display_data = 0xFFF;
+				  }
+				  if(flash_counter_prev != (flash_counter & 0x40)){
+					  if(flash_counter_prev) counter_hours++;
+					  flash_counter_prev = (flash_counter & 0x40);
+				  }
+			  }
+			  break;
+		  case state_enter_service:
+			  display_data = service_mode;
+		      flash_mode = 3; // All flashing
+			  break;
+
+		  case state_clear_hours:
 		  	  break;
-		  case address:
+		  case state_address:
 			  break;
-		  case pre_time:
+		  case state_pre_time:
 			  break;
-		  case cool_time:
+		  case state_cool_time:
 			  break;
-		  case ext_mode:
+		  case state_ext_mode:
 			  break;
 		  }
 
@@ -553,17 +592,22 @@ void TIM6_DAC_IRQHandler() {
 }
 
 int ToBCD(int value){
-	int result = value & 0x0f;
-	if(result > 9){
-		result = result -9;
-		value = value + 6;
-	}
-	result = result | (value & 0xf0);
-	if(result > 0x99){
-			result = result -0x90;
-			value = value + 0x60;
-	}
-	result = result | (value & 0xf00);
+	int digits[3];
+	int result;
+	digits[0] = value %10;
+	digits[1] = (value/10) % 10;
+	digits[2] = (value/100) % 10;
+	result = digits[0] | (digits[1]<<4) | (digits[2]<<8);
+	return result;
+}
+
+int FromBCD(int value){
+	int digits[3];
+	int result;
+	digits[0] = value & 0x0F;
+	digits[1] = (value>>4) & 0x0F;
+	digits[2] = (value>>8) & 0x0F;
+	result = digits[0] + digits[1]*10 + digits[2]*100;
 	return result;
 }
 
@@ -596,15 +640,38 @@ void assert_failed(uint8_t* file, uint32_t line)
   */
 void ProcessSensors(void)
 {
-	static int start_counter = 0;
+
 	// TKEY 0
 	if (TEST_TKEY(0))
 	{
 		// LED1_ON;
+		if(start_counter<10000) start_counter++;
+		if(start_counter== 5000){
+			if((!curr_time)&&(state < state_enter_service)){
+				push_note(C2,4);
+				push_note(E2,4);
+				push_note(G2,4);
+				push_note(C3,4);
+				push_note(G2,4);
+				push_note(C3,8);
+				state = state_enter_service;
+				service_mode = 0;
+			}
+		}
 	}
 	else
 	{
-
+		if(start_counter){
+			if(state == state_show_hours){
+				start_counter--;
+				if(!start_counter){
+					state = state_show_time;
+				}
+			}
+			else {
+				start_counter = 0;
+			}
+		}
 		//    LED1_OFF;
 	}
 
@@ -724,9 +791,7 @@ void TimingDelay_Decrement(void)
 		Gv_SystickCounter--;
 	}
 	TSL_tim_ProcessIT();
-	static int led_counter = 0;
-	static int flash_counter = 0;
-	static int digit_num = 0;
+
 	if(++led_counter>6){
 		led_counter = 0;
 		digit_num++;
@@ -785,10 +850,14 @@ void KeyPressed_0(void){//START Key(Left)
 	}
 	if((curr_status == STATUS_FREE)) {
 		if(time_to_set){
+			state = state_show_time;
 			push_note(E2,3);
 			push_note(D2,3);
 			push_note(C2,3);
 			send_time();
+		} else {
+			state = state_show_hours;
+			start_counter = 3000;
 		}
 	}
 }
@@ -796,9 +865,9 @@ void KeyPressed_1(void){// STAT Key (Right)
 	KeyPressed_0();
 }
 void KeyPressed_2(void){ // +
-	if(state == set_time){
+	if(state == state_set_time){
 		if(time_to_set < 0x99){
-			time_to_set = (display_data +1);
+			time_to_set ++;
 //			if((time_to_set & 0x0F)>9) time_to_set +=6;
 		}
 	}
@@ -807,13 +876,13 @@ void KeyPressed_2(void){ // +
 }
 void KeyPressed_3(void){ // -
 
-	if(state == set_time){
+	if(state == state_set_time){
 		if(time_to_set) {
 			time_to_set--;
 		}
 	}
 
-//	if((display_data & 0x0F)>9) display_data -=6;
+//	if((time_to_set & 0x0F)>9) time_to_set -=6;
 	push_note(G2,2);
 	push_note(D2,2);
 
@@ -836,6 +905,7 @@ void ping_status(void){
 				curr_time = 0;
 			}
 		}
+		curr_time = FromBCD(curr_time);
 	}
 }
 
@@ -848,12 +918,13 @@ void send_time(void){
 		int retry = 0;
 		int retry2 =0;
 		char data;
+		int time_in_hex = ToBCD(time_to_set);
 		preset_pre_time = preset_pre_time & 0x7F;
 		// checksum: CoolTime + Pre-Time - 5 - MainTime
 
 		while(retry < 20){
 			// clear in FIFO
-			volatile unsigned char checksum = (preset_pre_time + preset_cool_time  - time_to_set - 5) & 0x7F;
+			volatile unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
 			volatile unsigned char  remote_check_sum = 220;
 			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
 			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
@@ -869,7 +940,7 @@ void send_time(void){
 			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 
 			SystickDelay(2);
-			USART_SendData(USART1,time_to_set);
+			USART_SendData(USART1,time_in_hex);
 			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 
 //			SystickDelay(2);
