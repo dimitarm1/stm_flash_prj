@@ -58,6 +58,10 @@
 #define STATUS_WAITING (3)
 #define STATUS_WORKING (1)
 #define STATUS_COOLING (2)
+#define START_COUNTER_TIME 1000
+#define ENTER_SERVICE_DELAY 2000
+#define SERVICE_NEXT_DELAY 200
+#define EXIT_SERVICE_TIME  1000
 
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
@@ -76,7 +80,7 @@ USART_ClockInitTypeDef USART_ClockInitStruct;
 typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,
 	state_pre_time,state_cool_time,state_ext_mode}states;
 static states state;
-typedef enum modes {mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
+typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
 static modes service_mode;
 static unsigned char controller_address = 8; //0x10;
 static int curr_status;
@@ -529,7 +533,7 @@ int main(void)
 			  {
 				  int index = (counter_hours)%4;
 				  if(index<3){
-					  display_data = ToBCD(work_hours[index]);
+					  display_data = 0xF00 | ToBCD(work_hours[index]);
 				  }
 				  else {
 					  display_data = 0xFFF;
@@ -541,19 +545,29 @@ int main(void)
 			  }
 			  break;
 		  case state_enter_service:
-			  display_data = service_mode;
-		      flash_mode = 3; // All flashing
+			  display_data = service_mode|0xAF0;
+		      flash_mode = 0;
 			  break;
 
 		  case state_clear_hours:
+			  flash_mode = 3;
+			  display_data = 0xFFC;
 		  	  break;
 		  case state_address:
+			  flash_mode = 0;
+			  display_data = 0xFFA;
 			  break;
 		  case state_pre_time:
+			  flash_mode = 2;
+			  display_data = 0x3F0 | preset_pre_time;;
 			  break;
 		  case state_cool_time:
+			  flash_mode = 2;
+			  display_data = 0x4F0 | preset_cool_time;
 			  break;
 		  case state_ext_mode:
+			  flash_mode = 0;
+			  display_data = 0x5F0;
 			  break;
 		  }
 
@@ -642,12 +656,12 @@ void ProcessSensors(void)
 {
 
 	// TKEY 0
-	if (TEST_TKEY(0))
+	if (TEST_TKEY(0)||TEST_TKEY(1))
 	{
 		// LED1_ON;
-		if(start_counter<10000) start_counter++;
-		if(start_counter== 5000){
-			if((!curr_time)&&(state < state_enter_service)){
+		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
+		if(start_counter== START_COUNTER_TIME + ENTER_SERVICE_DELAY){
+			if((!curr_time)&&(state < state_enter_service));{
 				push_note(C2,4);
 				push_note(E2,4);
 				push_note(G2,4);
@@ -655,7 +669,18 @@ void ProcessSensors(void)
 				push_note(G2,4);
 				push_note(C3,8);
 				state = state_enter_service;
-				service_mode = 0;
+				service_mode = mode_clear_hours; // Clear Hours
+			}
+		}
+		if(state == state_enter_service){
+			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
+					service_mode = mode_set_address; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 2*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_pre_time; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_cool_time; //
 			}
 		}
 	}
@@ -668,8 +693,18 @@ void ProcessSensors(void)
 					state = state_show_time;
 				}
 			}
+			else if(state >= state_enter_service){
+				if(state == state_enter_service){
+					state = service_mode + state_enter_service;
+				}
+				start_counter--;
+				if(!start_counter){
+					state = state_show_time;
+				}
+			}
 			else {
 				start_counter = 0;
+
 			}
 		}
 		//    LED1_OFF;
@@ -856,29 +891,70 @@ void KeyPressed_0(void){//START Key(Left)
 			push_note(C2,3);
 			send_time();
 		} else {
+			if (state > state_enter_service){
+				// Write EEPROM
+				start_counter = 0;
+			} else {
+				start_counter = START_COUNTER_TIME;
+			}
 			state = state_show_hours;
-			start_counter = 3000;
 		}
 	}
 }
-void KeyPressed_1(void){// STAT Key (Right)
+void KeyPressed_1(void){// START Key (Right)
 	KeyPressed_0();
 }
 void KeyPressed_2(void){ // +
+	if(state == state_show_hours) {
+		state = state_set_time;
+		start_counter = 0;
+	}
 	if(state == state_set_time){
 		if(time_to_set < 0x99){
 			time_to_set ++;
 //			if((time_to_set & 0x0F)>9) time_to_set +=6;
 		}
 	}
+	else if(state > state_enter_service){
+		start_counter = EXIT_SERVICE_TIME;
+		switch (service_mode){
+		case mode_set_address:
+			break;
+		case mode_set_pre_time:
+			if(preset_pre_time<9) preset_pre_time++;
+			break;
+		case mode_set_cool_time:
+			if(preset_cool_time<9) preset_cool_time++;
+			break;
+		default:
+			break;
+		}
+	}
 	push_note(D2,2);
 	push_note(G2,2);
 }
 void KeyPressed_3(void){ // -
-
+	if(state == state_show_hours) {
+		state = state_set_time;
+		start_counter = 0;
+	}
 	if(state == state_set_time){
 		if(time_to_set) {
 			time_to_set--;
+		}
+	}else if(state > state_enter_service){
+		start_counter = EXIT_SERVICE_TIME;
+		switch (service_mode){
+		case mode_set_address:
+			break;
+		case mode_set_pre_time:
+			if(preset_pre_time) preset_pre_time--;
+			break;
+		case mode_set_cool_time:
+			if(preset_cool_time) preset_cool_time--;
+			break;
+		default:
+			break;
 		}
 	}
 
