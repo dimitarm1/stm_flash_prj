@@ -83,7 +83,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
 static states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
 static modes service_mode;
-static unsigned char controller_address = 8; //0x10;
+static unsigned char controller_address = 0x10;
 static int curr_status;
 static int curr_time;
 static int flash_mode = 0;
@@ -1189,7 +1189,7 @@ void write_eeprom(void){
 	int index = 0;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
-	uint32_t *param = (uint32_t *)&flash_mem;
+	uint32_t *p = (uint32_t *)&flash_mem;
 	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
 	if(index == 512){
 		// No more room. Erase the 4 pages
@@ -1211,12 +1211,16 @@ void write_eeprom(void){
 
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
+		flash_mem.settings.addresse = controller_address;
+		flash_mem.settings.unused = 0x55;
 		flash_mem.time.hours_h = work_hours[0];
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
-		FLASH_ProgramWord((uint32_t)&eeprom_array[index],*param);
-		FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],*param+1);
+		FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
+		FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
+		index = sizeof(flash_mem);
+		index ++;
 	}
 //	FLASH_Lock();
 }
