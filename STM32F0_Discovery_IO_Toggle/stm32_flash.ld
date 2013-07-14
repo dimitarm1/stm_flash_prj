@@ -42,7 +42,8 @@ _Min_Stack_Size = 0x80; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-  FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 64K
+  FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 60K
+  EEPROM(rx)      : ORIGIN = 0x08007000, LENGTH = 4K
   RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 8K
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
@@ -147,6 +148,14 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(4);
   } >RAM
+
+/* EEPROM section, code must be located here explicitly            */
+  /* Example: extern int foo(void) __attribute__ ((section (".eeprom1text"))); */
+  .eeprom1text :
+  {
+    *(.eeprom1text)        /* .eeporm sections (data) */
+  } >EEPROM
+
 
   /* MEMORY_bank1 section, code must be located here explicitly            */
   /* Example: extern int foo(void) __attribute__ ((section (".mb1text"))); */

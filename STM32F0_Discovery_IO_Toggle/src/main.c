@@ -35,6 +35,7 @@
 #include "stm32f0xx_gpio.h"
 #include "stm32f0xx_rcc.h"
 #include "stm32f0xx_usart.h"
+#include "stm32f0xx_flash.h"
 
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
@@ -61,7 +62,7 @@
 #define START_COUNTER_TIME 1000
 #define ENTER_SERVICE_DELAY 2000
 #define SERVICE_NEXT_DELAY 200
-#define EXIT_SERVICE_TIME  1000
+#define EXIT_SERVICE_TIME  400
 
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
@@ -87,7 +88,7 @@ static int curr_status;
 static int curr_time;
 static int flash_mode = 0;
 static unsigned char  time_to_set = 0;
-static unsigned int   work_hours[3] = {9,10,30};
+static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
 static unsigned char  preset_pre_time = 7;
 static unsigned char  preset_cool_time = 3;
 static int start_counter = 0;
@@ -98,6 +99,22 @@ static int flash_counter_prev = 0;
 static int led_counter = 0;
 static int flash_counter = 0;
 static int digit_num = 0;
+typedef struct time_str{
+	uint8_t used_flag :8;
+	uint8_t hours_h   :8;
+	uint8_t hours_l   :8;
+	uint8_t minutes   :8;
+}time_str;
+typedef struct settings_str{
+	uint8_t addresse  :8;
+	uint8_t pre_time  :8;
+	uint8_t cool_time :8;
+	uint8_t unused    :8;
+}settings_str;
+typedef struct flash_struct{
+	time_str time;
+	settings_str settings;
+}flash_struct;
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
@@ -108,13 +125,16 @@ void ping_status(void);
 int ToBCD(int value);
 void send_time(void);
 void send_start(void);
+void write_eeprom(void);
+void read_eeprom(void);
+
 
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
 extern __IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition
 
-
+static const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
 
 //const TSL_TouchKeyMethods_T MyTKeys_Methods =
 //{
@@ -480,6 +500,8 @@ int main(void)
 		  get_controller_status(8);
 	  }
 //	  get_address();
+
+	  read_eeprom();
 	  while (1)
 	  {
 //		  measurment = MyChannels_Data[0].Meas;
@@ -890,10 +912,28 @@ void KeyPressed_0(void){//START Key(Left)
 			push_note(D2,3);
 			push_note(C2,3);
 			send_time();
+			work_hours[2]+=time_to_set;
+			if(work_hours[2]>59){
+				work_hours[2]=work_hours[2]-59;
+				work_hours[1]++;
+				if(work_hours[1]>99){
+					work_hours[1] = 0;
+					work_hours[0]++;
+				}
+			}
+			write_eeprom();
 		} else {
 			if (state > state_enter_service){
 				// Write EEPROM
+				if(state == state_clear_hours){
+					work_hours[0] = 0;
+					work_hours[1] = 0;
+					work_hours[2] = 0;
+				}
+				write_eeprom();
+				read_eeprom();
 				start_counter = 0;
+				service_mode = mode_null;
 			} else {
 				start_counter = START_COUNTER_TIME;
 			}
@@ -1121,6 +1161,66 @@ void send_start(void){
 			USART_SendData(USART1,0x55);
 	}
 }
+
+void read_eeprom(void){
+	int index = 0;
+	flash_struct *flash_mem;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
+	if(index == 0){
+		// Load defaults
+		flash_mem = 0;
+		preset_pre_time = 7;
+		preset_cool_time = 3;
+		work_hours[0] = 0;
+		work_hours[1] = 0;
+		work_hours[2] = 0;
+		return;
+	}
+	index-=2;
+	flash_mem = (flash_struct*)&eeprom_array[index];
+	preset_pre_time = flash_mem->settings.pre_time ;
+	preset_cool_time = flash_mem->settings.cool_time;
+	work_hours[0] = flash_mem->time.hours_h;
+	work_hours[1] = flash_mem->time.hours_l;
+	work_hours[2] = flash_mem->time.minutes;
+}
+
+void write_eeprom(void){
+	int index = 0;
+	FLASH_Unlock();
+	volatile flash_struct flash_mem;
+	uint32_t *param = (uint32_t *)&flash_mem;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
+	if(index == 512){
+		// No more room. Erase the 4 pages
+		FLASH_ErasePage((uint32_t)&eeprom_array[0]);
+		FLASH_ErasePage((uint32_t)&eeprom_array[128]);
+		FLASH_ErasePage((uint32_t)&eeprom_array[256]);
+		FLASH_ErasePage((uint32_t)&eeprom_array[384]);
+		index = 0;
+	}
+
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index++;
+	if(index == 512){
+		display_data = 0xE01;
+		for (index = 0; index<20; index++){
+			push_note(E2,3);
+			push_note(D4,3);
+		}
+	} else {
+
+		flash_mem.settings.pre_time = preset_pre_time;
+		flash_mem.settings.cool_time = preset_cool_time;
+		flash_mem.time.hours_h = work_hours[0];
+		flash_mem.time.hours_l = work_hours[1];
+		flash_mem.time.minutes = work_hours[2];
+		flash_mem.time.used_flag = 0;
+		FLASH_ProgramWord((uint32_t)&eeprom_array[index],*param);
+		FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],*param+1);
+	}
+//	FLASH_Lock();
+}
+
 
 /**
  * @}
