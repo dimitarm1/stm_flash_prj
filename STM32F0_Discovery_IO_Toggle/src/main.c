@@ -474,9 +474,9 @@ int main(void)
 	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
 	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
-	  push_note(F2,3);
-	  push_note(E2,3);
-	  push_note(C2,3);
+	  push_note(F3,3);
+	  push_note(E3,3);
+	  push_note(C3,3);
 	  //============================================================================
 	  // Init STMTouch driver
 	  //============================================================================
@@ -901,16 +901,16 @@ void KeyPressed_0(void){//START Key(Left)
 //	push_note(G2,2);
 //	push_note(C3,2);
 	if( curr_status == STATUS_WAITING ){
-		push_note(C2,2);
-		push_note(E2,4);
-		send_start();
+		push_note(C3,6);
+		push_note(E3,4);
+		//send_start();
 	}
 	if((curr_status == STATUS_FREE)) {
 		if(time_to_set){
 			state = state_show_time;
-			push_note(E2,3);
-			push_note(D2,3);
-			push_note(C2,3);
+			push_note(A3,6);
+			push_note(A2,4);
+			push_note(A3,6);
 			send_time();
 			work_hours[2]+=time_to_set;
 			if(work_hours[2]>59){
@@ -950,7 +950,7 @@ void KeyPressed_2(void){ // +
 		start_counter = 0;
 	}
 	if(state == state_set_time){
-		if(time_to_set < 0x99){
+		if(time_to_set < 25){
 			time_to_set ++;
 //			if((time_to_set & 0x0F)>9) time_to_set +=6;
 		}
@@ -970,8 +970,7 @@ void KeyPressed_2(void){ // +
 			break;
 		}
 	}
-	push_note(D2,2);
-	push_note(G2,2);
+	push_note(A3,8);
 }
 void KeyPressed_3(void){ // -
 	if(state == state_show_hours) {
@@ -999,8 +998,7 @@ void KeyPressed_3(void){ // -
 	}
 
 //	if((time_to_set & 0x0F)>9) time_to_set -=6;
-	push_note(G2,2);
-	push_note(D2,2);
+	push_note(A3,8);
 
 }
 
