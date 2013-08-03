@@ -59,10 +59,12 @@
 #define STATUS_WAITING (3)
 #define STATUS_WORKING (1)
 #define STATUS_COOLING (2)
-#define START_COUNTER_TIME 1000
+#define START_COUNTER_TIME  1000
 #define ENTER_SERVICE_DELAY 2000
-#define SERVICE_NEXT_DELAY 200
-#define EXIT_SERVICE_TIME  400
+#define SERVICE_NEXT_DELAY  200
+#define EXIT_SERVICE_TIME   400
+#define START_DELAY         200
+
 
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
@@ -85,6 +87,7 @@ typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_tim
 static modes service_mode;
 static unsigned char controller_address = 0x10;
 static int curr_status;
+static int prev_status;
 static int curr_time;
 static int flash_mode = 0;
 static unsigned char  time_to_set = 0;
@@ -491,6 +494,7 @@ int main(void)
 	  digits[0] = 0;
 	  digits[1] = 1;
 	  digits[2] = 2;
+	  prev_status = 0;
 
 //	  while (1){
 //		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) != RESET)
@@ -502,6 +506,11 @@ int main(void)
 //	  get_address();
 
 	  read_eeprom();
+	  if(!preset_pre_time || ! preset_cool_time){
+		  preset_pre_time = 7;
+		  preset_cool_time = 3;
+		  write_eeprom();
+	  }
 	  while (1)
 	  {
 //		  measurment = MyChannels_Data[0].Meas;
@@ -532,7 +541,7 @@ int main(void)
 				  display_data = ToBCD(time_to_set);
 			  } else {
 				  state = state_show_time;
-				  time_to_set = 0;
+//				  time_to_set = 0;
 				  display_data = ToBCD(curr_time);
 				  if(curr_status == STATUS_WAITING ){
 					  flash_mode = 1; // DP flashing
@@ -683,7 +692,8 @@ void ProcessSensors(void)
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
 		if(start_counter== START_COUNTER_TIME + ENTER_SERVICE_DELAY){
-			if((!curr_time)&&(state < state_enter_service));{
+			if(curr_status == STATUS_FREE &&(state < state_enter_service))
+			{
 				push_note(C2,4);
 				push_note(E2,4);
 				push_note(G2,4);
@@ -704,6 +714,29 @@ void ProcessSensors(void)
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_cool_time; //
 			}
+		}
+		if(time_to_set && state == state_set_time && start_counter == START_DELAY){
+			// Do start
+			state = state_show_time;
+			push_note(A3,6);
+			push_note(A2,4);
+			push_note(A3,6);
+			send_time();
+//			start_counter = 0;
+		}
+		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
+			// Cancel start
+			state = state_show_time;
+			push_note(C3,6);
+			push_note(A3,4);
+			push_note(A2,6);
+			time_to_set = 0;
+			preset_pre_time = 0;
+			preset_cool_time = 0;
+			send_time();
+			read_eeprom();
+//			start_counter = 0;
+
 		}
 	}
 	else
@@ -729,17 +762,34 @@ void ProcessSensors(void)
 
 			}
 		}
+		if(prev_status != curr_status){
+			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
+				work_hours[2]+=time_to_set;
+				if(work_hours[2]>59){
+					work_hours[2]=work_hours[2]-60;
+					work_hours[1]++;
+					if(work_hours[1]>99){
+						work_hours[1] = 0;
+						work_hours[0]++;
+					}
+				}
+				write_eeprom();
+				time_to_set = 0;
+			}
+			prev_status = curr_status;
+
+		}
 		//    LED1_OFF;
 	}
 
 	// TKEY 1
 	if (TEST_TKEY(2))
 	{
-		LED2_ON;
+//		LED2_ON;
 	}
 	else
 	{
-		LED2_OFF;
+//		LED2_OFF;
 	}
 
 
@@ -907,21 +957,7 @@ void KeyPressed_0(void){//START Key(Left)
 	}
 	if((curr_status == STATUS_FREE)) {
 		if(time_to_set){
-			state = state_show_time;
-			push_note(A3,6);
-			push_note(A2,4);
-			push_note(A3,6);
-			send_time();
-			work_hours[2]+=time_to_set;
-			if(work_hours[2]>59){
-				work_hours[2]=work_hours[2]-59;
-				work_hours[1]++;
-				if(work_hours[1]>99){
-					work_hours[1] = 0;
-					work_hours[0]++;
-				}
-			}
-			write_eeprom();
+// Send of time moved elsewhere
 		} else {
 			if (state > state_enter_service){
 				// Write EEPROM
