@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?fileVersion 4.0.0?>
-
-<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="com.atollic.truestudio.exe.debug.250675032.27485740">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.atollic.truestudio.exe.debug.250675032.27485740" moduleId="org.eclipse.cdt.core.settings" name="gnueabi-debug">
 				<externalSettings/>
 				<extensions>
-					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
@@ -25,7 +23,6 @@
 								<option id="gnu.c.compiler.option.include.paths.500506512" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../src"/>
 									<listOptionValue builtIn="false" value="&quot;..\Libraries\CMSIS\Include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;..\Libraries\STMTouch_Driver\inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;..\Libraries\STM32F0xx_StdPeriph_Driver\inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;..\Libraries\CMSIS\Device\ST\STM32F0xx\Include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;..\Utilities\STM32F0-Discovery&quot;"/>
@@ -94,7 +91,7 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
 			<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
 				<buildOutputProvider>
-					<openAction enabled="true" filePath="E:/Documents and Settings/didi/Atollic/TrueSTUDIO/stm_flash_prj/STM32F0_Discovery_IO_Toggle/gnueabi-debug/STM32F0_Discovery_IO_Toggle.elf"/>
+					<openAction enabled="true" filePath="D:/stm_flash_prj/STM32F0_Discovery_IO_Toggle/gnueabi-debug/STM32F0_Discovery_IO_Toggle.elf"/>
 					<parser enabled="true"/>
 				</buildOutputProvider>
 				<scannerInfoProvider id="specsFile">

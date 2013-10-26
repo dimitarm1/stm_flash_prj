@@ -26,12 +26,10 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "stm32f0xx.h"
 #include "pitches.h"
-#include "tsl_types.h"
-#include "tsl_touchkey.h"
-#include "tsl_user.h"
-#include "tsl_conf_stm32f0xx.h"
+
 #include "stm32f0xx_gpio.h"
 #include "stm32f0xx_rcc.h"
 #include "stm32f0xx_usart.h"
@@ -53,7 +51,6 @@
 
 /* Private macros ------------------------------------------------------------*/
 
-#define TEST_TKEY(NB) (MyTKeys[(NB)].p_Data->StateId == TSL_STATEID_DETECT)
 
 #define STATUS_FREE    (0)
 #define STATUS_WAITING (3)
@@ -75,7 +72,6 @@ static int start_note = 0; // Or current note
 static int end_note = 0;
 static char digits[3];
 static __IO uint32_t TimingDelay;
-TSL_tMeas_T measurment;
 static int display_data=0;
 USART_InitTypeDef USART_InitStructure;
 USART_ClockInitTypeDef USART_ClockInitStruct;
@@ -121,9 +117,7 @@ typedef struct flash_struct{
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
-void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
-void TSL_tim_ProcessIT(void);
 void ping_status(void);
 int ToBCD(int value);
 void send_time(void);
@@ -138,23 +132,6 @@ __IO uint32_t Gv_SystickCounter;
 extern __IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition
 
 static const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
-
-//const TSL_TouchKeyMethods_T MyTKeys_Methods =
-//{
-//  TSL_tkey_Init,
-//  TSL_tkey_Process
-//};
-
-TSL_TouchKeyData_T          MyTKeys_Data[4];        /**< Data (state id, counter, flags, ...) */
-TSL_TouchKeyParam_T         MyTKeys_Param[4];       /**< Parameters (thresholds, debounce, ...) */
-TSL_ChannelData_T           MyChannels_Data[4];     /**< Channel Data (Meas, Ref, Delta, ...) */
-//// "basic" touchkeys: Always placed in ROM
-//const TSL_TouchKeyB_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
-//{
-//  { &MyTKeys_Data[0], &MyTKeys_Param[0], &MyChannels_Data[0] },
-//  { &MyTKeys_Data[1], &MyTKeys_Param[1], &MyChannels_Data[1] },
-//  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[2] }
-//};
 
 
 /* Private functions ---------------------------------------------------------*/
@@ -317,7 +294,6 @@ void get_address(void){
 int main(void)
 {
 
-	 TSL_Status_enum_T sts = 0;
   /*!< At this stage the microcontroller clock setting is already configured, 
        this is done through SystemInit() function which is called from startup
        file (startup_stm32f0xx.s) before to branch to application main.
@@ -356,12 +332,12 @@ int main(void)
  * PA0 - Digit 2
  * PB2,PB1 - a
  * PC6,PC7 - b
- * PC4,PA7 - c
- * PA4,PF5 - d
+ * PC4,PB15 - c
+ * PF5,PB14 - d
  * PF4, PA3 - e
- * PB11,PB10 - f
+ * PB13,PB12 - f
  * PB0,PC5 - g
- * PA6,PA5 - DP
+ * PC15,PF0 - DP
  *
  *
  *    A
@@ -488,7 +464,7 @@ int main(void)
 		  /* Capture error */
 		  while (1);
 	  }
-	  TSL_user_Init();
+//	  TSL_user_Init();
 
 
 	  digits[0] = 0;
@@ -517,9 +493,9 @@ int main(void)
 //		  display_data = measurment;
 
 		  // Execute STMTouch Driver state machine
-		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
+		  if (1)
 		  {
-			  ProcessSensors(); // Execute sensors related tasks
+			  // Execute sensors related tasks
 		  }
 
 		  else
@@ -809,14 +785,14 @@ void ProcessSensors(void)
 void MyTKeys_ErrorStateProcess(void)
 {
   // Add here your own processing when a sensor is in Error state
-  TSL_tkey_SetStateOff();
-  LED1_ON;
-  LED2_OFF;
+//  TSL_tkey_SetStateOff();
+//  LED1_ON;
+//  LED2_OFF;
 
   for (;;)
   {
 	display_data = 0xEEE;
-    LED1_TOGGLE;
+//    LED1_TOGGLE;
     SystickDelay(100);
     display_data = 0x000;
     SystickDelay(100);
@@ -897,7 +873,7 @@ void TimingDelay_Decrement(void)
 	{
 		Gv_SystickCounter--;
 	}
-	TSL_tim_ProcessIT();
+//	TSL_tim_ProcessIT();
 
 	if(++led_counter>6){
 		led_counter = 0;
@@ -931,18 +907,12 @@ void TimingDelay_Decrement(void)
 }
 
 void Process_TS_Int(void){
-	Gv_EOA = 1 +  (0!=(TSC->ISR & 0x02)); // Indicate Error also by MCEIF (MaxCount Error)
+//	Gv_EOA = 1 +  (0!=(TSC->ISR & 0x02)); // Indicate Error also by MCEIF (MaxCount Error)
 
 }
 
 void key_pressed_event(void){
-	TSL_tkey_DetectStateProcess();
 
-	if(TSL_Globals.This_TKey->p_Data->Change == TSL_STATE_CHANGED){
-		if(TSL_Globals.This_TKey->p_Data->StateId == TSL_STATEID_DETECT){
-			TSL_Globals.This_TKey->p_Methods->Callback();
-		}
-	}
 }
 
 void KeyPressed_0(void){//START Key(Left)
