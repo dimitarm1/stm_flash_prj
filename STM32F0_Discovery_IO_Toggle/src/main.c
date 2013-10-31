@@ -327,17 +327,22 @@ int main(void)
 
 /*
  * Outputs:
- * PA2 - Digit 0
- * PA1 - Digit 1
- * PA0 - Digit 2
- * PB2,PB1 - a
- * PC6,PC7 - b
- * PC4,PB15 - c
- * PF5,PB14 - d
- * PF4, PA3 - e
- * PB13,PB12 - f
- * PB0,PC5 - g
- * PC15,PF0 - DP
+ * PA2 - Digit 0, COL1 (klaviatura)
+ * PA1 - Digit 1, COL2 (klaviatura)
+ * PA0 - Digit 2, COL3 (klaviatura)
+ *
+ * PA13 - BAR1 (Group)
+ * PA14 - BAR2 (Group)
+ *
+ *
+ * PB2,PB1 - a , BAR1
+ * PC6,PC7 - b , BAR8
+ * PC4,PB15 - c , BAR3
+ * PF5,PB14 - d , BAR5
+ * PF4, PA3 - e , BAR6
+ * PB13,PB12 - f , BAR7
+ * PB0,PC5 - g , BAR2
+ * PC15,PF0 - DP , BAR4
  *
  *
  *    A
@@ -346,6 +351,44 @@ int main(void)
  *  E   C
  *    D
  *        DP
+ *
+ * PA12, PA11 - BAR9, AquaFresh(1,2),
+ * PA8, PC10 - BAR10, AquaFresh(1,2)
+ *
+ * PC8 - Lamp 1
+ * PC9 - Lamp 2
+ * PB5 - Auqa fresh
+ * PC14 - Ventilator 2
+ * PB4 - Ventilator 1
+ *
+ * PC13 - STBY of amplifier
+ *
+ * SPECIAL FUNCTIONS:
+ *
+ * PB6 - I2C2_SDA_0 - Left input
+ * PB7 - I2C2_SCL_0
+ * PB11 - I2C2_SDA_1 - Right input
+ * PB10 - I2C2_SCL_1
+ * PF7 - I2C2_SDA_2 - Left internal
+ * PF6 - I2C2_SCL_2
+ * PB8 -  I2C_SCL_3 - Right internal
+ * PB9 -  I2C_SDA_3
+ *
+ *
+ * PA15 - SPI1_NSS
+ * PA7 - MISO
+ * PA6 - MOSI
+ * PA5 - SPI_CLK
+ *
+ * PA4 - DAC_OUT
+ *
+ *
+ * INPUTS:
+ * PC11 - ROW1 - klaviatura
+ * PC12 - ROW2 - klaviatura
+ * PD2  - ROW3 - klaviatura
+ *
+ *
  */
 	  /*
 	   *
