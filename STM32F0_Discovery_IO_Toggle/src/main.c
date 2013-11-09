@@ -388,7 +388,7 @@ int main(void)
 	   * */
 
 	  /* Configure PA in output push-pull mode (for segments)*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_8 | GPIO_Pin_11| GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_8 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -437,7 +437,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-
+	  while(1);
 	  //Configure USART2 pins:  Rx and Tx ----------------------------
 	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -460,10 +460,14 @@ int main(void)
 	  SPI_StructInit(&SPI_InitStruct);
 	  SPI_Init(SPI1,&SPI_InitStruct);
 	  SPI_DataSizeConfig( SPI1, SPI_DataSize_16b);
-
-	  SPI_SendData8(SPI1, 0xAA);
-	  SPI_SendData8(SPI1, 0xFF);
-
+	  while(1){
+		  int i;
+		  SPI_SendData8(SPI1, 0xAA);
+		  SPI_SendData8(SPI1, 0xFF);
+		  for (i = 0; i< 65535; i++){
+			  i = ++i -1;
+		  }
+	  }
 
 
 
