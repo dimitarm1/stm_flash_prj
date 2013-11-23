@@ -235,11 +235,22 @@ static const int digits4[] = {
 
 
 void show_digit(int digit){
+	static int last_digit = 0;
 	digit = digit & 0xFF;
+	if(last_digit) digit = last_digit;
 	int digit_data = digits3[digit>>4] | digits4[digit & 0x0f];
-	SPI_I2S_SendData16(SPI1, 0);
 	SPI_I2S_SendData16(SPI1, digit_data);
-}
+	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+	SPI_I2S_SendData16(SPI1, digit_data);
+	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+	SPI_I2S_SendData16(SPI1, digit_data);
+	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+	GPIOC->BSRR = GPIO_BSRR_BS_14; // enable shift
+	SPI_I2S_SendData16(SPI1, digit_data);
+	GPIOC->BRR = GPIO_BSRR_BS_14;
+
+	last_digit = SPI_I2S_ReceiveData16(SPI1);
+ }
 
 int get_controller_status(int n){
 	int counter = 10000;
@@ -385,7 +396,7 @@ int main(void)
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	  /* Configure PC in output push-pull mode (for segments )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5 | GPIO_Pin_6|GPIO_Pin_7 | GPIO_Pin_13;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5 | GPIO_Pin_6|GPIO_Pin_7 | GPIO_Pin_10 | GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
