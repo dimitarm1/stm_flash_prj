@@ -236,20 +236,30 @@ static const int digits4[] = {
 
 void show_digit(int digit){
 	static int last_digit = 0;
-	digit = digit & 0xFF;
+	int i;
 	if(last_digit) digit = last_digit;
+	digit = digit & 0xFF;
 	int digit_data = digits3[digit>>4] | digits4[digit & 0x0f];
+	digit_data = ~digit_data;
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-	GPIOC->BSRR = GPIO_BSRR_BS_14; // enable shift
+	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
+	while(SPI_GetReceptionFIFOStatus(SPI1)) last_digit = SPI_I2S_ReceiveData16(SPI1);
 	SPI_I2S_SendData16(SPI1, digit_data);
-	GPIOC->BRR = GPIO_BSRR_BS_14;
+	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+	while(SPI_GetReceptionFIFOStatus(SPI1)) last_digit = SPI_I2S_ReceiveData16(SPI1);
+	GPIOB->BRR = GPIO_BSRR_BS_2;
+//	for (i = 16; i; i--){
+//		if(!((last_digit>>i) & 1)){
+//			last_digit = i;
+//			break;
+//		}
+//	}
 
-	last_digit = SPI_I2S_ReceiveData16(SPI1);
  }
 
 int get_controller_status(int n){
@@ -388,9 +398,9 @@ int main(void)
 
 	  /* Configure PB in output push-pull mode (for segments  )*/
 //	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_4  | GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  |  GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  |  GPIO_Pin_11 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -413,31 +423,31 @@ int main(void)
 
 
 //	  //Configure SPI pins:   ----------------------------
-//	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 ;
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 ;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	  //Configure SPI pins:   ----------------------------
+//	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 ;
 //	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 //	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 //	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 //	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-//	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	  //Configure SPI pins:   ----------------------------
-	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 ;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+//	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 
 
 //	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_0); // SPI1_NSS
-//	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_0); // MISO
-//	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_0); // MOSI
-//	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_0); // SPI_CLK
+	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_0); // MISO
+	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_0); // MOSI
+	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_0); // SPI_CLK
 
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource4, GPIO_AF_0); // MISO
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_0); // MOSI
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_0); // SPI_CLK
+//	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource4, GPIO_AF_0); // MISO
+//	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_0); // MOSI
+//	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_0); // SPI_CLK
 
 	  //Configure USART2 pins:  Rx and Tx ----------------------------
 //	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
@@ -468,7 +478,7 @@ int main(void)
 		  SPI_InitStruct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 		  SPI_InitStruct.SPI_Mode = SPI_Mode_Master;
 		  SPI_InitStruct.SPI_DataSize = SPI_DataSize_16b;
-		  SPI_InitStruct.SPI_CPOL = SPI_CPOL_Low;
+		  SPI_InitStruct.SPI_CPOL = SPI_CPOL_High;
 		  SPI_InitStruct.SPI_CPHA = SPI_CPHA_1Edge;
 		  SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;
 		  SPI_InitStruct.SPI_NSS = SPI_NSS_Soft;
@@ -488,12 +498,12 @@ int main(void)
 		  for (i = 0; i< 565530; i++){
 			  i = i +1;
 		  }
-		  GPIOC->BSRR = GPIO_BSRR_BS_13; // Trigger latch
+		  GPIOB->BSRR = GPIO_BSRR_BS_11; // Trigger latch
 
 		  for (i = 0; i< 565530; i++){
 			  i = i + 1;
 		  }
-		  GPIOC->BRR = GPIO_BSRR_BS_13;
+		  GPIOB->BRR = GPIO_BSRR_BS_11;
 //		  if(k&1){
 //			  GPIOA->BSRR = GPIO_BSRR_BS_6; // Trigger data
 //		  }else GPIOA->BRR = GPIO_BSRR_BS_6;
