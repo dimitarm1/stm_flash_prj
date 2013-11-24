@@ -236,7 +236,7 @@ static const int digits4[] = {
 
 void show_digit(int digit){
 	static int last_digit = 0;
-	int i;
+	int i,j;
 	if(last_digit) digit = last_digit;
 	digit = digit & 0xFF;
 	int digit_data = digits3[digit>>4] | digits4[digit & 0x0f];
@@ -253,12 +253,20 @@ void show_digit(int digit){
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
 	while(SPI_GetReceptionFIFOStatus(SPI1)) last_digit = SPI_I2S_ReceiveData16(SPI1);
 	GPIOB->BRR = GPIO_BSRR_BS_2;
-//	for (i = 16; i; i--){
-//		if(!((last_digit>>i) & 1)){
-//			last_digit = i;
-//			break;
-//		}
-//	}
+	for (i = 0; i<16; i++){
+		j = (last_digit>>i) & 1;
+		if(!j){
+			last_digit = i;
+			break;
+		}
+	}
+	if (last_digit < 0x0f){
+		GPIOB->BSRR = GPIO_BSRR_BS_9 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_13;
+		GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_10;
+	} else {
+		GPIOB->BRR = GPIO_BSRR_BS_9 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_13;
+		GPIOA->BRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_10;
+	}
 
  }
 
@@ -389,7 +397,7 @@ int main(void)
 	   * */
 
 	  /* Configure PA in output push-pull mode (for segments)*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_8 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_8 |GPIO_Pin_10 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -398,7 +406,7 @@ int main(void)
 
 	  /* Configure PB in output push-pull mode (for segments  )*/
 //	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_4  | GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  |  GPIO_Pin_11 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_9 |  GPIO_Pin_11 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -495,12 +503,12 @@ int main(void)
 		  show_digit(k);
 //		  SPI_I2S_SendData16(SPI1, 0x0001<<k);
 //		  SPI_I2S_SendData16(SPI1, 0x0001<<(k - 15));
-		  for (i = 0; i< 565530; i++){
+		  for (i = 0; i< 56553; i++){
 			  i = i +1;
 		  }
 		  GPIOB->BSRR = GPIO_BSRR_BS_11; // Trigger latch
 
-		  for (i = 0; i< 565530; i++){
+		  for (i = 0; i< 56553; i++){
 			  i = i + 1;
 		  }
 		  GPIOB->BRR = GPIO_BSRR_BS_11;
