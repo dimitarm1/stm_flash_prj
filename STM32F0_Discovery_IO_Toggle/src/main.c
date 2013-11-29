@@ -531,12 +531,12 @@ int main(void)
 
 	  // Zero cross detection timer
 
-	  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; // Enable TIM1 clock
-	  TIM2->PSC = 32768; // Set prescaler to 32768
-	  TIM2->ARR = 100; // Set auto-reload to 100 - the pulse width
-	  TIM2->CR1 |= TIM_CR1_OPM | TIM_CR1_ARPE; // One pulse mode /  Auto reload
-	  TIM2->EGR |= TIM_EGR_UG; // Force update
-	  TIM2->SR &= ~TIM_SR_UIF; // Clear the update flag
+//	  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; // Enable TIM1 clock
+//	  TIM2->PSC = 32768; // Set prescaler to 32768
+//	  TIM2->ARR = 100; // Set auto-reload to 100 - the pulse width
+//	  TIM2->CR1 |= TIM_CR1_OPM | TIM_CR1_ARPE; // One pulse mode /  Auto reload
+//	  TIM2->EGR |= TIM_EGR_UG; // Force update
+//	  TIM2->SR &= ~TIM_SR_UIF; // Clear the update flag
 //	  TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 //	  NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
 
@@ -544,9 +544,9 @@ int main(void)
 
 	  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-	  TIM_TimeBaseStructure.TIM_Prescaler = 32000 ;
+	  TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
 	  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	  TIM_TimeBaseStructure.TIM_Period = 30 ;
+	  TIM_TimeBaseStructure.TIM_Period = 50 ;
 	  TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	  TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
@@ -554,7 +554,7 @@ int main(void)
 	  //for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	  TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
 	  TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	  TIM_OCInitStructure.TIM_Pulse = 6;
+	  TIM_OCInitStructure.TIM_Pulse = 45;
 	  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
 	  TIM_OC4Init(TIM2, &TIM_OCInitStructure);
@@ -584,7 +584,9 @@ int main(void)
 
 	  /* OPM Bit -> Only one pulse */
 	  TIM_SelectOnePulseMode (TIM2, TIM_OPMode_Single);
-	  /* TIM3 enable counter */
+	  TIM2->DIER |= TIM_DIER_CC4IE; // Enable interrupt on update event
+	  NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
+	  /* TIM2 enable counter */
 	  TIM_Cmd(TIM2, ENABLE);
 
 
@@ -786,6 +788,18 @@ void TIM6_DAC_IRQHandler() {
 		}
 	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 	if(!buzz_counter )	get_next_note();
+}
+
+void TIM2_IRQHandler() {
+	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
+	{
+		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
+			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
+		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+		TIM_ICInit(TIM2, &TIM_ICInitStructure);
+	}
+
 }
 
 int ToBCD(int value){
