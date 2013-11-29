@@ -68,6 +68,48 @@ TIM_ICInitTypeDef  TIM_ICInitStructure;
 #define EXIT_SERVICE_TIME   400
 #define START_DELAY         200
 
+// Buttons
+#define BUTTON_START    (0x00)
+#define BUTTON_FAN1     (0x03)
+#define BUTTON_LICEVI   (0x0c)
+#define BUTTON_CLIMA    (0x01)
+#define BUTTON_PLUS     (0x07)
+#define BUTTON_MINUS    (0x06)
+
+// LEDs
+#define LED_VOICE_GUIDE_0     (1 << 0x00)
+#define LED_VOICE_GUIDE_L     (1 << 0x01)
+#define LED_INFO_1            (1 << 0x02)
+#define LED_INFO_L            (1 << 0x03)
+#define LED_VOLUME_L          (1 << 0x04)
+#define LED_CHANNEL_L         (1 << 0x05)
+#define LED_LICEVI_L          (1 << 0x06)
+#define LED_UNKNOWN_1         (1 << 0x07)
+#define LED_UNKNOWN_L         (1 << 0x08)
+#define LED_FAN1_L            (1 << 0x09)
+#define LED_FAN2_L            (1 << 0x0a)
+#define LED_SPRAY_BODY_L      (1 << 0x0b)
+#define LED_SPRAY_HEAD_L      (1 << 0x0c)
+#define LED_VITAL_L           (1 << 0x0d)
+#define LED_RELAX_L           (1 << 0x0e)
+#define LED_CLIMA_L           (1 << 0x0f)
+#define LED_CLIMA_4           (1 << 0x10)
+#define LED_CLIMA_3		      (1 << 0x11)
+#define LED_CLIMA_2           (1 << 0x12)
+#define LED_CLIMA_1           (1 << 0x13)
+#define LED_FAN2_1            (1 << 0x14)
+#define LED_FAN2_2            (1 << 0x15)
+#define LED_FAN2_3            (1 << 0x16)
+#define LED_FAN2_4            (1 << 0x17)
+#define LED_FAN1_1            (1 << 0x18)
+#define LED_FAN1_2            (1 << 0x19)
+#define LED_FAN1_3            (1 << 0x1a)
+#define LED_FAN1_4            (1 << 0x1b)
+#define LED_SPRAY_BODY_1      (1 << 0x1c)
+#define LED_SPRAY_HEAD_1      (1 << 0x1d)
+#define LED_RELAX_1           (1 << 0x1e)
+#define LED_VITAL_1           (1 << 0x1f)
+
 
 /* Private variables ---------------------------------------------------------*/
 GPIO_InitTypeDef        GPIO_InitStructure;
@@ -99,6 +141,9 @@ static unsigned char  preset_cool_time = 3;
 static int start_counter = 0;
 static int counter_hours = 0;
 static int flash_counter_prev = 0;
+static int last_button = 0;
+static int prev_button = 0;
+static int led_bits = 0x0;
 
 // for Display:
 static int led_counter = 0;
@@ -130,6 +175,7 @@ void send_time(void);
 void send_start(void);
 void write_eeprom(void);
 void read_eeprom(void);
+void TimingDelay_Decrement(void);
 
 
 /* Global variables ----------------------------------------------------------*/
@@ -197,7 +243,9 @@ static const int digits3[] = {
 // 0x0E:
 	( S_a3 |  S_d3 | S_e3 | S_f3 | S_g3),
 // 0x0F:
-	(S_a3 |  S_e3 | S_f3 | S_g3)
+	(S_a3 |  S_e3 | S_f3 | S_g3),
+// 0x10: "-"
+	(S_g3)
 };
 
 static const int digits4[] = {
@@ -232,44 +280,53 @@ static const int digits4[] = {
 // 0x0E:
 	( S_a4 |  S_d4 | S_e4 | S_f4 | S_g4),
 // 0x0F:
-	(S_a4 |  S_e4 | S_f4 | S_g4)
+	(S_a4 |  S_e4 | S_f4 | S_g4),
+// 0x10: "-"
+	(S_g4)
 };
 
 
 void show_digit(int digit){
-	static int last_digit = 0;
-	int i,j;
-	if(last_digit) digit = last_digit;
+
+	int i,j,digit_data;
+//	if(last_button) digit = last_button;
 	digit = digit & 0xFF;
-	int digit_data = digits3[digit>>4] | digits4[digit & 0x0f];
+
+
+	// LEDs 1
+	SPI_I2S_SendData16(SPI1, (~led_bits)>>16);
+	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+
+	// LEDs 2
+	SPI_I2S_SendData16(SPI1, (~led_bits )& 0xFFFF);
+	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+
+	// Rightmost 2 digits
+	digit_data = digits3[digit & 0x0f] | digits4[0x10];
 	digit_data = ~digit_data;
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-	SPI_I2S_SendData16(SPI1, digit_data);
-	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-	SPI_I2S_SendData16(SPI1, digit_data);
-	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+	// Flush Receive FIFO just in case
+	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+
+	// Leftmost 2 digits
+	digit_data = digits3[0x10] | digits4[digit>>4];
+	digit_data = ~digit_data;
 	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
-	while(SPI_GetReceptionFIFOStatus(SPI1)) last_digit = SPI_I2S_ReceiveData16(SPI1);
+	for (i = 0; i< 2000; i++);
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-	while(SPI_GetReceptionFIFOStatus(SPI1)) last_digit = SPI_I2S_ReceiveData16(SPI1);
-	GPIOB->BRR = GPIO_BSRR_BS_2;
+	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS
 	for (i = 0; i<16; i++){
-		j = (last_digit>>i) & 1;
+		j = (last_button>>i) & 1;
 		if(!j){
-			last_digit = i;
+			last_button = i;
 			break;
 		}
 	}
-	if (last_digit < 0x0f){
-		GPIOB->BSRR = GPIO_BSRR_BS_9 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_13;
-		GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_10;
-	} else {
-		GPIOB->BRR = GPIO_BSRR_BS_9 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_13;
-		GPIOA->BRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_10;
-	}
-
  }
 
 int get_controller_status(int n){
@@ -584,16 +641,23 @@ int main(void)
 
 	  /* OPM Bit -> Only one pulse */
 	  TIM_SelectOnePulseMode (TIM2, TIM_OPMode_Single);
-	  TIM2->DIER |= TIM_DIER_CC4IE; // Enable interrupt on update event
+	  TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	  NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
 	  /* TIM2 enable counter */
 	  TIM_Cmd(TIM2, ENABLE);
-
+	  SysTick_Config(SystemCoreClock / (1000));
 
 	  while(1){
-		  int k;
+		  int j,k;
 
 		  long long int i;
+		  for (i = 0; i<32; i++){
+		  		k = (led_bits>>i) & 1;
+		  		if(k){
+		  			k = i;
+		  			break;
+		  		} else k = 0xFF;
+		  	}
 		  show_digit(k);
 //		  SPI_I2S_SendData16(SPI1, 0x0001<<k);
 //		  SPI_I2S_SendData16(SPI1, 0x0001<<(k - 15));
@@ -611,6 +675,43 @@ int main(void)
 //		  }else GPIOA->BRR = GPIO_BSRR_BS_6;
 		  k++;
 		  if(k>40) k = 0;
+		  if (last_button < 0x0f){
+			  if(last_button != prev_button){
+				  switch(last_button){
+				  case BUTTON_START:
+					  break;
+				  case BUTTON_FAN1:
+					  break;
+				  case BUTTON_LICEVI:
+					  break;
+				  case BUTTON_CLIMA:
+					  break;
+				  case BUTTON_PLUS:
+				  {
+					if(  led_bits){
+						led_bits = led_bits <<1;
+					} else {
+						led_bits = 0x01;
+					}
+				  }
+					  break;
+				  case BUTTON_MINUS:
+					  if(  led_bits){
+						  led_bits = led_bits >>1;
+					  } else {
+						  led_bits = 0x01 << 31;
+					  }
+					  break;
+				  }
+				 prev_button =  last_button;
+			  }
+//			  GPIOB->BSRR = GPIO_BSRR_BS_9 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_13;
+//			  GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_10;
+		  } else {
+			  prev_button = last_button;
+//			  GPIOB->BRR = GPIO_BSRR_BS_9 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_13;
+//			  GPIOA->BRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_10;
+		  }
 	  }
 
 
@@ -779,15 +880,10 @@ void get_next_note(){
 
 void TIM6_DAC_IRQHandler() {
 	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
-		if(buzz_counter){
-			buzz_counter--;
-			if(buzz_counter & 1)
-				GPIOB->BSRR = GPIO_BSRR_BS_9; // Set B9 high
-			else
-				GPIOB->BRR = GPIO_BSRR_BS_9; // Set B9 low
-		}
+	{
+	}
 	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
-	if(!buzz_counter )	get_next_note();
+
 }
 
 void TIM2_IRQHandler() {
@@ -1064,7 +1160,7 @@ void TimingDelay_Decrement(void)
 		Gv_SystickCounter--;
 	}
 //	TSL_tim_ProcessIT();
-
+/*
 	if(++led_counter>6){
 		led_counter = 0;
 		digit_num++;
@@ -1094,6 +1190,7 @@ void TimingDelay_Decrement(void)
 			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
 		}
 	}
+	*/
 }
 
 void Process_TS_Int(void){
