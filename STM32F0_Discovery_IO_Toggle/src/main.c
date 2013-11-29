@@ -38,7 +38,9 @@
 
 SPI_InitTypeDef SPI_InitStruct;
 
-
+TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+TIM_OCInitTypeDef  TIM_OCInitStructure;
+TIM_ICInitTypeDef  TIM_ICInitStructure;
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{
@@ -397,7 +399,7 @@ int main(void)
 	   * */
 
 	  /* Configure PA in output push-pull mode (for segments)*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_8 |GPIO_Pin_10 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_8 |GPIO_Pin_10 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -445,6 +447,23 @@ int main(void)
 //	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 //	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 //	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	  //Configure Timer 2 pins:   ----------------------------
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_1;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	  //Configure Timer 2 pins:   ----------------------------
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_2); // TIM2_CH2
+	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_2); // TIM2_CH4
 
 
 
@@ -496,6 +515,79 @@ int main(void)
 
 		  SPI_Cmd(SPI1, ENABLE);
 	  }
+
+
+	  // Real time timer
+	  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
+	  TIM6->PSC = 41; // Set prescaler to 41999
+	  TIM6->ARR = 599; // Set auto-reload to 5999
+//	  TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
+	  TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
+	  TIM6->EGR |= TIM_EGR_UG; // Force update
+	  TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
+	  TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
+	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
+
+	  // Zero cross detection timer
+
+	  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; // Enable TIM1 clock
+	  TIM2->PSC = 32768; // Set prescaler to 32768
+	  TIM2->ARR = 100; // Set auto-reload to 100 - the pulse width
+	  TIM2->CR1 |= TIM_CR1_OPM | TIM_CR1_ARPE; // One pulse mode /  Auto reload
+	  TIM2->EGR |= TIM_EGR_UG; // Force update
+	  TIM2->SR &= ~TIM_SR_UIF; // Clear the update flag
+//	  TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+//	  NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
+
+
+
+	  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+	  TIM_TimeBaseStructure.TIM_Prescaler = 32000 ;
+	  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	  TIM_TimeBaseStructure.TIM_Period = 30 ;
+	  TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	  TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+
+	  /* TIM2 PWM2 Mode configuration: Channel4 */
+	  //for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+	  TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+	  TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	  TIM_OCInitStructure.TIM_Pulse = 6;
+	  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+
+	  TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+
+	  /* TIM2 configuration in Input Capture Mode */
+
+	  TIM_ICStructInit(&TIM_ICInitStructure);
+	  TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
+	  TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+	  TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+	  TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+	  TIM_ICInitStructure.TIM_ICFilter = 0;
+
+
+	  TIM_ICInit(TIM2, &TIM_ICInitStructure);
+
+	  /* One Pulse Mode selection */
+	  TIM_SelectOnePulseMode(TIM2, TIM_OPMode_Single);
+
+	  /* Input Trigger selection */
+	  TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
+
+	  /* Slave Mode selection: Trigger Mode */
+	  TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Trigger);
+
+	  TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
+
+	  /* OPM Bit -> Only one pulse */
+	  TIM_SelectOnePulseMode (TIM2, TIM_OPMode_Single);
+	  /* TIM3 enable counter */
+	  TIM_Cmd(TIM2, ENABLE);
+
+
 	  while(1){
 		  int k;
 
@@ -536,16 +628,6 @@ int main(void)
  * 5 - set main time
  */
 
-	  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
-	  TIM6->PSC = 41; // Set prescaler to 41999
-	  TIM6->ARR = 599; // Set auto-reload to 5999
-//	  TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
-	  TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
-	  TIM6->EGR |= TIM_EGR_UG; // Force update
-	  TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
-	  TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
-	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
 	  push_note(F3,3);
 	  push_note(E3,3);
