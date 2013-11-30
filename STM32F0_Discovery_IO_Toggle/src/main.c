@@ -75,6 +75,8 @@ static int last_button = 0;
 static int prev_button = 0;
 static int led_bits = 0x0;
 static int display_data;
+static int pre_time, main_time, cool_time;
+int Gv_miliseconds = 0;
 
 // for Display:
 static int refresh_counter = 0;
@@ -108,6 +110,11 @@ void write_eeprom(void);
 void read_eeprom(void);
 void TimingDelay_Decrement(void);
 void ProcessButtons(void);
+void set_lamps(int value);
+void set_licevi_lamps(int value);
+void set_fan1(int value);
+void set_fan2(int value);
+void set_clima(int value);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -135,7 +142,12 @@ void Delay(__IO uint32_t nTime)
 void show_digit(int digit){
 
 	int i,j,digit_data;
+	if(flash_mode == 2){ // DP cycling
 
+	}
+	if(((flash_mode == 3) ||(flash_mode == 1) )&&(flash_counter & 0x04)){
+		digit |= 0x00FF;
+	}
 	// LEDs 1
 	SPI_I2S_SendData16(SPI1, (~led_bits)>>16);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
@@ -148,7 +160,16 @@ void show_digit(int digit){
 	if (digit & 0xFF00){ //Code for Blanking
 		digit_data = digits3[digit & 0x11] | digits4[0x11];
 	} else {
-		digit_data = digits3[digit & 0x0f] | digits4[0x10];
+		digit_data = digits3[digit & 0x0f];
+		if(pre_time){
+			if (flash_counter & 0x02) digit_data |= digits4[0x0F];
+			else digit_data |= digits4[0x10];
+		}
+		else if(main_time){
+			digit_data |= digits4[0x0F];
+		} else {
+			digit_data |= digits4[0x10];
+		}
 	}
 	digit_data = ~digit_data;
 	SPI_I2S_SendData16(SPI1, digit_data);
@@ -162,7 +183,16 @@ void show_digit(int digit){
 	if (digit & 0xFF00){ //Code for Blanking
 		digit_data = digits3[digit & 0x11] | digits4[0x11];
 	} else {
-		digit_data = digits3[0x10] | digits4[digit>>4];
+		digit_data =  digits4[digit>>4];
+		if(pre_time ){
+			if(!(flash_counter & 0x02)) digit_data |= digits3[0x0F];
+			else digit_data |= digits3[0x10];
+		}
+		else if (main_time) {
+			digit_data |= digits3[0x0F];
+		} else {
+			digit_data |= digits3[0x10];
+		}
 	}
 	digit_data = ~digit_data;
 	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
@@ -254,10 +284,11 @@ int main(void)
 	while (1)
 	{
 		int delay_counter = 0;
-		for (delay_counter = 0; delay_counter<1000000; delay_counter++);
+		for (delay_counter = 0; delay_counter<500000; delay_counter++);
 
 
 		ProcessButtons();
+		if(pre_time || main_time || cool_time) state = state_show_time; // Working now. Other functions disabled
 		switch (state){
 		case state_show_time:
 		case state_set_time:
@@ -276,7 +307,7 @@ int main(void)
 				} else  if(curr_status == STATUS_COOLING ){
 					flash_mode = 3; // All flashing
 				} else {
-					display_data = 0xEEE;
+					display_data = 0x0EE;
 					flash_mode = 3; // All flashing
 				}
 			}
@@ -285,20 +316,16 @@ int main(void)
 
 			if( flash_mode != 3){
 				flash_mode = 3; // All flashing
-				flash_counter_prev = flash_counter = 0;
 			}
 			{
-				int index = (counter_hours)%4;
+				int index = (flash_counter/8)%4;
 				if(index<3){
 					display_data =  ToBCD(work_hours[index]);
 				}
 				else {
 					display_data = 0x0FF;
 				}
-				if(flash_counter_prev != (flash_counter & 0x40)){
-					if(flash_counter_prev) counter_hours++;
-					flash_counter_prev = (flash_counter & 0x40);
-				}
+
 			}
 			break;
 		case state_enter_service:
@@ -327,7 +354,29 @@ int main(void)
 			display_data = 0x5;
 			break;
 		}
-		show_digit(0x23);
+		show_digit(display_data);
+		if (state == state_show_time){
+			if(!pre_time && main_time){
+				// turn on lamps
+				set_lamps(100);
+				set_licevi_lamps(100);
+				set_fan1(20);
+				set_fan2(100);
+			} else	if(!pre_time && !main_time && cool_time){
+				set_lamps(0);
+				set_licevi_lamps(0);
+				set_fan1(100);
+				set_fan2(100);
+				// turn on all coolers
+			} else {
+				// turn off all
+				set_lamps(0);
+				set_licevi_lamps(0);
+				set_fan1(0);
+				set_fan2(0);
+				set_clima(0);
+			}
+		}
 	}
 }
 
@@ -400,10 +449,15 @@ void ProcessButtons(void)
 			case BUTTON_START:
 				if( curr_status == STATUS_WAITING ){
 					//send_start();
+					Gv_miliseconds = 0;
+					pre_time = 0;
 				}
 				if((curr_status == STATUS_FREE)) {
 					if(time_to_set){
 						// Send of time moved elsewhere
+						pre_time = preset_pre_time;
+						main_time = time_to_set;
+						cool_time = preset_cool_time;
 					} else {
 						if (state > state_enter_service){
 							// Write EEPROM
@@ -621,33 +675,15 @@ void TimingDelay_Decrement(void)
 	}
 	if( ++ refresh_counter>200){
 		refresh_counter = 0;
-//		flash_counter++;
-//		if(digit_num>2) digit_num = 0;
-//		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2; // Turn off the lights while changing them
-//		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+		flash_counter++;
+	}
+	if(Gv_miliseconds++>1000){
+		Gv_miliseconds = 0;
 
-//		show_digit(display_data);
-
-
-//		if(flash_mode < 3 ||(flash_counter & 0x40)){
-//		}
-//		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-//			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
-//		}
 	}
 }
 
 
-
-void KeyPressed_2(void){ // +
-
-}
-void KeyPressed_3(void){ // -
-
-
-	//	if((time_to_set & 0x0F)>9) time_to_set -=6;
-
-}
 
 void send_time(void){
 	// Ping solarium for status
@@ -847,14 +883,20 @@ void write_eeprom(void){
 	}
 	//	FLASH_Lock();
 }
+void set_lamps(int value){
 
+}
+void set_licevi_lamps(int value){
 
-/**
- * @}
- */
+}
+void set_fan1(int value){
 
-/**
- * @}
- */
+}
+void set_fan2(int value){
+
+}
+void set_clima(int value){
+
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
