@@ -168,7 +168,8 @@ void show_digit(int digit){
 		else if(main_time){
 			digit_data |= digits4[0x0F];
 		} else {
-			digit_data |= digits4[0x10];
+			if(cool_time && (flash_counter & 0x04)) digit_data |= digits4[0x0F];
+			else digit_data |= digits4[0x10];
 		}
 	}
 	digit_data = ~digit_data;
@@ -191,7 +192,8 @@ void show_digit(int digit){
 		else if (main_time) {
 			digit_data |= digits3[0x0F];
 		} else {
-			digit_data |= digits3[0x10];
+			if(cool_time && (flash_counter & 0x04)) digit_data |= digits3[0x0f];
+			else digit_data |= digits3[0x10];
 		}
 	}
 	digit_data = ~digit_data;
@@ -292,24 +294,14 @@ int main(void)
 		switch (state){
 		case state_show_time:
 		case state_set_time:
-			if(curr_status == STATUS_FREE ){
+			if(!pre_time && ! main_time && !cool_time ){
 				flash_mode = 0;
 				state = state_set_time;
 				display_data = ToBCD(time_to_set);
 			} else {
 				state = state_show_time;
 				//				  time_to_set = 0;
-				display_data = ToBCD(curr_time);
-				if(curr_status == STATUS_WAITING ){
-					flash_mode = 1; // DP flashing
-				} else  if(curr_status == STATUS_WORKING ){
-					flash_mode = 2; // DP cycling
-				} else  if(curr_status == STATUS_COOLING ){
-					flash_mode = 3; // All flashing
-				} else {
-					display_data = 0x0EE;
-					flash_mode = 3; // All flashing
-				}
+				display_data = ToBCD(main_time);
 			}
 			break;
 		case state_show_hours:
@@ -325,7 +317,6 @@ int main(void)
 				else {
 					display_data = 0x0FF;
 				}
-
 			}
 			break;
 		case state_enter_service:
@@ -375,6 +366,7 @@ int main(void)
 				set_fan1(0);
 				set_fan2(0);
 				set_clima(0);
+				state = state_set_time;
 			}
 		}
 	}
@@ -447,17 +439,20 @@ void ProcessButtons(void)
 		if(last_button != prev_button){
 			switch(last_button){
 			case BUTTON_START:
-				if( curr_status == STATUS_WAITING ){
+				if( pre_time ){
 					//send_start();
 					Gv_miliseconds = 0;
 					pre_time = 0;
+					state = state_show_time;
 				}
-				if((curr_status == STATUS_FREE)) {
+				if(!pre_time && ! main_time && !cool_time) {
 					if(time_to_set){
 						// Send of time moved elsewhere
 						pre_time = preset_pre_time;
 						main_time = time_to_set;
 						cool_time = preset_cool_time;
+						state = state_show_time;
+						time_to_set = 0;
 					} else {
 						if (state > state_enter_service){
 							// Write EEPROM
@@ -487,37 +482,37 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_PLUS:
 			{
-//				if(  led_bits){
-//					led_bits = led_bits <<1;
-//				} else {
-//					led_bits = 0x01;
-//				}
+				//				if(  led_bits){
+				//					led_bits = led_bits <<1;
+				//				} else {
+				//					led_bits = 0x01;
+				//				}
 
 				if(state == state_show_hours) {
-						state = state_set_time;
-						start_counter = 0;
+					state = state_set_time;
+					start_counter = 0;
+				}
+				if(state == state_set_time){
+					if(time_to_set < 25){
+						time_to_set ++;
+						//			if((time_to_set & 0x0F)>9) time_to_set +=6;
 					}
-					if(state == state_set_time){
-						if(time_to_set < 25){
-							time_to_set ++;
-							//			if((time_to_set & 0x0F)>9) time_to_set +=6;
-						}
+				}
+				else if(state > state_enter_service){
+					start_counter = EXIT_SERVICE_TIME;
+					switch (service_mode){
+					case mode_set_address:
+						break;
+					case mode_set_pre_time:
+						if(preset_pre_time<9) preset_pre_time++;
+						break;
+					case mode_set_cool_time:
+						if(preset_cool_time<9) preset_cool_time++;
+						break;
+					default:
+						break;
 					}
-					else if(state > state_enter_service){
-						start_counter = EXIT_SERVICE_TIME;
-						switch (service_mode){
-						case mode_set_address:
-							break;
-						case mode_set_pre_time:
-							if(preset_pre_time<9) preset_pre_time++;
-							break;
-						case mode_set_cool_time:
-							if(preset_cool_time<9) preset_cool_time++;
-							break;
-						default:
-							break;
-						}
-					}
+				}
 
 
 
@@ -525,11 +520,11 @@ void ProcessButtons(void)
 			}
 			break;
 			case BUTTON_MINUS:
-//				if(  led_bits){
-//					led_bits = led_bits >>1;
-//				} else {
-//					led_bits = 0x01 << 31;
-//				}
+				//				if(  led_bits){
+				//					led_bits = led_bits >>1;
+				//				} else {
+				//					led_bits = 0x01 << 31;
+				//				}
 
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -679,7 +674,9 @@ void TimingDelay_Decrement(void)
 	}
 	if(Gv_miliseconds++>1000){
 		Gv_miliseconds = 0;
-
+		if (pre_time)pre_time--;
+		else if (main_time) main_time--;
+		else if (cool_time) cool_time--;
 	}
 }
 
