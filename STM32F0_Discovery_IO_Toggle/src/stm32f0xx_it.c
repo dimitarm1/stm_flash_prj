@@ -102,8 +102,7 @@ void SysTick_Handler(void)
 
 void TS_IRQHandler(void)
 {
-	Process_TS_Int();
-	TSC->ICR = 03;
+
 }
 
 
