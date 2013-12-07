@@ -59,7 +59,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
 static states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
 static modes service_mode;
-static unsigned char controller_address = 0x10;
+static unsigned char controller_address = 0x0f;
 static int curr_status;
 static int prev_status;
 static int curr_time;
@@ -77,6 +77,10 @@ static int led_bits = 0x0;
 static int display_data;
 static int pre_time, main_time, cool_time;
 int Gv_miliseconds = 0;
+int Gv_UART_Timeout = 500; // Timeout in mSec
+static int rx_payload[3];
+static int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+static int rx_state= 0;
 
 // for Display:
 static int refresh_counter = 0;
@@ -100,9 +104,8 @@ typedef struct flash_struct{
 }flash_struct;
 
 /* Private function prototypes -----------------------------------------------*/
-void push_note(int pitch, int duration);
 void SystickDelay(__IO uint32_t nTime);
-void ping_status(void);
+void send_status(void);
 int ToBCD(int value);
 void send_time(void);
 void send_start(void);
@@ -129,6 +132,7 @@ TIM_ICInitTypeDef  			TIM_ICInitStructure;
 GPIO_InitTypeDef        	GPIO_InitStructure;
 USART_InitTypeDef 			USART_InitStructure;
 USART_ClockInitTypeDef 		USART_ClockInitStruct;
+NVIC_InitTypeDef 			NVIC_InitStructure;
 
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
@@ -369,6 +373,13 @@ int main(void)
 				state = state_set_time;
 			}
 		}
+//
+//		while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET); // wAIT UNTIL RX BUFFER IS EMPTY
+//		int data =  USART_ReceiveData(USART1);
+//		USART_SendData(USART1,0x80);
+//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+
+
 	}
 }
 
@@ -662,6 +673,24 @@ void SystickDelay(__IO uint32_t nTime)
 
 }
 
+void update_status(){
+	if(pre_time) {
+		curr_time = pre_time;
+		curr_status = STATUS_WAITING;
+	}
+	else if(main_time) {
+		curr_time = main_time;
+		curr_status = STATUS_WORKING;
+	}
+	else if(cool_time) {
+		curr_time = cool_time;
+		curr_status = STATUS_COOLING;
+	}
+	else {
+		curr_time = 0;
+		curr_status = STATUS_FREE;
+	}
+}
 void TimingDelay_Decrement(void)
 {
 	if (Gv_SystickCounter != 0x00)
@@ -677,6 +706,14 @@ void TimingDelay_Decrement(void)
 		if (pre_time)pre_time--;
 		else if (main_time) main_time--;
 		else if (cool_time) cool_time--;
+		update_status();
+	}
+	if  (Gv_UART_Timeout){
+		 Gv_UART_Timeout--;
+		 if(! Gv_UART_Timeout) {
+			 rx_state = 0;
+			 pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+		 }
 	}
 }
 
@@ -893,6 +930,68 @@ void set_fan2(int value){
 
 }
 void set_clima(int value){
+
+}
+
+void usart_receive(void){
+
+	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
+	int data =  USART_ReceiveData(USART1);
+	Gv_UART_Timeout = 500;
+	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+	int time_in_hex = ToBCD(main_time_sent);
+	if (data & 0x80){
+		// Command
+		if(data == (0x80U | ((controller_address & 0x0fU)<<3U))){
+			data = (curr_status<<6)|curr_time;
+			USART_SendData(USART1,data);
+		}
+		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 2U)) //Command 2 == Pre_time_set
+		{
+			rx_state = state_pre_time;
+		}
+		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 5U)) //Command 5 == Main_time_set
+		{
+			rx_state = state_main_time;
+		}
+		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 3U)) //Command 3 == Cool_time_set
+		{
+			rx_state = state_cool_time;
+			unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
+			data = checksum;
+			USART_SendData(USART1,data);
+		}
+
+	} else if (rx_state){
+		// payload
+		if(rx_state == state_pre_time){
+			pre_time_sent = data;
+			rx_state = 0;
+		}
+		if(rx_state == state_main_time){
+			main_time_sent = data;
+			rx_state = 0;
+		}
+		if(rx_state == state_cool_time){
+			cool_time_sent = data;
+			rx_state = state_get_checksum;
+		}
+		if(rx_state == state_get_checksum){
+			unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
+			if(	data == checksum){
+				pre_time = pre_time_sent;
+				main_time = main_time_sent;
+				cool_time = cool_time_sent;
+				update_status();
+			}
+			rx_state = 0;
+		}
+
+	}
+//	USART_SendData(USART1,0x80);
+}
+
+void send_status(void){
 
 }
 
