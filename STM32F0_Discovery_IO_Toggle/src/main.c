@@ -939,7 +939,7 @@ void usart_receive(void){
 	int data =  USART_ReceiveData(USART1);
 	Gv_UART_Timeout = 500;
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-	int time_in_hex = ToBCD(main_time_sent);
+
 	if (data & 0x80){
 		// Command
 		if(data == (0x80U | ((controller_address & 0x0fU)<<3U))){
@@ -957,13 +957,21 @@ void usart_receive(void){
 		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 3U)) //Command 3 == Cool_time_set
 		{
 			rx_state = state_cool_time;
-			unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
-			data = checksum;
-			USART_SendData(USART1,data);
 		}
 
 	} else if (rx_state){
 		// payload
+		int time_in_hex = ToBCD(main_time_sent);
+		if(rx_state == state_get_checksum){
+			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			if(	data == checksum){
+				pre_time = pre_time_sent;
+				main_time = main_time_sent;
+				cool_time = cool_time_sent;
+				update_status();
+			}
+			rx_state = 0;
+		}
 		if(rx_state == state_pre_time){
 			pre_time_sent = data;
 			rx_state = 0;
@@ -975,17 +983,11 @@ void usart_receive(void){
 		if(rx_state == state_cool_time){
 			cool_time_sent = data;
 			rx_state = state_get_checksum;
+			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			data = checksum;
+			USART_SendData(USART1,data);
 		}
-		if(rx_state == state_get_checksum){
-			unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
-			if(	data == checksum){
-				pre_time = pre_time_sent;
-				main_time = main_time_sent;
-				cool_time = cool_time_sent;
-				update_status();
-			}
-			rx_state = 0;
-		}
+
 
 	}
 //	USART_SendData(USART1,0x80);
