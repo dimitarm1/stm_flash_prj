@@ -487,6 +487,11 @@ void ProcessButtons(void)
 					default:
 						break;
 					}
+				} else {
+					if(selected_led_bits & LED_FAN2_L){
+						if(percent_fan2<100) percent_fan2+=25;
+						set_fan2(percent_fan2);
+					}
 				}
 
 
@@ -611,6 +616,24 @@ void ProcessButtons(void)
 				}
 				write_eeprom();
 				time_to_set = 0;
+			}
+			if (curr_status == STATUS_COOLING){
+				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
+				set_lamps(100);
+				set_licevi_lamps(percent_licevi);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+				set_clima(percent_clima);
+				set_leds();
+			}
+			if (curr_status == STATUS_FREE){
+				percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+				set_lamps(0);
+				set_licevi_lamps(percent_licevi);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+				set_clima(percent_clima);
+				set_leds();
 			}
 			prev_status = curr_status;
 
