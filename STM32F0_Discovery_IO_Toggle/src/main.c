@@ -80,6 +80,7 @@ int Gv_UART_Timeout = 500; // Timeout in mSec
 static int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 static int rx_state= 0;
 static int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+static int minute_counter =0;
 
 // for Display:
 static int refresh_counter = 0;
@@ -115,7 +116,6 @@ void set_licevi_lamps(int value);
 void set_fan1(int value);
 void set_fan2(int value);
 void set_clima(int value);
-void set_leds(void);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -178,7 +178,7 @@ void show_digit(int digit){
 			else digit_data |= digits4[0x10];
 		}
 	}
-//	if(percent_licevi)	digit_data |= 0x0080;
+	if(percent_licevi)	digit_data |= 0x0080;
 	digit_data = ~digit_data;
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
@@ -203,7 +203,7 @@ void show_digit(int digit){
 			else digit_data |= digits3[0x10];
 		}
 	}
-//	if(percent_licevi)	digit_data |= 0x0080;
+	if(percent_licevi)	digit_data |= 0x0080;
 	digit_data = ~digit_data;
 
 
@@ -325,15 +325,15 @@ int main(void)
 		if (state == state_show_time){
 			if(!pre_time && main_time){
 				// turn on lamps
-				set_lamps(100);
-				set_licevi_lamps(100);
-				set_fan1(20);
-				set_fan2(100);
+//				set_lamps(100);
+//				set_licevi_lamps(100);
+//				set_fan1(20);
+//				set_fan2(100);
 			} else	if(!pre_time && !main_time && cool_time){
-				set_lamps(0);
-				set_licevi_lamps(0);
-				set_fan1(100);
-				set_fan2(100);
+//				set_lamps(0);
+//				set_licevi_lamps(0);
+//				set_fan1(100);
+//				set_fan2(100);
 				// turn on all coolers
 			} else {
 				// turn off all
@@ -448,8 +448,10 @@ void ProcessButtons(void)
 				selected_led_bits ^= LED_FAN2_L;
 				break;
 			case BUTTON_LICEVI:
-				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_LICEVI_L);
-				selected_led_bits ^= LED_LICEVI_L;
+				if(minute_counter){
+					selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_LICEVI_L);
+					selected_led_bits ^= LED_LICEVI_L;
+				}
 				break;
 			case BUTTON_CLIMA:
 				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
@@ -491,6 +493,12 @@ void ProcessButtons(void)
 					if(selected_led_bits & LED_FAN2_L){
 						if(percent_fan2<100) percent_fan2+=25;
 						set_fan2(percent_fan2);
+					} else if(selected_led_bits & LED_FAN1_L){
+						if(percent_fan1<100) percent_fan1=100;
+						set_fan1(percent_fan1);
+					} else if(selected_led_bits & LED_CLIMA_L){
+						if(percent_clima<100) percent_clima=100;
+						set_clima(percent_clima);
 					}
 				}
 
@@ -529,7 +537,17 @@ void ProcessButtons(void)
 						break;
 					}
 				}
-
+				if(selected_led_bits & LED_FAN2_L){
+					if(percent_fan2) percent_fan2-=25;
+					set_fan2(percent_fan2);
+				} else if(selected_led_bits & LED_FAN1_L){
+					if(percent_fan1) percent_fan1=0;
+					set_fan1(percent_fan1);
+				}
+				else if(selected_led_bits & LED_LICEVI_L){
+					if(percent_licevi) percent_licevi=0;
+					set_licevi_lamps(percent_licevi);
+				}
 
 				break;
 			}
@@ -616,15 +634,21 @@ void ProcessButtons(void)
 				}
 				write_eeprom();
 				time_to_set = 0;
-			}
-			if (curr_status == STATUS_COOLING){
-				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
+				percent_clima = 0, percent_licevi = 100, percent_fan1 = 100, percent_fan2 = 50;
 				set_lamps(100);
 				set_licevi_lamps(percent_licevi);
 				set_fan1(percent_fan1);
 				set_fan2(percent_fan2);
 				set_clima(percent_clima);
-				set_leds();
+			}
+			if (curr_status == STATUS_COOLING){
+				selected_led_bits = 0;
+				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
+				set_lamps(0);
+				set_licevi_lamps(percent_licevi);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+				set_clima(percent_clima);
 			}
 			if (curr_status == STATUS_FREE){
 				percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
@@ -633,7 +657,8 @@ void ProcessButtons(void)
 				set_fan1(percent_fan1);
 				set_fan2(percent_fan2);
 				set_clima(percent_clima);
-				set_leds();
+				selected_led_bits = 0;
+				minute_counter = 0;
 			}
 			prev_status = curr_status;
 
@@ -693,7 +718,10 @@ void TimingDelay_Decrement(void)
 	if(Gv_miliseconds++>60000){
 		Gv_miliseconds = 0;
 		if (pre_time)pre_time--;
-		else if (main_time) main_time--;
+		else if (main_time) {
+			main_time--;
+			minute_counter ++;
+		}
 		else if (cool_time) cool_time--;
 		update_status();
 	}
@@ -768,23 +796,28 @@ void write_eeprom(void){
 	//	FLASH_Lock();
 }
 void set_lamps(int value){
-
+	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_13;
+	else GPIOB->BRR = GPIO_BSRR_BS_13;
 }
 void set_licevi_lamps(int value){
-
+	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_14;
+	else GPIOB->BRR = GPIO_BSRR_BS_14;
 }
 void set_fan1(int value){
+	if(value) led_bits |= LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4;
+	else led_bits &= ~(LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4);
 
 }
 void set_fan2(int value){
-//	led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
-//	if(value > 75 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
-//	if(value > 50 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 );
-//	if(value > 25 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 );
-//	if(value > 0  ) led_bits |= (LED_FAN2_1  );
+	led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
+	if(value > 75 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
+	if(value > 50 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 );
+	if(value > 25 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 );
+	if(value > 0  ) led_bits |= (LED_FAN2_1  );
 }
 void set_clima(int value){
-
+	led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
+	if(value ) led_bits |= (LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
 }
 
 void usart_receive(void){
@@ -846,22 +879,6 @@ void usart_receive(void){
 
 	}
 //	USART_SendData(USART1,0x80);
-}
-
-void set_leds(void){
-	percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
-	if(percent_clima) led_bits |= LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4;
-	else led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4);
-
-	if(percent_licevi) led_bits |= LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4;
-	else led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4);
-
-	set_lamps(0);
-	set_licevi_lamps(percent_licevi);
-	set_fan1(percent_fan1);
-	set_fan2(percent_fan2);
-	set_clima(percent_clima);
-	set_leds();
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
