@@ -79,6 +79,7 @@ unsigned int Gv_miliseconds = 0;
 int Gv_UART_Timeout = 500; // Timeout in mSec
 static int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 static int rx_state= 0;
+static int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 
 // for Display:
 static int refresh_counter = 0;
@@ -114,6 +115,7 @@ void set_licevi_lamps(int value);
 void set_fan1(int value);
 void set_fan2(int value);
 void set_clima(int value);
+void set_leds(void);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -176,6 +178,7 @@ void show_digit(int digit){
 			else digit_data |= digits4[0x10];
 		}
 	}
+//	if(percent_licevi)	digit_data |= 0x0080;
 	digit_data = ~digit_data;
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
@@ -200,7 +203,10 @@ void show_digit(int digit){
 			else digit_data |= digits3[0x10];
 		}
 	}
+//	if(percent_licevi)	digit_data |= 0x0080;
 	digit_data = ~digit_data;
+
+
 	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
 	for (i = 0; i< 2000; i++);
 	SPI_I2S_SendData16(SPI1, digit_data);
@@ -748,7 +754,11 @@ void set_fan1(int value){
 
 }
 void set_fan2(int value){
-
+//	led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
+//	if(value > 75 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
+//	if(value > 50 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 );
+//	if(value > 25 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 );
+//	if(value > 0  ) led_bits |= (LED_FAN2_1  );
 }
 void set_clima(int value){
 
@@ -815,8 +825,20 @@ void usart_receive(void){
 //	USART_SendData(USART1,0x80);
 }
 
-void send_status(void){
+void set_leds(void){
+	percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+	if(percent_clima) led_bits |= LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4;
+	else led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4);
 
+	if(percent_licevi) led_bits |= LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4;
+	else led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4);
+
+	set_lamps(0);
+	set_licevi_lamps(percent_licevi);
+	set_fan1(percent_fan1);
+	set_fan2(percent_fan2);
+	set_clima(percent_clima);
+	set_leds();
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
