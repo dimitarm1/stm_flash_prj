@@ -814,19 +814,19 @@ void set_licevi_lamps(int value){
 	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_14;
 	else GPIOB->BRR = GPIO_BSRR_BS_14;
 }
-void set_fan1(int value){
+void set_fan2(int value){
 	while(!zero_crossed);
-	if(value) led_bits |= LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4;
-	else led_bits &= ~(LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4);
+	if(value) led_bits |= LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4;
+	else led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4);
 
 }
-void set_fan2(int value){
+void set_fan1(int value){
 	TIM_Cmd(TIM2, DISABLE);
-	led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
-	if(value > 75 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
-	if(value > 50 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 );
-	if(value > 25 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 );
-	if(value > 0  ) led_bits |= (LED_FAN2_1  );
+	led_bits &= ~(LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4 );
+	if(value > 75 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4 );
+	if(value > 50 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 );
+	if(value > 25 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 );
+	if(value > 0  ) led_bits |= (LED_FAN1_1  );
 
 	if (value > 75 ) TIM_TimeBaseStructure.TIM_Period = 0;
 	if (value > 50 ) TIM_TimeBaseStructure.TIM_Period = 30;
