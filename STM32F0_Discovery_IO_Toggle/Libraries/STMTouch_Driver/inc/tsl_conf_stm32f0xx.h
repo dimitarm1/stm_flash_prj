@@ -164,17 +164,17 @@
 /** TouchKeys Proximity state input threshold (range=0..255)
   - Enter Proximity state if delta is above
 */
-#define TSLPRM_TKEY_PROX_IN_TH (10)//(10)
+#define TSLPRM_TKEY_PROX_IN_TH (5)//(10)
 
 /** TouchKeys Proximity state output threshold (range=0..255)
   - Exit Proximity state if delta is below
 */
-#define TSLPRM_TKEY_PROX_OUT_TH (5) //(5)
+#define TSLPRM_TKEY_PROX_OUT_TH (4) //(5)
 
 /** TouchKeys Detect state input threshold (range=0..255)
   - Enter Detect state if delta is above
 */
-#define TSLPRM_TKEY_DETECT_IN_TH (25) //(20)
+#define TSLPRM_TKEY_DETECT_IN_TH (20) //(20)
 
 /** TouchKeys Detect state output threshold (range=0..255)
   - Exit Detect state if delta is below
@@ -185,7 +185,7 @@
   - @warning The value is inverted in the sensor state machine
   - Enter Calibration state if delta is below
 */
-#define TSLPRM_TKEY_CALIB_TH (15) //(20)
+#define TSLPRM_TKEY_CALIB_TH (5) //(20)
 
 /** TouchKey, Linear and Rotary sensors thresholds coefficient (range=0..4)
     This multiplier coefficient is applied on Detect thresholds only.
@@ -343,7 +343,7 @@
   - A Low value will result in a higher sensitivity during the detection but with less noise filtering.
   - A High value will result in improving the system noise immunity but will increase the system response time.
 */
-#define TSLPRM_DEBOUNCE_DETECT (20)
+#define TSLPRM_DEBOUNCE_DETECT (10)
 
 /** Release state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the end-detection but with less noise filtering.
@@ -355,7 +355,7 @@
   - A Low value will result in a higher sensitivity during the recalibration but with less noise filtering.
   - A High value will result in a lower sensitivity during the recalibration but with more noise filtering.
 */
-#define TSLPRM_DEBOUNCE_CALIB (6)
+#define TSLPRM_DEBOUNCE_CALIB (10)
 
 /** Error state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity to enter in error state.
@@ -375,12 +375,12 @@
 /** Environment Change System Slow K factor (range=0..255)
   - The higher value is K, the faster is the response time.
 */
-#define TSLPRM_ECS_K_SLOW (10)
+#define TSLPRM_ECS_K_SLOW (5)
 
 /** Environment Change System Fast K factor (range=0..255)
   - The higher value is K, the faster is the response time.
 */
-#define TSLPRM_ECS_K_FAST (20)
+#define TSLPRM_ECS_K_FAST (5)
 
 /** Environment Change System delay in msec (range=0..5000)
   - The ECS will be started after this delay and when all sensors are in Release state.
