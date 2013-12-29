@@ -753,12 +753,9 @@ void ProcessSensors(void)
 					state = service_mode + state_enter_service;
 				}
 				start_counter--;
-				if(!start_counter){
-					state = state_show_time;
-				}
 			}
 			else {
-				start_counter = 0;
+				start_counter--;
 
 			}
 		}
