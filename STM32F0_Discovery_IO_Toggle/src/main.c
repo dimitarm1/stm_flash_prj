@@ -516,10 +516,10 @@ void ProcessButtons(void)
 					}
 				} else {
 					if(selected_led_bits & LED_FAN2_L){
-						if(percent_fan2<100) percent_fan2+=25;
+						if(percent_fan2<100) percent_fan2=100;
 						set_fan2(percent_fan2);
 					} else if(selected_led_bits & LED_FAN1_L){
-						if(percent_fan1<100) percent_fan1=100;
+						if(percent_fan1<100) percent_fan1+=25;
 						set_fan1(percent_fan1);
 					} else if(selected_led_bits & LED_CLIMA_L){
 						if(percent_clima<100) percent_clima=100;
@@ -563,10 +563,10 @@ void ProcessButtons(void)
 					}
 				}
 				if(selected_led_bits & LED_FAN2_L){
-					if(percent_fan2) percent_fan2-=25;
+					if(percent_fan2) percent_fan2 = 0;
 					set_fan2(percent_fan2);
 				} else if(selected_led_bits & LED_FAN1_L){
-					if(percent_fan1) percent_fan1=0;
+					if(percent_fan1) percent_fan1-=25;
 					set_fan1(percent_fan1);
 				}
 				else if(selected_led_bits & LED_LICEVI_L){
