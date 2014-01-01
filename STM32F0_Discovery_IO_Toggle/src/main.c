@@ -145,6 +145,7 @@ void Delay(__IO uint32_t nTime)
 void show_digit(int digit){
 
 	int i,j,digit_data;
+	volatile uint16_t status;
 	int led_bits_tmp = led_bits;
 	if(flash_mode == 2){ // DP cycling
 
@@ -155,9 +156,26 @@ void show_digit(int digit){
 	if(flash_counter & 0x04){
 		led_bits_tmp &= ~selected_led_bits;
 	}
+
+	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
+	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS / Parallel load
+	for (i = 0; i< 2000; i++); // some delay
+	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
+//	while(1){ //DEBUG
+	SPI_I2S_ReceiveData16(SPI1); // Flush FIFO
+	SPI_I2S_ReceiveData16(SPI1); // FLUSH FIFO
+	for (i = 0; i< 2000; i++); // some delay
 	// LEDs 1
 	SPI_I2S_SendData16(SPI1, (~led_bits_tmp)>>16);
-	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
+	while ((status = SPI_GetTransmissionFIFOStatus(SPI1)) != SPI_TransmissionFIFOStatus_Empty);
+	for (i = 0; i< 2000; i++); // some delay
+	last_button = 0x11111111;
+
+	while((status = SPI_GetReceptionFIFOStatus(SPI1)) > SPI_ReceptionFIFOStatus_1QuarterFull){
+		last_button = SPI_I2S_ReceiveData16(SPI1);
+	}
+
+//	}
 
 	// LEDs 2
 	SPI_I2S_SendData16(SPI1, (~led_bits_tmp )& 0xFFFF);
@@ -184,9 +202,9 @@ void show_digit(int digit){
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
 	// Flush Receive FIFO just in case
-	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
 
 	// Leftmost 2 digits
 	if (digit & 0xFF00){ //Code for Blanking
@@ -208,13 +226,13 @@ void show_digit(int digit){
 	digit_data = ~digit_data;
 
 
-	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
-	for (i = 0; i< 2000; i++);
+//	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
+//	for (i = 0; i< 2000; i++);
 	SPI_I2S_SendData16(SPI1, digit_data);
 	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS
-	for (i = 0; i<16; i++){
+//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+//	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS
+	for (i = 1; i<16; i++){ // bit 0 is junk
 		j = (last_button>>i) & 1;
 		if(!j){
 			last_button = i;
@@ -252,7 +270,10 @@ int main(void)
 
 
 	prev_status = 0;
-
+	state = state_show_time;
+	pre_time = 0;
+	main_time = 0;
+	cool_time = 0;
 	read_eeprom();
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
@@ -275,10 +296,12 @@ int main(void)
 				flash_mode = 0;
 				state = state_set_time;
 				display_data = ToBCD(time_to_set);
+//				display_data = ToBCD(last_button);
 			} else {
 				state = state_show_time;
 				//				  time_to_set = 0;
 				display_data = ToBCD(main_time);
+//				display_data = ToBCD(last_button);
 			}
 			break;
 		case state_show_hours:
