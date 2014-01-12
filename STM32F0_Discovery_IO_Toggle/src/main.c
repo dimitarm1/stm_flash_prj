@@ -82,6 +82,7 @@ static int rx_state= 0;
 static int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 static int minute_counter =0;
 static int zero_crossed = 0;
+static int auto_exit_fn = 0;
 
 // for Display:
 static int refresh_counter = 0;
@@ -422,7 +423,7 @@ int FromBCD(int value){
 void ProcessButtons(void)
 {
 
-	if (last_button < 0x0f){
+	if (last_button < 0x1f){
 		if(last_button != prev_button){
 			switch(last_button){
 			case BUTTON_START:
@@ -467,20 +468,24 @@ void ProcessButtons(void)
 			case BUTTON_FAN1:
 				selected_led_bits &= ~(LED_BUTTONS_MASK ^ LED_FAN1_L);
 				selected_led_bits ^= LED_FAN1_L;
+				auto_exit_fn = 20;
 				break;
 			case BUTTON_FAN2:
-				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
-				selected_led_bits ^= LED_FAN2_L;
+//				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
+//				selected_led_bits ^= LED_FAN2_L;
+				auto_exit_fn = 20;
 				break;
 			case BUTTON_LICEVI:
 				if(minute_counter){
 					selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_LICEVI_L);
 					selected_led_bits ^= LED_LICEVI_L;
 				}
+				auto_exit_fn = 20;
 				break;
 			case BUTTON_CLIMA:
 				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
 				selected_led_bits ^= LED_CLIMA_L;
+				auto_exit_fn = 20;
 				break;
 			case BUTTON_PLUS:
 			{
@@ -489,6 +494,7 @@ void ProcessButtons(void)
 				//				} else {
 				//					led_bits = 0x01;
 				//				}
+				auto_exit_fn = 20;
 
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -496,7 +502,8 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set < 25){
-						time_to_set ++;
+						if(!Gv_UART_Timeout)
+							time_to_set ++;
 						//			if((time_to_set & 0x0F)>9) time_to_set +=6;
 					}
 				}
@@ -538,6 +545,7 @@ void ProcessButtons(void)
 				//				} else {
 				//					led_bits = 0x01 << 31;
 				//				}
+				auto_exit_fn = 20;
 
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -545,7 +553,7 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set) {
-						time_to_set--;
+						if(!Gv_UART_Timeout) time_to_set--;
 					}
 				}else if(state > state_enter_service){
 					start_counter = EXIT_SERVICE_TIME;
@@ -576,6 +584,8 @@ void ProcessButtons(void)
 				}
 
 				break;
+			default:
+				while(0);
 			}
 			prev_button =  last_button;
 		}
@@ -720,7 +730,7 @@ void update_status(void){
 	else if(main_time) {
 		curr_time = main_time;
 		curr_status = STATUS_WORKING;
-		led_bits |= LED_CLIMA_L | LED_FAN1_L | LED_FAN2_L;
+		led_bits |= LED_CLIMA_L | LED_FAN1_L | LED_FAN2_L | LED_UNUSED_BUTTON_MASK;
 		if(percent_licevi) led_bits |= LED_LICEVI_L;
 		else {
 			selected_led_bits &= ~LED_LICEVI_L;
@@ -746,6 +756,11 @@ void TimingDelay_Decrement(void)
 	if( ++ refresh_counter>200){
 		refresh_counter = 0;
 		flash_counter++;
+		if(auto_exit_fn)
+		{
+			auto_exit_fn--;
+			if (!auto_exit_fn) selected_led_bits =0;
+		}
 	}
 	if(Gv_miliseconds++>60000){
 		Gv_miliseconds = 0;
@@ -841,9 +856,11 @@ void set_fan2(int value){
 	while(!zero_crossed);
 	if(value) led_bits |= LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4;
 	else led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4);
-
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_10;
+	else GPIOA->BRR = GPIO_BSRR_BS_10;
 }
 void set_fan1(int value){
+	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
 	led_bits &= ~(LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4 );
 	if(value > 75 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4 );
@@ -851,11 +868,11 @@ void set_fan1(int value){
 	if(value > 25 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 );
 	if(value > 0  ) led_bits |= (LED_FAN1_1  );
 
-	if (value > 75 ) TIM_TimeBaseStructure.TIM_Period = 0;
-	if (value > 50 ) TIM_TimeBaseStructure.TIM_Period = 30;
-	if (value > 25 ) TIM_TimeBaseStructure.TIM_Period = 50;
-	if (value > 0  ) TIM_TimeBaseStructure.TIM_Period = 70;
-	TIM_TimeBaseStructure.TIM_Period = 70 ;
+	if (value == 100) tim_base = 5;
+	if (value == 75) tim_base = 40;
+	if (value == 50) tim_base = 49;
+	if (value == 25) tim_base = 58;
+	TIM_TimeBaseStructure.TIM_Period = tim_base;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
 	/* TIM2 PWM2 Mode configuration: Channel4 */
@@ -863,7 +880,7 @@ void set_fan1(int value){
 	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
 	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
-	else  TIM_OCInitStructure.TIM_Pulse = 5;
+	else  TIM_OCInitStructure.TIM_Pulse = 9;
 
 	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
 	TIM_Cmd(TIM2, ENABLE);
@@ -872,6 +889,8 @@ void set_fan1(int value){
 void set_clima(int value){
 	led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
 	if(value ) led_bits |= (LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
+	else GPIOA->BRR = GPIO_BSRR_BS_11;
 }
 
 void usart_receive(void){
