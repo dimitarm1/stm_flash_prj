@@ -513,95 +513,93 @@ int main(void)
 	  }
 	  while (1)
 	  {
-//		  measurment = MyChannels_Data[0].Meas;
-//		  display_data = measurment;
+		  //		  measurment = MyChannels_Data[0].Meas;
+		  //		  display_data = measurment;
 
 		  // Execute STMTouch Driver state machine
-		  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
-		  {
-			  ProcessSensors(); // Execute sensors related tasks
+		  if(controller_address >15){
+			  display_data = 0xEEE;
+			  // Try to get controller address continuously
+			  get_address();
 		  }
+		  else  {
+			  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 
-		  else
-		  {
-			  // Execute other tasks...
-			  if(controller_address>15){
-				  // Try to get controller address continuously
-				  get_address();
-			  }
-		  }
-		  ping_status();
-
-		  switch (state){
-		  case state_show_time:
-		  case state_set_time:
-			  if(curr_status == STATUS_FREE ){
-				  flash_mode = 0;
-				  state = state_set_time;
-				  display_data = ToBCD(time_to_set);
-			  } else {
-				  state = state_show_time;
-//				  time_to_set = 0;
-				  display_data = ToBCD(curr_time);
-				  if(curr_status == STATUS_WAITING ){
-					  flash_mode = 1; // DP flashing
-				  } else  if(curr_status == STATUS_WORKING ){
-					  flash_mode = 2; // DP cycling
-				  } else  if(curr_status == STATUS_COOLING ){
-					  flash_mode = 3; // All flashing
-				  } else {
-					  display_data = 0xEEE;
-					  flash_mode = 3; // All flashing
-				  }
-			  }
-			  break;
-		  case state_show_hours:
-
-			  if( flash_mode != 3){
-				  flash_mode = 3; // All flashing
-				  flash_counter_prev = flash_counter = 0;
-			  }
 			  {
-				  int index = (counter_hours)%4;
-				  if(index<3){
-					  display_data = 0xF00 | ToBCD(work_hours[index]);
-				  }
-				  else {
-					  display_data = 0xFFF;
-				  }
-				  if(flash_counter_prev != (flash_counter & 0x40)){
-					  if(flash_counter_prev) counter_hours++;
-					  flash_counter_prev = (flash_counter & 0x40);
-				  }
+				  ProcessSensors(); // Execute sensors related tasks
 			  }
-			  break;
-		  case state_enter_service:
-			  display_data = service_mode|0xAF0;
-		      flash_mode = 0;
-			  break;
+			  ping_status();
 
-		  case state_clear_hours:
-			  flash_mode = 3;
-			  display_data = 0xFFC;
-		  	  break;
-		  case state_address:
-			  flash_mode = 0;
-			  display_data = 0xFFA;
-			  break;
-		  case state_pre_time:
-			  flash_mode = 2;
-			  display_data = 0x3F0 | preset_pre_time;;
-			  break;
-		  case state_cool_time:
-			  flash_mode = 2;
-			  display_data = 0x4F0 | preset_cool_time;
-			  break;
-		  case state_ext_mode:
-			  flash_mode = 0;
-			  display_data = 0x5F0;
-			  break;
+			  switch (state){
+			  case state_show_time:
+			  case state_set_time:
+				  if(curr_status == STATUS_FREE ){
+					  flash_mode = 0;
+					  state = state_set_time;
+					  display_data = ToBCD(time_to_set);
+				  } else {
+					  state = state_show_time;
+					  //				  time_to_set = 0;
+					  display_data = ToBCD(curr_time);
+					  if(curr_status == STATUS_WAITING ){
+						  flash_mode = 1; // DP flashing
+					  } else  if(curr_status == STATUS_WORKING ){
+						  flash_mode = 2; // DP cycling
+					  } else  if(curr_status == STATUS_COOLING ){
+						  flash_mode = 3; // All flashing
+					  } else {
+						  display_data = 0xEEE;
+						  flash_mode = 3; // All flashing
+					  }
+				  }
+				  break;
+			  case state_show_hours:
+
+				  if( flash_mode != 3){
+					  flash_mode = 3; // All flashing
+					  flash_counter_prev = flash_counter = 0;
+				  }
+				  {
+					  int index = (counter_hours)%4;
+					  if(index<3){
+						  display_data = 0xF00 | ToBCD(work_hours[index]);
+					  }
+					  else {
+						  display_data = 0xFFF;
+					  }
+					  if(flash_counter_prev != (flash_counter & 0x40)){
+						  if(flash_counter_prev) counter_hours++;
+						  flash_counter_prev = (flash_counter & 0x40);
+					  }
+				  }
+				  break;
+			  case state_enter_service:
+				  display_data = service_mode|0xAF0;
+				  flash_mode = 0;
+				  break;
+
+			  case state_clear_hours:
+				  flash_mode = 3;
+				  display_data = 0xFFC;
+				  break;
+			  case state_address:
+				  flash_mode = 0;
+				  display_data = 0xFFA;
+				  break;
+			  case state_pre_time:
+				  flash_mode = 2;
+				  display_data = 0x3F0 | preset_pre_time;;
+				  break;
+			  case state_cool_time:
+				  flash_mode = 2;
+				  display_data = 0x4F0 | preset_cool_time;
+				  break;
+			  case state_ext_mode:
+				  flash_mode = 0;
+				  display_data = 0x5F0;
+				  break;
+			  }
 		  }
-
 	  }
 }
 
@@ -1040,18 +1038,16 @@ void ping_status(void){
 	// Ping solarium for status
 	if(++ping_counter>600){
 		ping_counter = 0;
-		if(controller_address >15){
-			display_data = 0xEEE;
+
+		int sts = get_controller_status(controller_address);
+		if(sts != -1){
+			curr_status = (sts & 0xC0)>>6;
+			curr_time = sts & 0x3F;
 		} else {
-			int sts = get_controller_status(controller_address);
-			if(sts != -1){
-				curr_status = (sts & 0xC0)>>6;
-				curr_time = sts & 0x3F;
-			} else {
-				curr_status = -1;
-				curr_time = 0;
-			}
+			curr_status = -1;
+			curr_time = 0;
 		}
+
 		curr_time = FromBCD(curr_time);
 	}
 }
