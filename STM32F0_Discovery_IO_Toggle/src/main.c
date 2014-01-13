@@ -670,7 +670,7 @@ void ProcessButtons(void)
 				}
 				write_eeprom();
 				time_to_set = 0;
-				percent_clima = 0, percent_licevi = 100, percent_fan1 = 100, percent_fan2 = 50;
+				percent_clima = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
 				zero_crossed = 0;
 				set_lamps(100);
 				set_licevi_lamps(percent_licevi);
