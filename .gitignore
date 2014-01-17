@@ -3,6 +3,6 @@
 Debug/
 *~
 *.swp
-/STM32F0_Discovery_IO_Toggle
+/STM32F0_Discovery_IO_Toggle_____
 *.d
 *.o
