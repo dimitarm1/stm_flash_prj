@@ -84,9 +84,13 @@ static int minute_counter =0;
 static int zero_crossed = 0;
 static int auto_exit_fn = 0;
 
+static char digits[3];
 // for Display:
 static int refresh_counter = 0;
 static int flash_counter = 0;
+// for Display:
+static int led_counter = 0;
+static int digit_num = 0;
 typedef struct time_str{
 	uint8_t used_flag :8;
 	uint8_t hours_h   :8;
@@ -137,115 +141,141 @@ NVIC_InitTypeDef 			NVIC_InitStructure;
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
 {
-	TimingDelay = nTime;
+  TimingDelay = nTime;
 
-	while(TimingDelay != 0);
+  while(TimingDelay != 0);
 }
-
 
 void show_digit(int digit){
-
-	int i,j,digit_data;
-	volatile uint16_t status;
-	int led_bits_tmp = led_bits;
-	if(flash_mode == 2){ // DP cycling
-
-	}
-	if(((flash_mode == 3) ||(flash_mode == 1) )&&(flash_counter & 0x04)){
-		digit |= 0x00FF;
-	}
-	if(flash_counter & 0x04){
-		led_bits_tmp &= ~selected_led_bits;
-	}
-
-	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
-	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS / Parallel load
-	for (i = 0; i< 2000; i++); // some delay
-	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
-//	while(1){ //DEBUG
-	SPI_I2S_ReceiveData16(SPI1); // Flush FIFO
-	SPI_I2S_ReceiveData16(SPI1); // FLUSH FIFO
-	for (i = 0; i< 2000; i++); // some delay
-	// LEDs 1
-	SPI_I2S_SendData16(SPI1, (~led_bits_tmp)>>16);
-	while ((status = SPI_GetTransmissionFIFOStatus(SPI1)) != SPI_TransmissionFIFOStatus_Empty);
-	for (i = 0; i< 2000; i++); // some delay
-	last_button = 0x11111111;
-
-	while((status = SPI_GetReceptionFIFOStatus(SPI1)) > SPI_ReceptionFIFOStatus_1QuarterFull){
-		last_button = SPI_I2S_ReceiveData16(SPI1);
-	}
-
-//	}
-
-	// LEDs 2
-	SPI_I2S_SendData16(SPI1, (~led_bits_tmp )& 0xFFFF);
-	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-
-	// Rightmost 2 digits
-	if (digit & 0xFF00){ //Code for Blanking
-		digit_data = digits3[digit & 0x11] | digits4[0x11];
-	} else {
-		digit_data = digits3[digit & 0x0f];
-		if(pre_time){
-			if (flash_counter & 0x02) digit_data |= digits4[0x0F];
-			else digit_data |= digits4[0x10];
-		}
-		else if(main_time){
-			digit_data |= digits4[0x0F];
-		} else {
-			if(cool_time && (flash_counter & 0x04)) digit_data |= digits4[0x0F];
-			else digit_data |= digits4[0x10];
-		}
-	}
-	if(percent_licevi)	digit_data |= 0x0080;
-	digit_data = ~digit_data;
-	SPI_I2S_SendData16(SPI1, digit_data);
-	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-	// Flush Receive FIFO just in case
-//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-
-	// Leftmost 2 digits
-	if (digit & 0xFF00){ //Code for Blanking
-		digit_data = digits3[digit & 0x11] | digits4[0x11];
-	} else {
-		digit_data =  digits4[digit>>4];
-		if(pre_time ){
-			if(!(flash_counter & 0x02)) digit_data |= digits3[0x0F];
-			else digit_data |= digits3[0x10];
-		}
-		else if (main_time) {
-			digit_data |= digits3[0x0F];
-		} else {
-			if(cool_time && (flash_counter & 0x04)) digit_data |= digits3[0x0f];
-			else digit_data |= digits3[0x10];
-		}
-	}
-	if(percent_licevi)	digit_data |= 0x0080;
-	digit_data = ~digit_data;
-
-
-//	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
-//	for (i = 0; i< 2000; i++);
-	SPI_I2S_SendData16(SPI1, digit_data);
-	while (SPI_GetTransmissionFIFOStatus(SPI1) != SPI_TransmissionFIFOStatus_Empty);
-//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
-//	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS
-	for (i = 1; i<16; i++){ // bit 0 is junk
-		j = (last_button>>i) & 1;
-		if(!j){
-			last_button = i;
-			break;
-		}
-	}
-	for (i = 0; i< 500; i++);
-	GPIOB->BSRR = GPIO_BSRR_BS_11; // Trigger latch
-	for (i = 0; i< 50; i++);
-	GPIOB->BRR = GPIO_BSRR_BS_11;
+        digit = digit & 0x0F;
+        GPIOA->BSRR = GPIO_BSRR_BR_3 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
+        GPIOB->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2 | GPIO_BSRR_BR_10 | GPIO_BSRR_BR_11;
+        GPIOC->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
+        GPIOF->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5;
+        switch (digit) {
+        case 0:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 1:
+                GPIOA->BSRR = GPIO_BSRR_BS_7;
+                GPIOB->BSRR = 0 ;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = 0;
+                break;
+        case 2:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 ;
+                GPIOC->BSRR = GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 3:
+                GPIOA->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 ;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_5;
+                break;
+        case 4:
+                GPIOA->BSRR = GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = 0;
+                break;
+        case 5:
+                GPIOA->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                GPIOF->BSRR = GPIO_BSRR_BS_5;
+                break;
+        case 6:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 7:
+                GPIOA->BSRR = GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = 0;
+                break;
+        case 8:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 9:
+                GPIOA->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_5;
+                break;
+        case 0x0A:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_4;
+                break;
+        case 0x0B:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 0x0C:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4;
+                GPIOB->BSRR = GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = 0 ;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 0x0D:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 ;
+                GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 0x0E:
+                GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 ;
+                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+                GPIOC->BSRR = GPIO_BSRR_BS_5;
+                GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+                break;
+        case 0x0F:
+        default:
+                //empty
+//                GPIOA->BSRR = GPIO_BSRR_BS_3 ;
+//                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+//                GPIOC->BSRR = GPIO_BSRR_BS_5;
+//                GPIOF->BSRR = GPIO_BSRR_BS_4;
+                break;
+        }
 }
 
+/*
+* Outputs:
+* PA2 - Digit 0
+* PA1 - Digit 1
+* PA0 - Digit 2
+* PB2,PB1 - a
+* PC6,PC7 - b
+* PC4,PA7 - c
+* PA4,PF5 - d
+* PF4, PA3 - e
+* PB11,PB10 - f
+* PB0,PC5 - g
+* PA6,PA5 - DP
+*
+*
+* A
+* F B
+* G
+* E C
+* D
+* DP
+*/
 
 /**
  * @brief  Main program.
@@ -269,7 +299,9 @@ int main(void)
 	 * 5 - set main time
 	 */
 
-
+	digits[0] = 0;
+	digits[1] = 1;
+	digits[2] = 2;
 	prev_status = 0;
 	state = state_show_time;
 	pre_time = 0;
@@ -281,6 +313,7 @@ int main(void)
 		preset_cool_time = 3;
 		write_eeprom();
 	}
+	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	update_status();
 	while (1)
 	{
@@ -381,7 +414,7 @@ int main(void)
 }
 
 
-void TIM2_IRQHandler() {
+void TIM3_IRQHandler() {
 	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
 	{
 		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
@@ -779,6 +812,37 @@ void TimingDelay_Decrement(void)
 			 pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		 }
 	}
+	if(0 &&(++led_counter>6)){
+		led_counter = 0;
+		digit_num++;
+		flash_counter++;
+		if(digit_num>2) digit_num = 0;
+		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2; // Turn off the lights while changing them
+		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+		if(flash_mode < 3 ||(flash_counter & 0x40)){
+			switch (digit_num){
+			case 2:
+				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
+				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+				break;
+
+			case 1:
+				GPIOA->BSRR = GPIO_BSRR_BS_1 ;
+				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
+				break;
+			case 0:
+			default:
+				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
+				GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
+				break;
+			}
+		}
+		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+		}
+	}
+
+
 }
 
 
