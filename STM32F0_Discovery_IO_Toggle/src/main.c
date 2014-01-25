@@ -826,45 +826,53 @@ void TimingDelay_Decrement(void)
 			 pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		 }
 	}
-	if(++led_counter>6){
+	if(++led_counter>3){
 		led_counter = 0;
 		digit_num++;
 		flash_counter++;
-		display_data = 0xdef; //DEBUG!!!!1
+		display_data = 0x135; //DEBUG!!!!1
+		aqua_fresh_level = 2;
 		if(digit_num>4) digit_num = 0;
 		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2; // Turn off the lights while changing them
-		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+		GPIOC->BSRR = GPIO_BSRR_BR_13 ;
+		GPIOF->BSRR = GPIO_BSRR_BR_1 ;
+		if(digit_num<3){
+			show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+		} else {
+			show_digit(0x8);// DEBUG
+		}
 		if(flash_mode < 3 ||(flash_counter & 0x40)){
 			switch (digit_num){
 			case 0:
 				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+				//set Aqua 2 LED
+				if(aqua_fresh_level>1){
+					GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
+				}
 				break;
 
 			case 1:
 				GPIOA->BSRR = GPIO_BSRR_BS_1 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
-				break;
-			case 2:
-				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
 				//set Aqua 2 LEDs
-
-				break;
-			case 3:
-				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
-				//set Aqua 1 LEDs
-				if(aqua_fresh_level>0){
-
-				} else {
-
+				if(aqua_fresh_level>1){
+					GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
+					GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 				}
 				break;
 			case 2:
-			default:
 				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
+				//set Aqua 1 LEDs
+				if(aqua_fresh_level>0){
+					GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
+					GPIOC->BSRR = GPIO_BSRR_BS_10 ;
+				}
+				break;
+			case 3:
+				GPIOC->BSRR = GPIO_BSRR_BS_13 ;
+				break;
+			case 4:
+			default:
+				GPIOF->BSRR = GPIO_BSRR_BS_1 ;
 				break;
 			}
 		}
