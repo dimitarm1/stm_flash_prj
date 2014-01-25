@@ -110,6 +110,10 @@ void USART1_IRQHandler(void){
 	usart_receive();
 }
 
+void USART2_IRQHandler(void){
+	usart_receive();
+}
+
 
 /******************************************************************************/
 /*                 STM32F0xx Peripherals Interrupt Handlers                   */

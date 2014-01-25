@@ -126,7 +126,7 @@ void init(){
 //	USART_ReceiveData(USART1);
 	USART_Cmd(USART2,ENABLE);
 
-	/* Enable USART1 IRQ */
+	/* Enable USART2 IRQ */
 	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 5;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -174,29 +174,29 @@ void init(){
 
 	// TODO: Configure External interrupt for timer trigger
 
-
-	TIM_ICInit(TIM3, &TIM_ICInitStructure);
-
-	/* One Pulse Mode selection */
-	TIM_SelectOnePulseMode(TIM3, TIM_OPMode_Single);
-
-	/* Input Trigger selection */
-	TIM_SelectInputTrigger(TIM3, TIM_TS_ITR0);
-
-	/* Slave Mode selection: Trigger Mode */
-	TIM_SelectSlaveMode(TIM3, TIM_SlaveMode_Trigger);
-
-	TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);
-
-	/* OPM Bit -> Only one pulse */
-	TIM_SelectOnePulseMode (TIM3, TIM_OPMode_Single);
-	TIM3->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	NVIC_EnableIRQ(TIM3_IRQn); // Enable TIM3 IRQ
-	/* TIM3 enable counter */
-	TIM_Cmd(TIM3, ENABLE);
-	if (SysTick_Config(SystemCoreClock / (1000))){
-		while(1); // Capture error
-	}
-	NVIC_SetPriority (SysTick_IRQn, 3);
+//
+//	TIM_ICInit(TIM3, &TIM_ICInitStructure);
+//
+//	/* One Pulse Mode selection */
+//	TIM_SelectOnePulseMode(TIM3, TIM_OPMode_Single);
+//
+//	/* Input Trigger selection */
+//	TIM_SelectInputTrigger(TIM3, TIM_TS_ITR0);
+//
+//	/* Slave Mode selection: Trigger Mode */
+//	TIM_SelectSlaveMode(TIM3, TIM_SlaveMode_Trigger);
+//
+//	TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);
+//
+//	/* OPM Bit -> Only one pulse */
+//	TIM_SelectOnePulseMode (TIM3, TIM_OPMode_Single);
+//	TIM3->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+//	NVIC_EnableIRQ(TIM3_IRQn); // Enable TIM3 IRQ
+//	/* TIM3 enable counter */
+//	TIM_Cmd(TIM3, ENABLE);
+//	if (SysTick_Config(SystemCoreClock / (1000))){
+//		while(1); // Capture error
+//	}
+//	NVIC_SetPriority (SysTick_IRQn, 3);
 
 }
