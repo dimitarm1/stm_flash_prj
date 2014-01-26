@@ -72,8 +72,6 @@ static unsigned char  preset_cool_time = 3;
 static int start_counter = 0;
 static int last_button = 0;
 static int prev_button = 0;
-static int led_bits = 0x0;
-static int selected_led_bits = 0x0;
 static int display_data;
 static int pre_time, main_time, cool_time;
 unsigned int Gv_miliseconds = 0;
@@ -586,35 +584,25 @@ void ProcessButtons(void)
 
 
 				break;
-			case BUTTON_FAN1:
-				selected_led_bits &= ~(LED_BUTTONS_MASK ^ LED_FAN1_L);
-				selected_led_bits ^= LED_FAN1_L;
+			case BUTTON_FAN_PLUS:
 				auto_exit_fn = 20;
 				break;
-			case BUTTON_FAN2:
-//				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
-//				selected_led_bits ^= LED_FAN2_L;
+			case BUTTON_FAN_MINUS:
 				auto_exit_fn = 20;
 				break;
-			case BUTTON_LICEVI:
+			case BUTTON_AQUA:
 				if(minute_counter){
-					selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_LICEVI_L);
-					selected_led_bits ^= LED_LICEVI_L;
 				}
 				auto_exit_fn = 20;
 				break;
-			case BUTTON_CLIMA:
-				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
-				selected_led_bits ^= LED_CLIMA_L;
+			case BUTTON_VOL_PLUS:
+				auto_exit_fn = 20;
+				break;
+			case BUTTON_VOL_MINUS:
 				auto_exit_fn = 20;
 				break;
 			case BUTTON_PLUS:
 			{
-				//				if(  led_bits){
-				//					led_bits = led_bits <<1;
-				//				} else {
-				//					led_bits = 0x01;
-				//				}
 				auto_exit_fn = 20;
 
 				if(state == state_show_hours) {
@@ -643,16 +631,16 @@ void ProcessButtons(void)
 						break;
 					}
 				} else {
-					if(selected_led_bits & LED_FAN2_L){
-						if(percent_fan2<100) percent_fan2=100;
-						set_fan2(percent_fan2);
-					} else if(selected_led_bits & LED_FAN1_L){
-						if(percent_fan1<100) percent_fan1+=25;
-						set_fan1(percent_fan1);
-					} else if(selected_led_bits & LED_CLIMA_L){
-						if(percent_clima<100) percent_clima=100;
-						set_clima(percent_clima);
-					}
+//					if(selected_led_bits & LED_FAN2_L){
+//						if(percent_fan2<100) percent_fan2=100;
+//						set_fan2(percent_fan2);
+//					} else if(selected_led_bits & LED_FAN1_L){
+//						if(percent_fan1<100) percent_fan1+=25;
+//						set_fan1(percent_fan1);
+//					} else if(selected_led_bits & LED_CLIMA_L){
+//						if(percent_clima<100) percent_clima=100;
+//						set_clima(percent_clima);
+//					}
 				}
 
 
@@ -691,18 +679,18 @@ void ProcessButtons(void)
 						break;
 					}
 				}
-				if(selected_led_bits & LED_FAN2_L){
-					if(percent_fan2) percent_fan2 = 0;
-					set_fan2(percent_fan2);
-				} else if(selected_led_bits & LED_FAN1_L){
-					if(percent_fan1) percent_fan1-=25;
-					set_fan1(percent_fan1);
-				}
-				else if(selected_led_bits & LED_LICEVI_L){
-					if(percent_licevi) percent_licevi=0;
-					set_licevi_lamps(percent_licevi);
-					update_status();
-				}
+//				if(selected_led_bits & LED_FAN2_L){
+//					if(percent_fan2) percent_fan2 = 0;
+//					set_fan2(percent_fan2);
+//				} else if(selected_led_bits & LED_FAN1_L){
+//					if(percent_fan1) percent_fan1-=25;
+//					set_fan1(percent_fan1);
+//				}
+//				else if(selected_led_bits & LED_LICEVI_L){
+//					if(percent_licevi) percent_licevi=0;
+//					set_licevi_lamps(percent_licevi);
+//					update_status();
+//				}
 
 				break;
 			default:
@@ -800,7 +788,6 @@ void ProcessButtons(void)
 				set_clima(percent_clima);
 			}
 			if (curr_status == STATUS_COOLING){
-				selected_led_bits = 0;
 				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
 				set_lamps(0);
 				set_licevi_lamps(percent_licevi);
@@ -815,7 +802,6 @@ void ProcessButtons(void)
 				set_fan1(percent_fan1);
 				set_fan2(percent_fan2);
 				set_clima(percent_clima);
-				selected_led_bits = 0;
 				minute_counter = 0;
 			}
 			prev_status = curr_status;
@@ -851,12 +837,6 @@ void update_status(void){
 	else if(main_time) {
 		curr_time = main_time;
 		curr_status = STATUS_WORKING;
-		led_bits |= LED_CLIMA_L | LED_FAN1_L | LED_FAN2_L | LED_UNUSED_BUTTON_MASK;
-		if(percent_licevi) led_bits |= LED_LICEVI_L;
-		else {
-			selected_led_bits &= ~LED_LICEVI_L;
-			led_bits &= ~LED_LICEVI_L;
-		}
 	}
 	else if(cool_time) {
 		curr_time = cool_time;
@@ -865,11 +845,11 @@ void update_status(void){
 	else {
 		curr_time = 0;
 		curr_status = STATUS_FREE;
-		led_bits = 0;
 	}
 }
 void TimingDelay_Decrement(void)
 {
+	static int current_button_read = 0;
 	if (Gv_SystickCounter != 0x00)
 	{
 		Gv_SystickCounter--;
@@ -880,7 +860,7 @@ void TimingDelay_Decrement(void)
 		if(auto_exit_fn)
 		{
 			auto_exit_fn--;
-			if (!auto_exit_fn) selected_led_bits =0;
+			if (!auto_exit_fn);
 		}
 	}
 	if(Gv_miliseconds++>60000){
@@ -904,9 +884,12 @@ void TimingDelay_Decrement(void)
 		led_counter = 0;
 		digit_num++;
 		flash_counter++;
-		display_data = 0x135; //DEBUG!!!!1
 //		aqua_fresh_level = 0;
-		if(digit_num>4) digit_num = 0;
+		if(digit_num>4) {
+			digit_num = 0;
+			last_button = current_button_read;
+			current_button_read = 0;
+		}
 		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2|GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12; // Turn off the lights while changing them
 		GPIOC->BSRR = GPIO_BSRR_BR_10 | GPIO_BSRR_BR_13 ;
 		GPIOF->BSRR = GPIO_BSRR_BR_1 ;
@@ -918,6 +901,17 @@ void TimingDelay_Decrement(void)
 
 		}
 		if(flash_mode < 3 ||(flash_counter & 0x40)){
+
+			// Indicate pre_time by movind bars
+			if (state_pre_time == state){
+				volume_level = (flash_counter>>5) & 0x07;
+				fan_level = ((flash_counter>>5) & 0x07) +3;
+			}
+			else {
+				volume_level = 1;
+				fan_level = 1;
+			}
+
 			switch (digit_num){
 			case 0:
 				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
@@ -926,6 +920,8 @@ void TimingDelay_Decrement(void)
 					GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 					GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 				}
+				current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+						((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
 				break;
 
 			case 1:
@@ -935,6 +931,9 @@ void TimingDelay_Decrement(void)
 					GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 					GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 				}
+				current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+										((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
+
 				break;
 			case 2:
 				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
@@ -942,17 +941,18 @@ void TimingDelay_Decrement(void)
 				if(aqua_fresh_level>1){
 					GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 				}
+				current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+														((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
 				break;
 			case 3:
 				GPIOC->BSRR = GPIO_BSRR_BS_13 ;
 				show_level(volume_level);
-				volume_level = (flash_counter>>5) & 0x07;
+
 				break;
 			case 4:
 			default:
 				GPIOF->BSRR = GPIO_BSRR_BS_1 ;
 				show_level(fan_level);
-				fan_level = ((flash_counter>>5) & 0x07) +3;
 				break;
 			}
 		}
@@ -1038,19 +1038,12 @@ void set_licevi_lamps(int value){
 }
 void set_fan2(int value){
 	while(!zero_crossed);
-	if(value) led_bits |= LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4;
-	else led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4);
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_10;
 	else GPIOA->BRR = GPIO_BSRR_BS_10;
 }
 void set_fan1(int value){
 	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
-	led_bits &= ~(LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4 );
-	if(value > 75 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 | LED_FAN1_4 );
-	if(value > 50 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 | LED_FAN1_3 );
-	if(value > 25 ) led_bits |= (LED_FAN1_1 | LED_FAN1_2 );
-	if(value > 0  ) led_bits |= (LED_FAN1_1  );
 
 	if (value == 100) tim_base = 5;
 	if (value == 75) tim_base = 40;
@@ -1071,8 +1064,6 @@ void set_fan1(int value){
 
 }
 void set_clima(int value){
-	led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
-	if(value ) led_bits |= (LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
 	else GPIOA->BRR = GPIO_BSRR_BS_11;
 }
