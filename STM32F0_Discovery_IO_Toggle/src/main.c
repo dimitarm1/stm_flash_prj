@@ -903,7 +903,7 @@ void TimingDelay_Decrement(void)
 		if(flash_mode < 3 ||(flash_counter & 0x40)){
 
 			// Indicate pre_time by movind bars
-			if (state_pre_time == state){
+			if (pre_time){
 				volume_level = (flash_counter>>5) & 0x07;
 				fan_level = ((flash_counter>>5) & 0x07) +3;
 			}
@@ -1027,30 +1027,30 @@ void write_eeprom(void){
 	//	FLASH_Lock();
 }
 void set_lamps(int value){
-	while(!zero_crossed);
-	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_13;
-	else GPIOB->BRR = GPIO_BSRR_BS_13;
+//	while(!zero_crossed);
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
+	else GPIOC->BRR = GPIO_BSRR_BS_8;
 }
 void set_licevi_lamps(int value){
-	while(!zero_crossed);
+//	while(!zero_crossed);
 	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_14;
 	else GPIOB->BRR = GPIO_BSRR_BS_14;
 }
 void set_fan2(int value){
-	while(!zero_crossed);
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_10;
-	else GPIOA->BRR = GPIO_BSRR_BS_10;
+//	while(!zero_crossed);
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_14;
+	else GPIOC->BRR = GPIO_BSRR_BS_14;
 }
 void set_fan1(int value){
 	uint32_t tim_base=5;
-	TIM_Cmd(TIM2, DISABLE);
+	TIM_Cmd(TIM3, DISABLE);
 
 	if (value == 100) tim_base = 5;
 	if (value == 75) tim_base = 40;
 	if (value == 50) tim_base = 49;
 	if (value == 25) tim_base = 58;
 	TIM_TimeBaseStructure.TIM_Period = tim_base;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
@@ -1059,13 +1059,13 @@ void set_fan1(int value){
 	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
 	else  TIM_OCInitStructure.TIM_Pulse = 9;
 
-	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
-	TIM_Cmd(TIM2, ENABLE);
+	TIM_OC4Init(TIM3, &TIM_OCInitStructure);
+	TIM_Cmd(TIM3, ENABLE);
 
 }
 void set_clima(int value){
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
-	else GPIOA->BRR = GPIO_BSRR_BS_11;
+//	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
+//	else GPIOA->BRR = GPIO_BSRR_BS_11;
 }
 
 void usart_receive(void){
