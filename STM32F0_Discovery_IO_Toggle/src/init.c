@@ -18,7 +18,8 @@ void init(){
 	/* GPIO Periph clock enable */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF, ENABLE);
 	/* UART1 Clock enable; SPI1 Clock enable*/
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB2Periph_SPI1,ENABLE);
+	RCC_APB1PeriphClockCmd( RCC_APB2Periph_SPI1,ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
 
 	/* Configure PA in output push-pull mode (for segments)*/
@@ -109,12 +110,12 @@ void init(){
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_0); // USART1_TX
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_0); // USART1_RX
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1); // USART1_TX
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1); // USART1_RX
 
 	USART_InitStructure.USART_BaudRate = 1200;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -122,14 +123,16 @@ void init(){
 	USART_InitStructure.USART_Parity = USART_Parity_No;
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART2, &USART_InitStructure);
-	USART_InvPinCmd(USART2,USART_InvPin_Tx,ENABLE);
-	USART_ITConfig(USART2,USART_IT_RXNE,ENABLE);
+	USART_Init(USART1, &USART_InitStructure);
+	//	USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
+	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
+//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+	USART_ITConfig(USART1,USART_IT_RXNE | USART_IT_FE | USART_IT_NE | USART_IT_ORE | USART_IT_ERR,ENABLE);
 //	USART1->CR1 |= USART_CR3_EIE;
 //	USART1->CR2 |= USART_CR2_TXINV;
 //	USART1->CR1 |= USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE ;
 //	USART_ReceiveData(USART1);
-	USART_Cmd(USART2,ENABLE);
+	USART_Cmd(USART1,ENABLE);
 
 	/* Enable USART2 IRQ */
 	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;

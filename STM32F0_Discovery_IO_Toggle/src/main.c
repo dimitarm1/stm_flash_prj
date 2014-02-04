@@ -406,7 +406,6 @@ int main(void)
 //		IWDG_ReloadCounter();
 //		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
-
 		ProcessButtons();
 		if(pre_time || main_time || cool_time) state = state_show_time; // Working now. Other functions disabled
 		switch (state){
@@ -1071,7 +1070,7 @@ void set_clima(int value){
 void usart_receive(void){
 
 	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
-	int data =  USART_ReceiveData(USART2);
+	int data =  USART_ReceiveData(USART1);
 	Gv_UART_Timeout = 500;
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
@@ -1079,7 +1078,7 @@ void usart_receive(void){
 		// Command
 		if(data == (0x80U | ((controller_address & 0x0fU)<<3U))){
 			data = (curr_status<<6)|curr_time;
-			USART_SendData(USART2,data);
+			USART_SendData(USART1,data);
 		}
 		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 1U)) //Command 1 - Start
 		{
@@ -1126,12 +1125,12 @@ void usart_receive(void){
 			rx_state = state_get_checksum;
 			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			data = checksum;
-			USART_SendData(USART2,data);
+			USART_SendData(USART1,data);
 		}
 
 
 	}
-//	USART_SendData(USART2,0x80);
+//	USART_SendData(USART1,0x80);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
