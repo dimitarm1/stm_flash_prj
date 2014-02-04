@@ -65,6 +65,9 @@ static int curr_status;
 static int prev_status;
 static int curr_time;
 static int flash_mode = 0;
+
+static uint16_t data = 0;
+
 static unsigned char  time_to_set = 0;
 static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
 static unsigned char  preset_pre_time = 7;
@@ -366,7 +369,7 @@ void show_digit(int digit){
 int main(void)
 {
 
-	init();
+	init_periph();
 
 	if (SysTick_Config(SystemCoreClock / (1000))){
 			while(1); // Capture error
@@ -401,8 +404,18 @@ int main(void)
 	update_status();
 	while (1)
 	{
+//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
+//			while(1);
+//			preset_pre_time = 7;
 
-		int delay_counter = 0;
+//		}
+//		static int data =  0;
+//		static int lastdata = 0;
+//		data = USART_ReceiveData(USART1);
+//		if(data != lastdata){
+//			lastdata = data;
+//		}
+//		int delay_counter = 0;
 //		IWDG_ReloadCounter();
 //		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
@@ -1070,13 +1083,14 @@ void set_clima(int value){
 void usart_receive(void){
 
 	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
-	int data =  USART_ReceiveData(USART1);
+//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
+	data =  USART_ReceiveData(USART1);
 	Gv_UART_Timeout = 500;
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
-	if (data & 0x80){
+	if ((data & 0x80)){
 		// Command
-		if(data == (0x80U | ((controller_address & 0x0fU)<<3U))){
+		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
 			data = (curr_status<<6)|curr_time;
 			USART_SendData(USART1,data);
 		}
@@ -1130,6 +1144,7 @@ void usart_receive(void){
 
 
 	}
+//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
 //	USART_SendData(USART1,0x80);
 }
 

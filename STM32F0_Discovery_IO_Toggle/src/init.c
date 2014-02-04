@@ -7,7 +7,7 @@
 #include "init.h"
 
 
-void init(){
+void init_periph(){
 	/*!< At this stage the microcontroller clock setting is already configured,
        this is done through SystemInit() function which is called from startup
        file (startup_stm32f0xx.s) before to branch to application main.
@@ -125,17 +125,17 @@ void init(){
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(USART1, &USART_InitStructure);
 	//	USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
-	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
+//	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
 //	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
-	USART_ITConfig(USART1,USART_IT_RXNE | USART_IT_FE | USART_IT_NE | USART_IT_ORE | USART_IT_ERR,ENABLE);
+	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
 //	USART1->CR1 |= USART_CR3_EIE;
 //	USART1->CR2 |= USART_CR2_TXINV;
 //	USART1->CR1 |= USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE ;
 //	USART_ReceiveData(USART1);
 	USART_Cmd(USART1,ENABLE);
 
-	/* Enable USART2 IRQ */
-	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+	/* Enable USART1 IRQ */
+	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 5;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);

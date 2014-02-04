@@ -15,6 +15,8 @@
 #include "stm32f0xx_usart.h"
 #include "stm32f0xx_flash.h"
 #include "stm32f0xx_spi.h"
+#include "stm32f0xx_tim.h"
+#include "stm32f0xx_misc.h"
 
 
 extern SPI_InitTypeDef 				SPI_InitStruct;
@@ -26,7 +28,7 @@ extern USART_InitTypeDef 			USART_InitStructure;
 extern USART_ClockInitTypeDef 		USART_ClockInitStruct;
 extern NVIC_InitTypeDef 			NVIC_InitStructure;
 
-extern void init();
+extern void init_periph();
 
 
 #endif /* INIT_H_ */
