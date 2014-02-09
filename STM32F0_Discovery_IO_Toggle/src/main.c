@@ -53,49 +53,49 @@
 /* Private variables ---------------------------------------------------------*/
 
 
-static const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
-static __IO uint32_t TimingDelay;
+ const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
+ __IO uint32_t TimingDelay;
 
 typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode}states;
-static states state;
+ states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
-static modes service_mode;
-static unsigned char controller_address = 0x0f;
-static int curr_status;
-static int prev_status;
-static int curr_time;
-static int flash_mode = 0;
+ modes service_mode;
+ unsigned char controller_address = 0x0f;
+ int curr_status;
+ int prev_status;
+ int curr_time;
+ int flash_mode = 0;
 
-static uint16_t data = 0;
+ uint16_t data = 0;
 
 static unsigned char  time_to_set = 0;
 static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
 static unsigned char  preset_pre_time = 7;
 static unsigned char  preset_cool_time = 3;
-static int start_counter = 0;
-static int last_button = 0;
-static int prev_button = 0;
-static int display_data;
-static int pre_time, main_time, cool_time;
+ int start_counter = 0;
+ int last_button = 0;
+ int prev_button = 0;
+ int display_data;
+ int pre_time, main_time, cool_time;
 unsigned int Gv_miliseconds = 0;
 int Gv_UART_Timeout = 500; // Timeout in mSec
-static int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-static int rx_state= 0;
-static int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
-static int minute_counter =0;
-static int zero_crossed = 0;
-static int auto_exit_fn = 0;
-static int aqua_fresh_level = 0;
-static int volume_level = 5;
-static int fan_level = 7;
+ int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+ int rx_state= 0;
+ int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+ int minute_counter =0;
+ int zero_crossed = 0;
+ int auto_exit_fn = 0;
+ int aqua_fresh_level = 0;
+ int volume_level = 5;
+ int fan_level = 7;
 
-static char digits[3];
+ char digits[3];
 // for Display:
-static int refresh_counter = 0;
-static int flash_counter = 0;
+ int refresh_counter = 0;
+ int flash_counter = 0;
 // for Display:
-static int led_counter = 0;
-static int digit_num = 0;
+ int led_counter = 0;
+ int digit_num = 0;
 typedef struct time_str{
 	uint8_t used_flag :8;
 	uint8_t hours_h   :8;
@@ -146,9 +146,9 @@ NVIC_InitTypeDef 			NVIC_InitStructure;
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
 {
-  TimingDelay = nTime;
+	TimingDelay = nTime;
 
-  while(TimingDelay != 0);
+	while(TimingDelay != 0);
 }
 
 void show_level(int level){
@@ -327,39 +327,39 @@ void show_digit(int digit){
 		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
 		GPIOF->BSRR = GPIO_BSRR_BS_5;
 		break;
-        case 0x0F:
-        default:
-                //empty
-//                GPIOA->BSRR = GPIO_BSRR_BS_3 ;
-//                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
-//                GPIOC->BSRR = GPIO_BSRR_BS_5;
-//                GPIOF->BSRR = GPIO_BSRR_BS_4;
-                break;
-        }
+	case 0x0F:
+	default:
+		//empty
+		//                GPIOA->BSRR = GPIO_BSRR_BS_3 ;
+		//                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		//                GPIOC->BSRR = GPIO_BSRR_BS_5;
+		//                GPIOF->BSRR = GPIO_BSRR_BS_4;
+		break;
+	}
 }
 
 /*
-* Outputs:
-* PA2 - Digit 0
-* PA1 - Digit 1
-* PA0 - Digit 2
-* PB2,PB1 - a
-* PC6,PC7 - b
-* PC4,PA7 - c
-* PA4,PF5 - d
-* PF4, PA3 - e
-* PB11,PB10 - f
-* PB0,PC5 - g
-* PA6,PA5 - DP
-*
-*
-* A
-* F B
-* G
-* E C
-* D
-* DP
-*/
+ * Outputs:
+ * PA2 - Digit 0
+ * PA1 - Digit 1
+ * PA0 - Digit 2
+ * PB2,PB1 - a
+ * PC6,PC7 - b
+ * PC4,PA7 - c
+ * PA4,PF5 - d
+ * PF4, PA3 - e
+ * PB11,PB10 - f
+ * PB0,PC5 - g
+ * PA6,PA5 - DP
+ *
+ *
+ * A
+ * F B
+ * G
+ * E C
+ * D
+ * DP
+ */
 
 /**
  * @brief  Main program.
@@ -372,9 +372,9 @@ int main(void)
 	init_periph();
 
 	if (SysTick_Config(SystemCoreClock / (1000))){
-			while(1); // Capture error
-		}
-		NVIC_SetPriority (SysTick_IRQn, 3);
+		while(1); // Capture error
+	}
+	NVIC_SetPriority (SysTick_IRQn, 3);
 
 	/*
 	 * commads:
@@ -404,20 +404,20 @@ int main(void)
 	update_status();
 	while (1)
 	{
-//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
-//			while(1);
-//			preset_pre_time = 7;
+		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
+		//			while(1);
+		//			preset_pre_time = 7;
 
-//		}
-//		static int data =  0;
-//		static int lastdata = 0;
-//		data = USART_ReceiveData(USART1);
-//		if(data != lastdata){
-//			lastdata = data;
-//		}
-//		int delay_counter = 0;
-//		IWDG_ReloadCounter();
-//		for (delay_counter = 0; delay_counter<500; delay_counter++);
+		//		}
+		//		static int data =  0;
+		//		static int lastdata = 0;
+		//		data = USART_ReceiveData(USART1);
+		//		if(data != lastdata){
+		//			lastdata = data;
+		//		}
+		//		int delay_counter = 0;
+		//		IWDG_ReloadCounter();
+		//		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
 		ProcessButtons();
 		if(pre_time || main_time || cool_time) state = state_show_time; // Working now. Other functions disabled
@@ -428,12 +428,12 @@ int main(void)
 				flash_mode = 0;
 				state = state_set_time;
 				display_data = ToBCD(time_to_set);
-//				display_data = ToBCD(last_button);
+				//				display_data = ToBCD(last_button);
 			} else {
 				state = state_show_time;
 				//				  time_to_set = 0;
 				display_data = ToBCD(main_time);
-//				display_data = ToBCD(last_button);
+				//				display_data = ToBCD(last_button);
 			}
 			break;
 		case state_show_hours:
@@ -477,19 +477,19 @@ int main(void)
 			display_data = 0x5;
 			break;
 		}
-//		show_digit(display_data);
+		//		show_digit(display_data);
 		if (state == state_show_time){
 			if(!pre_time && main_time){
 				// turn on lamps
-//				set_lamps(100);
-//				set_licevi_lamps(100);
-//				set_fan1(20);
-//				set_fan2(100);
+				//				set_lamps(100);
+				//				set_licevi_lamps(100);
+				//				set_fan1(20);
+				//				set_fan2(100);
 			} else	if(!pre_time && !main_time && cool_time){
-//				set_lamps(0);
-//				set_licevi_lamps(0);
-//				set_fan1(100);
-//				set_fan2(100);
+				//				set_lamps(0);
+				//				set_licevi_lamps(0);
+				//				set_fan1(100);
+				//				set_fan2(100);
 				// turn on all coolers
 			} else {
 				// turn off all
@@ -498,15 +498,100 @@ int main(void)
 				set_fan1(0);
 				set_fan2(0);
 				set_clima(0);
-				state = state_set_time;
+//				state = state_set_time;
 			}
 		}
-//
-//		while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET); // wAIT UNTIL RX BUFFER IS EMPTY
-//		int data =  USART_ReceiveData(USART1);
-//		USART_SendData(USART1,0x80);
-//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+		//
+		//		while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET); // wAIT UNTIL RX BUFFER IS EMPTY
+		//		int data =  USART_ReceiveData(USART1);
+		//		USART_SendData(USART1,0x80);
+		//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+		if(++led_counter>130){
+			static int current_button_read = 0;
+//			if(flash_counter%80 == 0){
+//						data = (STATUS_COOLING<<6)|4;
+//						USART_SendData(USART1,data);
+//			}
+			led_counter = 0;
+			digit_num++;
+			flash_counter++;
+			//		aqua_fresh_level = 0;
+			if(digit_num>4) {
+				digit_num = 0;
+				last_button = current_button_read;
+				current_button_read = 0;
+			}
+			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2|GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12; // Turn off the lights while changing them
+			GPIOC->BSRR = GPIO_BSRR_BR_10 | GPIO_BSRR_BR_13 ;
+			GPIOF->BSRR = GPIO_BSRR_BR_1 ;
+			GPIOA->BSRR = GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
+			if(digit_num<3){
+				show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+			} else {
+				show_digit(0x8);// DEBUG
 
+			}
+			if(flash_mode < 3 ||(flash_counter & 0x40)){
+
+				// Indicate pre_time by movind bars
+				if (pre_time){
+					volume_level = (flash_counter>>5) & 0x07;
+					fan_level = ((flash_counter>>5) & 0x07) +3;
+				}
+				else {
+					volume_level = 1;
+					fan_level = 1;
+				}
+
+				switch (digit_num){
+				case 0:
+					GPIOA->BSRR = GPIO_BSRR_BS_2 ;
+					//set Aqua 2 LED
+					if(aqua_fresh_level>0){
+						GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
+						GPIOC->BSRR = GPIO_BSRR_BS_10 ;
+					}
+					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+							((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
+					break;
+
+				case 1:
+					GPIOA->BSRR = GPIO_BSRR_BS_1 ;
+					//set Aqua 2 LEDs
+					if(aqua_fresh_level>1){
+						GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
+						GPIOC->BSRR = GPIO_BSRR_BS_10 ;
+					}
+					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+							((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
+
+					break;
+				case 2:
+					GPIOA->BSRR = GPIO_BSRR_BS_0 ;
+					//set Aqua 1 LEDs
+					if(aqua_fresh_level>1){
+						GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
+					}
+					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+							((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
+					break;
+				case 3:
+					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
+					show_level(volume_level);
+
+					break;
+				case 4:
+				default:
+					GPIOF->BSRR = GPIO_BSRR_BS_1 ;
+					show_level(fan_level);
+					break;
+				}
+			}
+			if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+				GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+			}
+		}
+		IWDG_ReloadCounter(); //DEBUG
 
 	}
 }
@@ -643,16 +728,16 @@ void ProcessButtons(void)
 						break;
 					}
 				} else {
-//					if(selected_led_bits & LED_FAN2_L){
-//						if(percent_fan2<100) percent_fan2=100;
-//						set_fan2(percent_fan2);
-//					} else if(selected_led_bits & LED_FAN1_L){
-//						if(percent_fan1<100) percent_fan1+=25;
-//						set_fan1(percent_fan1);
-//					} else if(selected_led_bits & LED_CLIMA_L){
-//						if(percent_clima<100) percent_clima=100;
-//						set_clima(percent_clima);
-//					}
+					//					if(selected_led_bits & LED_FAN2_L){
+					//						if(percent_fan2<100) percent_fan2=100;
+					//						set_fan2(percent_fan2);
+					//					} else if(selected_led_bits & LED_FAN1_L){
+					//						if(percent_fan1<100) percent_fan1+=25;
+					//						set_fan1(percent_fan1);
+					//					} else if(selected_led_bits & LED_CLIMA_L){
+					//						if(percent_clima<100) percent_clima=100;
+					//						set_clima(percent_clima);
+					//					}
 				}
 
 
@@ -691,18 +776,18 @@ void ProcessButtons(void)
 						break;
 					}
 				}
-//				if(selected_led_bits & LED_FAN2_L){
-//					if(percent_fan2) percent_fan2 = 0;
-//					set_fan2(percent_fan2);
-//				} else if(selected_led_bits & LED_FAN1_L){
-//					if(percent_fan1) percent_fan1-=25;
-//					set_fan1(percent_fan1);
-//				}
-//				else if(selected_led_bits & LED_LICEVI_L){
-//					if(percent_licevi) percent_licevi=0;
-//					set_licevi_lamps(percent_licevi);
-//					update_status();
-//				}
+				//				if(selected_led_bits & LED_FAN2_L){
+				//					if(percent_fan2) percent_fan2 = 0;
+				//					set_fan2(percent_fan2);
+				//				} else if(selected_led_bits & LED_FAN1_L){
+				//					if(percent_fan1) percent_fan1-=25;
+				//					set_fan1(percent_fan1);
+				//				}
+				//				else if(selected_led_bits & LED_LICEVI_L){
+				//					if(percent_licevi) percent_licevi=0;
+				//					set_licevi_lamps(percent_licevi);
+				//					update_status();
+				//				}
 
 				break;
 			default:
@@ -740,7 +825,7 @@ void ProcessButtons(void)
 		if(time_to_set && state == state_set_time && start_counter == START_DELAY){
 			// Do start
 			state = state_show_time;
-//			send_time();
+			//			send_time();
 			//			start_counter = 0;
 		}
 		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
@@ -749,7 +834,7 @@ void ProcessButtons(void)
 			time_to_set = 0;
 			preset_pre_time = 0;
 			preset_cool_time = 0;
-//			send_time();
+			//			send_time();
 			read_eeprom();
 			//			start_counter = 0;
 
@@ -861,7 +946,6 @@ void update_status(void){
 }
 void TimingDelay_Decrement(void)
 {
-	static int current_button_read = 0;
 	if (Gv_SystickCounter != 0x00)
 	{
 		Gv_SystickCounter--;
@@ -886,93 +970,13 @@ void TimingDelay_Decrement(void)
 		update_status();
 	}
 	if  (Gv_UART_Timeout){
-		 Gv_UART_Timeout--;
-		 if(! Gv_UART_Timeout) {
-			 rx_state = 0;
-			 pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-		 }
-	}
-	if(++led_counter>3){
-		led_counter = 0;
-		digit_num++;
-		flash_counter++;
-//		aqua_fresh_level = 0;
-		if(digit_num>4) {
-			digit_num = 0;
-			last_button = current_button_read;
-			current_button_read = 0;
-		}
-		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2|GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12; // Turn off the lights while changing them
-		GPIOC->BSRR = GPIO_BSRR_BR_10 | GPIO_BSRR_BR_13 ;
-		GPIOF->BSRR = GPIO_BSRR_BR_1 ;
-		GPIOA->BSRR = GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
-		if(digit_num<3){
-			show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
-		} else {
-			show_digit(0x8);// DEBUG
-
-		}
-		if(flash_mode < 3 ||(flash_counter & 0x40)){
-
-			// Indicate pre_time by movind bars
-			if (pre_time){
-				volume_level = (flash_counter>>5) & 0x07;
-				fan_level = ((flash_counter>>5) & 0x07) +3;
-			}
-			else {
-				volume_level = 1;
-				fan_level = 1;
-			}
-
-			switch (digit_num){
-			case 0:
-				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
-				//set Aqua 2 LED
-				if(aqua_fresh_level>0){
-					GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
-					GPIOC->BSRR = GPIO_BSRR_BS_10 ;
-				}
-				current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-						((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
-				break;
-
-			case 1:
-				GPIOA->BSRR = GPIO_BSRR_BS_1 ;
-				//set Aqua 2 LEDs
-				if(aqua_fresh_level>1){
-					GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
-					GPIOC->BSRR = GPIO_BSRR_BS_10 ;
-				}
-				current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-										((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
-
-				break;
-			case 2:
-				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-				//set Aqua 1 LEDs
-				if(aqua_fresh_level>1){
-					GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
-				}
-				current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-														((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
-				break;
-			case 3:
-				GPIOC->BSRR = GPIO_BSRR_BS_13 ;
-				show_level(volume_level);
-
-				break;
-			case 4:
-			default:
-				GPIOF->BSRR = GPIO_BSRR_BS_1 ;
-				show_level(fan_level);
-				break;
-			}
-		}
-		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+		Gv_UART_Timeout--;
+		if(! Gv_UART_Timeout) {
+			rx_state = 0;
+			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		}
 	}
-	IWDG_ReloadCounter(); //DEBUG
+
 
 
 }
@@ -1039,17 +1043,17 @@ void write_eeprom(void){
 	//	FLASH_Lock();
 }
 void set_lamps(int value){
-//	while(!zero_crossed);
+	//	while(!zero_crossed);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
 	else GPIOC->BRR = GPIO_BSRR_BS_8;
 }
 void set_licevi_lamps(int value){
-//	while(!zero_crossed);
+	//	while(!zero_crossed);
 	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_14;
 	else GPIOB->BRR = GPIO_BSRR_BS_14;
 }
 void set_fan2(int value){
-//	while(!zero_crossed);
+	//	while(!zero_crossed);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_14;
 	else GPIOC->BRR = GPIO_BSRR_BS_14;
 }
@@ -1076,14 +1080,14 @@ void set_fan1(int value){
 
 }
 void set_clima(int value){
-//	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
-//	else GPIOA->BRR = GPIO_BSRR_BS_11;
+	//	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
+	//	else GPIOA->BRR = GPIO_BSRR_BS_11;
 }
 
 void usart_receive(void){
 
 	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
-//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
+	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
 	data =  USART_ReceiveData(USART1);
 	Gv_UART_Timeout = 500;
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
@@ -1092,6 +1096,7 @@ void usart_receive(void){
 		// Command
 		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
 			data = (curr_status<<6)|curr_time;
+//			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
 		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 1U)) //Command 1 - Start
@@ -1144,8 +1149,8 @@ void usart_receive(void){
 
 
 	}
-//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
-//	USART_SendData(USART1,0x80);
+	//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+	//	USART_SendData(USART1,0x80);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

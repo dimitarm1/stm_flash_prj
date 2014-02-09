@@ -124,7 +124,7 @@ void init_periph(){
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(USART1, &USART_InitStructure);
-	//	USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
+//		USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
 //	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
 //	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
 	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
