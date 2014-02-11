@@ -527,6 +527,7 @@ int main(void)
 			GPIOA->BSRR = GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
 			if(digit_num<3){
 				show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+//				show_digit(last_button>>(digit_num*4));
 			} else {
 				show_digit(0x8);// DEBUG
 
@@ -639,7 +640,7 @@ int FromBCD(int value){
 void ProcessButtons(void)
 {
 
-	if (last_button < 0x1f){
+	if (last_button ){
 		if(last_button != prev_button){
 			switch(last_button){
 			case BUTTON_START:
@@ -678,14 +679,22 @@ void ProcessButtons(void)
 						state = state_show_hours;
 					}
 				}
-
-
 				break;
 			case BUTTON_FAN_PLUS:
 				auto_exit_fn = 20;
+				if(curr_status == STATUS_WORKING){
+					if(fan_level<10){
+						fan_level++;
+					}
+				}
 				break;
 			case BUTTON_FAN_MINUS:
 				auto_exit_fn = 20;
+				if(curr_status == STATUS_WORKING){
+					if(fan_level>0){
+						fan_level--;
+					}
+				}
 				break;
 			case BUTTON_AQUA:
 				if(minute_counter){
@@ -694,9 +703,19 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_VOL_PLUS:
 				auto_exit_fn = 20;
+				if(curr_status == STATUS_WORKING){
+					if(volume_level<10){
+						volume_level++;
+					}
+				}
 				break;
 			case BUTTON_VOL_MINUS:
 				auto_exit_fn = 20;
+				if(curr_status == STATUS_WORKING){
+					if(volume_level>0){
+						volume_level--;
+					}
+				}
 				break;
 			case BUTTON_PLUS:
 			{
@@ -1054,8 +1073,10 @@ void set_licevi_lamps(int value){
 }
 void set_fan2(int value){
 	//	while(!zero_crossed);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_14;
-	else GPIOC->BRR = GPIO_BSRR_BS_14;
+//	if (value);
+//		GPIOC->BSRR = GPIO_BSRR_BS_14;
+//	else
+//		GPIOC->BSRR = GPIO_BSRR_BR_14;
 }
 void set_fan1(int value){
 	uint32_t tim_base=5;
