@@ -28,6 +28,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "defines.h"
 #include "init.h"
+
 #include "stm32f0xx_iwdg.h"
 
 
@@ -84,7 +85,6 @@ int Gv_UART_Timeout = 500; // Timeout in mSec
  int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
  int minute_counter =0;
  int zero_crossed = 0;
- int auto_exit_fn = 0;
  int aqua_fresh_level = 0;
  int volume_level = 5;
  int fan_level = 7;
@@ -115,7 +115,6 @@ typedef struct flash_struct{
 
 /* Private function prototypes -----------------------------------------------*/
 void SystickDelay(__IO uint32_t nTime);
-void send_status(void);
 int ToBCD(int value);
 void write_eeprom(void);
 void read_eeprom(void);
@@ -131,7 +130,6 @@ void set_clima(int value);
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
-extern __IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition
 
 
 SPI_InitTypeDef 			SPI_InitStruct;
@@ -540,8 +538,7 @@ int main(void)
 					fan_level = ((flash_counter>>5) & 0x07) +3;
 				}
 				else {
-					volume_level = 1;
-					fan_level = 1;
+
 				}
 
 				switch (digit_num){
@@ -648,6 +645,8 @@ void ProcessButtons(void)
 					//send_start();
 					Gv_miliseconds = 0;
 					pre_time = 0;
+					volume_level = 6;
+					fan_level = 7;
 					state = state_show_time;
 					update_status();
 				}
@@ -669,8 +668,8 @@ void ProcessButtons(void)
 								work_hours[1] = 0;
 								work_hours[2] = 0;
 							}
-							write_eeprom();
-							read_eeprom();
+//							write_eeprom();
+//							read_eeprom();
 							start_counter = 0;
 							service_mode = mode_null;
 						} else {
@@ -680,8 +679,12 @@ void ProcessButtons(void)
 					}
 				}
 				break;
+			case BUTTON_STOP:
+				if(curr_status == STATUS_WORKING){
+					main_time = 0;
+				}
+				break;
 			case BUTTON_FAN_PLUS:
-				auto_exit_fn = 20;
 				if(curr_status == STATUS_WORKING){
 					if(fan_level<10){
 						fan_level++;
@@ -689,7 +692,6 @@ void ProcessButtons(void)
 				}
 				break;
 			case BUTTON_FAN_MINUS:
-				auto_exit_fn = 20;
 				if(curr_status == STATUS_WORKING){
 					if(fan_level>0){
 						fan_level--;
@@ -699,10 +701,8 @@ void ProcessButtons(void)
 			case BUTTON_AQUA:
 				if(minute_counter){
 				}
-				auto_exit_fn = 20;
 				break;
 			case BUTTON_VOL_PLUS:
-				auto_exit_fn = 20;
 				if(curr_status == STATUS_WORKING){
 					if(volume_level<10){
 						volume_level++;
@@ -710,7 +710,6 @@ void ProcessButtons(void)
 				}
 				break;
 			case BUTTON_VOL_MINUS:
-				auto_exit_fn = 20;
 				if(curr_status == STATUS_WORKING){
 					if(volume_level>0){
 						volume_level--;
@@ -719,7 +718,6 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_PLUS:
 			{
-				auto_exit_fn = 20;
 
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -727,9 +725,7 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set < 25){
-						if(!Gv_UART_Timeout)
-							time_to_set ++;
-						//			if((time_to_set & 0x0F)>9) time_to_set +=6;
+						if(!Gv_UART_Timeout) time_to_set++;
 					}
 				}
 				else if(state > state_enter_service){
@@ -746,32 +742,11 @@ void ProcessButtons(void)
 					default:
 						break;
 					}
-				} else {
-					//					if(selected_led_bits & LED_FAN2_L){
-					//						if(percent_fan2<100) percent_fan2=100;
-					//						set_fan2(percent_fan2);
-					//					} else if(selected_led_bits & LED_FAN1_L){
-					//						if(percent_fan1<100) percent_fan1+=25;
-					//						set_fan1(percent_fan1);
-					//					} else if(selected_led_bits & LED_CLIMA_L){
-					//						if(percent_clima<100) percent_clima=100;
-					//						set_clima(percent_clima);
-					//					}
 				}
-
-
-
 
 			}
 			break;
 			case BUTTON_MINUS:
-				//				if(  led_bits){
-				//					led_bits = led_bits >>1;
-				//				} else {
-				//					led_bits = 0x01 << 31;
-				//				}
-				auto_exit_fn = 20;
-
 				if(state == state_show_hours) {
 					state = state_set_time;
 					start_counter = 0;
@@ -846,17 +821,6 @@ void ProcessButtons(void)
 			state = state_show_time;
 			//			send_time();
 			//			start_counter = 0;
-		}
-		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
-			// Cancel start
-			state = state_show_time;
-			time_to_set = 0;
-			preset_pre_time = 0;
-			preset_cool_time = 0;
-			//			send_time();
-			read_eeprom();
-			//			start_counter = 0;
-
 		}
 	}
 	else
@@ -972,11 +936,6 @@ void TimingDelay_Decrement(void)
 	if( ++ refresh_counter>200){
 		refresh_counter = 0;
 		flash_counter++;
-		if(auto_exit_fn)
-		{
-			auto_exit_fn--;
-			if (!auto_exit_fn);
-		}
 	}
 	if(Gv_miliseconds++>60000){
 		Gv_miliseconds = 0;

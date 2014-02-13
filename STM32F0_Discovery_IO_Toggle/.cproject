@@ -3,7 +3,13 @@
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="com.atollic.truestudio.exe.debug.250675032.27485740">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.atollic.truestudio.exe.debug.250675032.27485740" moduleId="org.eclipse.cdt.core.settings" name="gnueabi-debug">
-				<externalSettings/>
+				<externalSettings>
+					<externalSetting>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/STM32F0_Discovery_IO_Toggle"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/STM32F0_Discovery_IO_Toggle/gnueabi-debug"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="STM32F0_Discovery_IO_Toggle" srcPrefixMapping="" srcRootPath=""/>
+					</externalSetting>
+				</externalSettings>
 				<extensions>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
@@ -14,45 +20,45 @@
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="arm gnueabi-debug" id="com.atollic.truestudio.exe.debug.250675032.27485740" name="gnueabi-debug" parent="com.atollic.truestudio.exe.debug.250675032.27485740">
 					<folderInfo id="com.atollic.truestudio.exe.debug.250675032.27485740." name="/" resourcePath="">
-						<toolChain id="cdt.managedbuild.toolchain.gnu.base.1834536137" name="Linux GCC" nonInternalBuilderId="cdt.managedbuild.target.gnu.builder.base" superClass="cdt.managedbuild.toolchain.gnu.base">
-							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.gnu.platform.base.2106281087" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
-							<builder autoBuildTarget="all" buildPath="${workspace_loc:/STM32F0_Discovery_IO_Toggle}/gnueabi-debug" cleanBuildTarget="clean" id="org.eclipse.cdt.build.core.internal.builder.1910265536" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CDT Internal Builder" superClass="org.eclipse.cdt.build.core.internal.builder"/>
-							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1038227769" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1642382164" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base"/>
-							<tool command="arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.compiler.base.391347697" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
-								<option id="gnu.c.compiler.option.include.paths.500506512" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="../src"/>
-									<listOptionValue builtIn="false" value="&quot;..\Libraries\CMSIS\Include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;..\Libraries\STM32F0xx_StdPeriph_Driver\inc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;..\Libraries\CMSIS\Device\ST\STM32F0xx\Include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;..\Utilities\STM32F0-Discovery&quot;"/>
-								</option>
-								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1854345059" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.base.1675574746" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.base">
+							<targetPlatform archList="all" id="cdt.managedbuild.target.gnu.platform.base.226103840" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
+							<builder buildPath="${workspace_loc:/STM32F0_Discovery_IO_Toggle}/gnueabi-debug" id="org.eclipse.cdt.build.core.internal.builder.175360654" keepEnvironmentInBuildfile="false" name="CDT Internal Builder" superClass="org.eclipse.cdt.build.core.internal.builder"/>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1423783101" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.434750650" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base"/>
+							<tool command="D:\gcc-arm-none-eabi-4_7-131005\bin\arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.compiler.base.615638703" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+								<option id="gnu.c.compiler.option.misc.other.279969798" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-mcpu=cortex-m0 -mthumb -Wall -ffunction-sections -c" valueType="string"/>
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1975095856" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="STM32F051R4"/>
+									<listOptionValue builtIn="false" value="_USE_STDPERIPH_DRIVER"/>
 									<listOptionValue builtIn="false" value="STM32F0XX"/>
-									<listOptionValue builtIn="false" value="USE_STM32F0_DISCOVERY"/>
-									<listOptionValue builtIn="false" value="HSI_VALUE=8000000"/>
-									<listOptionValue builtIn="false" value="USE_STDPERIPH_DRIVER"/>
+									<listOptionValue builtIn="false" value="STM32F0XX_MD"/>
 								</option>
-								<option id="gnu.c.compiler.option.misc.other.1838851040" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -mthumb -mcpu=cortex-m0 -std=gnu90" valueType="string"/>
-								<option id="gnu.c.compiler.option.optimization.level.1623779338" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.none" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.optimization.flags.878949188" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-ffunction-sections -fdata-sections" valueType="string"/>
-								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1864229254" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+								<option id="gnu.c.compiler.option.include.paths.690456304" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/CMSIS/Device/ST/STM32F0xx}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/STM32F0xx_StdPeriph_Driver/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/CMSIS/Device/ST}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/CMSIS/Device/ST/STM32F0xx/Include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/CMSIS/Include}&quot;"/>
+								</option>
+								<option id="gnu.c.compiler.option.optimization.level.923729896" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.none" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2077935168" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
-							<tool command="arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.linker.base.364472985" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base">
-								<option id="gnu.c.link.option.libs.431547591" name="Libraries (-l)" superClass="gnu.c.link.option.libs"/>
-								<option id="gnu.c.link.option.ldflags.1311512986" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="-lm -o STM32F0_Discovery_IO_Toggle.elf -mthumb -mcpu=cortex-m0 -Wl,--start-group -lc -lm -Wl,--end-group -static -Wl,-cref,-u,Reset_Handler -Wl,-Map=STM32F0_Discovery_IO_Toggle.map -Wl,--gc-sections -Wl,--defsym=malloc_getpagesize_P=0x1000 " valueType="string"/>
-								<option id="gnu.c.link.option.other.1875033011" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">
-									<listOptionValue builtIn="false" value="-T..\stm32_flash.ld "/>
-								</option>
-								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.177049467" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
+							<tool command="D:\gcc-arm-none-eabi-4_7-131005\bin\arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.c.linker.base.806740164" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base">
+								<option defaultValue="true" id="gnu.c.link.option.shared.1616659901" name="Shared (-shared)" superClass="gnu.c.link.option.shared" value="false" valueType="boolean"/>
+								<option id="gnu.c.link.option.ldflags.1415691025" name="Linker flags" superClass="gnu.c.link.option.ldflags" value=" -mcpu=cortex-m0 -mthumb -g -Wl,-Map=stm_discovery.map -O0 -Wl,--gc-sections -Wl,-TD:/stm_flash_prj/stm32f0_discovery_io_toggle/stm32_flash.ld" valueType="string"/>
+								<option id="gnu.c.link.option.nodeflibs.1278156920" name="Do not use default libraries (-nodefaultlibs)" superClass="gnu.c.link.option.nodeflibs" value="false" valueType="boolean"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.272093914" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1740878957" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base"/>
-							<tool command="arm-none-eabi-gcc.exe" id="cdt.managedbuild.tool.gnu.assembler.base.652852400" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
-								<option id="gnu.both.asm.option.flags.1111641142" name="Assembler flags" superClass="gnu.both.asm.option.flags" value="-c -mthumb -mcpu=cortex-m0 -g -Wa,--warn -x assembler-with-cpp" valueType="string"/>
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1482179264" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.912436095" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base">
+								<option defaultValue="true" id="gnu.cpp.link.option.shared.879089268" name="Shared (-shared)" superClass="gnu.cpp.link.option.shared" valueType="boolean"/>
+							</tool>
+							<tool command="D:\gcc-arm-none-eabi-4_7-131005\bin\arm-none-eabi-as" id="cdt.managedbuild.tool.gnu.assembler.base.717574015" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1322866638" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
@@ -82,8 +88,36 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+		<buildTargets>
+			<target name="discovery" path="src" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildArguments/>
+				<buildTarget>discovery</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+		</buildTargets>
+	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.debug.250675032.27485740;com.atollic.truestudio.exe.debug.250675032.27485740.;cdt.managedbuild.tool.gnu.cross.c.compiler.1278448315;cdt.managedbuild.tool.gnu.c.compiler.input.1248210037">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD &quot;${plugin_state_location}/specs.c&quot;" command="D:\CodeSourcery\Sourcery_G_Lite\bin\arm-none-eabi-gcc.exe" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.debug.250675032.27485740;com.atollic.truestudio.exe.debug.250675032.27485740.;cdt.managedbuild.tool.gnu.cross.c.compiler.1576839625;cdt.managedbuild.tool.gnu.c.compiler.input.2130590941">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.debug.302578412;cdt.managedbuild.config.gnu.cross.exe.debug.302578412.;cdt.managedbuild.tool.gnu.cross.c.compiler.1032437114;cdt.managedbuild.tool.gnu.c.compiler.input.1998716356">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
@@ -100,17 +134,18 @@
 				</scannerInfoProvider>
 			</profile>
 		</scannerConfigBuildInfo>
-	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
-		<buildTargets>
-			<target name="discovery" path="src" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>make</buildCommand>
-				<buildArguments/>
-				<buildTarget>discovery</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-		</buildTargets>
+		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.debug.250675032.27485740;com.atollic.truestudio.exe.debug.250675032.27485740.;cdt.managedbuild.tool.gnu.c.compiler.base.615638703;cdt.managedbuild.tool.gnu.c.compiler.input.2077935168">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath="D:/stm_flash_prj/STM32F0_Discovery_IO_Toggle/gnueabi-debug/STM32F0_Discovery_IO_Toggle"/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD &quot;${plugin_state_location}/specs.c&quot;" command="D:\gcc-arm-none-eabi-4_7-131005\bin\arm-none-eabi-gcc.exe" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

@@ -6,9 +6,9 @@
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="false"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value="${workspace_loc:\STM32F0_Discovery_IO_Toggle\gnueabi-debug\STM32F0_Discovery_IO_Toggle.elf}"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value=""/>
-<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value="monitor reset &#13;&#10;monitor halt&#13;&#10;set remote hardware-breakpoint-limit 4&#13;&#10;set remote hardware-watchpoint-limit 2&#13;&#10;define hook-step&#13;&#10;     mon cortex_m maskisr on&#13;&#10;end&#13;&#10;     define hookpost-step&#13;&#10;     mon cortex_m maskisr off&#13;&#10;end&#13;&#10;set host-charset CP1252&#13;&#10;set target-charset CP1252&#13;&#10;monitor flash probe 0&#13;&#10;monitor stm32x mass_erase 0&#13;&#10;monitor flash erase_check 0&#13;&#10;monitor soft_reset_halt"/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value="monitor reset halt&#13;&#10;set remote hardware-breakpoint-limit 4&#13;&#10;set remote hardware-watchpoint-limit 2&#13;&#10;define hook-step&#13;&#10;     mon cortex_m maskisr on&#13;&#10;end&#13;&#10;     define hookpost-step&#13;&#10;     mon cortex_m maskisr off&#13;&#10;end&#13;&#10;set host-charset CP1252&#13;&#10;set target-charset CP1252&#13;&#10;#monitor poll&#13;&#10;monitor flash protect 0 0 127 off&#13;&#10;monitor flash probe 0&#13;&#10;monitor stm32x mass_erase 0&#13;&#10;monitor flash erase_check 0&#13;&#10;monitor soft_reset_halt"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.ipAddress" value="localhost"/>
-<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDevice" value="Generic TCP/IP"/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDevice" value="OpenOCD (via pipe)"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadImage" value="true"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadSymbols" value="true"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.pcRegister" value=""/>
@@ -37,7 +37,7 @@
 <stringAttribute key="org.eclipse.cdt.launch.FORMAT" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&lt;contentList/&gt;"/>
 <stringAttribute key="org.eclipse.cdt.launch.GLOBAL_VARIABLES" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#13;&#10;&lt;globalVariableList/&gt;&#13;&#10;"/>
 <stringAttribute key="org.eclipse.cdt.launch.MEMORY_BLOCKS" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#13;&#10;&lt;memoryBlockExpressionList/&gt;&#13;&#10;"/>
-<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="gnueabi-debug/STM32F0_Discovery_IO_Toggle.elf"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="gnueabi-debug\STM32F0_Discovery_IO_Toggle.elf"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="STM32F0_Discovery_IO_Toggle"/>
 <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value="com.atollic.truestudio.exe.debug.250675032.27485740"/>
