@@ -17,6 +17,8 @@
 #include "stm32f0xx_spi.h"
 #include "stm32f0xx_tim.h"
 #include "stm32f0xx_misc.h"
+#include "stm32f0xx_exti.h"
+#include "stm32f0xx_syscfg.h"
 
 
 extern SPI_InitTypeDef 				SPI_InitStruct;
@@ -27,6 +29,7 @@ extern GPIO_InitTypeDef        		GPIO_InitStructure;
 extern USART_InitTypeDef 			USART_InitStructure;
 extern USART_ClockInitTypeDef 		USART_ClockInitStruct;
 extern NVIC_InitTypeDef 			NVIC_InitStructure;
+extern EXTI_InitTypeDef 			EXTI_InitStructure;
 
 extern void init_periph();
 

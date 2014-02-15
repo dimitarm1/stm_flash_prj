@@ -137,6 +137,7 @@ TIM_TimeBaseInitTypeDef  	TIM_TimeBaseStructure;
 TIM_OCInitTypeDef  			TIM_OCInitStructure;
 TIM_ICInitTypeDef  			TIM_ICInitStructure;
 GPIO_InitTypeDef        	GPIO_InitStructure;
+EXTI_InitTypeDef   			EXTI_InitStructure;
 USART_InitTypeDef 			USART_InitStructure;
 USART_ClockInitTypeDef 		USART_ClockInitStruct;
 NVIC_InitTypeDef 			NVIC_InitStructure;
@@ -594,18 +595,21 @@ int main(void)
 	}
 }
 
+/**
+  * @brief  This function handles External line 0 interrupt request.
+  * @param  None
+  * @retval None
+  */
+void EXTI0_1_IRQHandler(void)
+{
+  if(EXTI_GetITStatus(EXTI_Line0) != RESET)
+  {
 
-void TIM3_IRQHandler() {
-	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
-	{
-		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
-		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
-			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
-		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-		TIM_ICInit(TIM2, &TIM_ICInitStructure);
-	}
-	zero_crossed = 1;
-
+    /* Clear the EXTI line 0 pending bit */
+    EXTI_ClearITPendingBit(EXTI_Line0);
+//    Start Timer...
+  }
+  zero_crossed = 1;
 }
 
 int ToBCD(int value){
