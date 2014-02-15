@@ -68,26 +68,25 @@ typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_tim
  int flash_mode = 0;
 
  uint16_t data = 0;
-
-static unsigned char  time_to_set = 0;
-static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
-static unsigned char  preset_pre_time = 7;
-static unsigned char  preset_cool_time = 3;
- int start_counter = 0;
- int last_button = 0;
- int prev_button = 0;
- int display_data;
- int pre_time, main_time, cool_time;
+unsigned char  time_to_set = 0;
+unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
+unsigned char  preset_pre_time = 7;
+unsigned char  preset_cool_time = 3;
+int start_counter = 0;
+int last_button = 0;
+int prev_button = 0;
+int display_data;
+int pre_time, main_time, cool_time;
 unsigned int Gv_miliseconds = 0;
 int Gv_UART_Timeout = 500; // Timeout in mSec
- int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
- int rx_state= 0;
- int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
- int minute_counter =0;
- int zero_crossed = 0;
- int aqua_fresh_level = 0;
- int volume_level = 5;
- int fan_level = 7;
+int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+int rx_state= 0;
+int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+int minute_counter =0;
+int zero_crossed = 0;
+int aqua_fresh_level = 0;
+int volume_level = 5;
+int fan_level = 7;
 
  char digits[3];
 // for Display:
@@ -122,10 +121,10 @@ void TimingDelay_Decrement(void);
 void ProcessButtons(void);
 void update_status(void);
 void set_lamps(int value);
-void set_licevi_lamps(int value);
+void set_colarium_lamps(int value);
 void set_fan1(int value);
 void set_fan2(int value);
-void set_clima(int value);
+void set_aquafresh(int value);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -480,23 +479,24 @@ int main(void)
 		if (state == state_show_time){
 			if(!pre_time && main_time){
 				// turn on lamps
-				//				set_lamps(100);
-				//				set_licevi_lamps(100);
-				//				set_fan1(20);
-				//				set_fan2(100);
+				set_lamps(1);
+				set_colarium_lamps(1);
+				percent_fan1 = 45;
+				set_fan2(1);
 			} else	if(!pre_time && !main_time && cool_time){
-				//				set_lamps(0);
-				//				set_licevi_lamps(0);
-				//				set_fan1(100);
-				//				set_fan2(100);
+				set_lamps(0);
+				set_colarium_lamps(0);
+				percent_fan1 = 100;
+				set_fan2(1);
 				// turn on all coolers
 			} else {
 				// turn off all
 				set_lamps(0);
-				set_licevi_lamps(0);
+				set_colarium_lamps(0);
+				percent_fan1 = 0;
 				set_fan1(0);
 				set_fan2(0);
-				set_clima(0);
+				set_aquafresh(0);
 //				state = state_set_time;
 			}
 		}
@@ -591,7 +591,6 @@ int main(void)
 			}
 		}
 		IWDG_ReloadCounter(); //DEBUG
-
 	}
 }
 
@@ -604,12 +603,14 @@ void EXTI0_1_IRQHandler(void)
 {
   if(EXTI_GetITStatus(EXTI_Line0) != RESET)
   {
-
-    /* Clear the EXTI line 0 pending bit */
-    EXTI_ClearITPendingBit(EXTI_Line0);
-//    Start Timer...
+	  /* Clear the EXTI line 0 pending bit */
+	  EXTI_ClearITPendingBit(EXTI_Line0);
+	  //    Start Timer...
+	  zero_crossed = 100; //Downcounter to next pulse
+	  if(percent_fan1){
+		  set_fan1(1);
+	  }
   }
-  zero_crossed = 1;
 }
 
 int ToBCD(int value){
@@ -651,6 +652,7 @@ void ProcessButtons(void)
 					pre_time = 0;
 					volume_level = 6;
 					fan_level = 7;
+					percent_fan1 = fan_level * 10;
 					state = state_show_time;
 					update_status();
 				}
@@ -692,6 +694,7 @@ void ProcessButtons(void)
 				if(curr_status == STATUS_WORKING){
 					if(fan_level<10){
 						fan_level++;
+						percent_fan1 = fan_level * 10;
 					}
 				}
 				break;
@@ -699,6 +702,7 @@ void ProcessButtons(void)
 				if(curr_status == STATUS_WORKING){
 					if(fan_level>0){
 						fan_level--;
+						percent_fan1 = fan_level * 10;
 					}
 				}
 				break;
@@ -863,29 +867,29 @@ void ProcessButtons(void)
 				}
 				write_eeprom();
 				time_to_set = 0;
-				percent_clima = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
+				percent_aquafresh = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
 				zero_crossed = 0;
 				set_lamps(100);
-				set_licevi_lamps(percent_licevi);
+				set_colarium_lamps(percent_licevi);
 				set_fan1(percent_fan1);
 				set_fan2(percent_fan2);
-				set_clima(percent_clima);
+				set_aquafresh(percent_aquafresh);
 			}
 			if (curr_status == STATUS_COOLING){
 				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
-				set_lamps(0);
-				set_licevi_lamps(percent_licevi);
+//				set_lamps(0);
+				set_colarium_lamps(percent_licevi);
 				set_fan1(percent_fan1);
 				set_fan2(percent_fan2);
-				set_clima(percent_clima);
+				set_aquafresh(percent_aquafresh);
 			}
 			if (curr_status == STATUS_FREE){
-				percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
-				set_lamps(0);
-				set_licevi_lamps(percent_licevi);
+				percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+//				set_lamps(0);
+				set_colarium_lamps(percent_licevi);
 				set_fan1(percent_fan1);
 				set_fan2(percent_fan2);
-				set_clima(percent_clima);
+				set_aquafresh(percent_aquafresh);
 				minute_counter = 0;
 			}
 			prev_status = curr_status;
@@ -958,9 +962,8 @@ void TimingDelay_Decrement(void)
 			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		}
 	}
-
-
-
+	if(zero_crossed) zero_crossed-=5;
+	if(percent_fan1) set_fan1(zero_crossed < percent_fan1);
 }
 
 
@@ -1029,43 +1032,28 @@ void set_lamps(int value){
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
 	else GPIOC->BRR = GPIO_BSRR_BS_8;
 }
-void set_licevi_lamps(int value){
+void set_colarium_lamps(int value){
 	//	while(!zero_crossed);
-	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_14;
-	else GPIOB->BRR = GPIO_BSRR_BS_14;
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+	else GPIOC->BRR = GPIO_BSRR_BS_9;
 }
 void set_fan2(int value){
-	//	while(!zero_crossed);
-//	if (value);
-//		GPIOC->BSRR = GPIO_BSRR_BS_14;
-//	else
-//		GPIOC->BSRR = GPIO_BSRR_BR_14;
+	if (value)
+		GPIOC->BSRR = GPIO_BSRR_BS_14;
+	else
+		GPIOC->BSRR = GPIO_BSRR_BR_14;
 }
 void set_fan1(int value){
-	uint32_t tim_base=5;
-	TIM_Cmd(TIM3, DISABLE);
-
-	if (value == 100) tim_base = 5;
-	if (value == 75) tim_base = 40;
-	if (value == 50) tim_base = 49;
-	if (value == 25) tim_base = 58;
-	TIM_TimeBaseStructure.TIM_Period = tim_base;
-	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
-
-	/* TIM2 PWM2 Mode configuration: Channel4 */
-	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
-	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
-	else  TIM_OCInitStructure.TIM_Pulse = 9;
-
-	TIM_OC4Init(TIM3, &TIM_OCInitStructure);
-	TIM_Cmd(TIM3, ENABLE);
+	if (value)
+		GPIOB->BSRR = GPIO_BSRR_BS_4;
+	else
+		GPIOB->BSRR = GPIO_BSRR_BR_4;
 
 }
-void set_clima(int value){
-	//	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
-	//	else GPIOA->BRR = GPIO_BSRR_BS_11;
+void set_aquafresh(int value){
+	return;
+	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_5;
+	else GPIOB->BRR = GPIO_BSRR_BS_5;
 }
 
 void usart_receive(void){

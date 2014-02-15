@@ -32,7 +32,7 @@ void init_periph(){
 
 	/* Configure PB in output push-pull mode (for segments  )*/
 	//	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_4  | GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2| GPIO_Pin_5 | GPIO_Pin_12 |  GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_12 |  GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -96,15 +96,6 @@ void init_periph(){
 	SPI_Init(SPI1,&SPI_InitStruct);
 	SPI_Cmd(SPI1, ENABLE);
 
-	//Configure Timer 3 pins:   -------------------------------------------------------------------
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource4, GPIO_AF_2); // TIM3_CH1
-
 	// Zero cross
 	//Configure Input event pin: (Zero cross detection)   ------------------------------------------
 	/* Configure PC0 pin as input floating */
@@ -133,53 +124,8 @@ void init_periph(){
 	NVIC_Init(&NVIC_InitStructure);
 
 	// Zero cross detection timer
+    //Next version maybe....
 
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseStructure.TIM_Period = 70 ;
-	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
-
-	/* TIM3 PWM2 Mode configuration: Channel4 */
-	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-	TIM_OCInitStructure.TIM_Pulse = 65;
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-
-	TIM_OC1Init(TIM3, &TIM_OCInitStructure);
-
-//
-//	/* One Pulse Mode selection */
-	TIM_SelectOnePulseMode(TIM3, TIM_OPMode_Single);
-
-//	/* Input Trigger selection */
-	TIM_SelectInputTrigger(TIM3, TIM_TS_ITR0);
-
-
-	TIM_ICInitStructure.TIM_Channel = TIM_Channel_1;
-	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
-	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
-	TIM_ICInitStructure.TIM_ICFilter = 0;
-	TIM_ICInit(TIM3, &TIM_ICInitStructure);
-
-
-
-//
-//	/* Slave Mode selection: Trigger Mode */
-	TIM_SelectSlaveMode(TIM3, TIM_SlaveMode_Trigger);
-
-	TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);
-//
-//	/* OPM Bit -> Only one pulse */
-//	TIM_SelectOnePulseMode (TIM3, TIM_OPMode_Single);
-//	TIM3->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-//	NVIC_EnableIRQ(TIM3_IRQn); // Enable TIM3 IRQ
-	/* TIM3 enable counter */
-	TIM_Cmd(TIM3, ENABLE);
 
 	//Configure USART1 pins:  Rx and Tx -------------------------------------------------------------
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
