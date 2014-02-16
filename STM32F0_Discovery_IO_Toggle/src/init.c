@@ -119,7 +119,7 @@ void init_periph(){
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
+	TIM_TimeBaseStructure.TIM_Prescaler = 10000 ;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_Period = 70 ;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
@@ -157,8 +157,6 @@ void init_periph(){
 
 	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
 
-	/* OPM Bit -> Only one pulse */
-	TIM_SelectOnePulseMode (TIM2, TIM_OPMode_Single);
 	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
 	/* TIM2 enable counter */

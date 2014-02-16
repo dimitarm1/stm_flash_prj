@@ -88,7 +88,7 @@ int aqua_fresh_level = 0;
 int volume_level = 5;
 int fan_level = 7;
 
-const char tim_base_array[] = {5,13,20,25,30,35,40,48,54,60};
+const char tim_pulse_array[] = {1,3,6,9,12,14,17,19,21,23};
  char digits[3];
 // for Display:
  int refresh_counter = 0;
@@ -1032,22 +1032,24 @@ void set_fan2(int value){
 }
 
 void set_fan1(int value){
-	uint32_t tim_base=5;
+//	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
 
-	if (value ) tim_base = tim_base_array[value%10];
-
-	TIM_TimeBaseStructure.TIM_Period = tim_base;
+	if (value ) TIM_OCInitStructure.TIM_Pulse = tim_pulse_array[value+1];
+	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+//	  One Pulse value = (TIM_Period - TIM_Pulse)/TIM2 counter clock
+	TIM_TimeBaseStructure.TIM_Period =  TIM_OCInitStructure.TIM_Pulse + 6;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
-	else  TIM_OCInitStructure.TIM_Pulse = 9;
+	//TIM_Pulse defines the delay value
+//	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-3;
+//	else  TIM_OCInitStructure.TIM_Pulse = 3;
 
-	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+
 	TIM_Cmd(TIM2, ENABLE);
 }
 
