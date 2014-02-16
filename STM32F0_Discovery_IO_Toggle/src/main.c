@@ -54,7 +54,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 
- const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
+ const uint32_t eeprom_array[512/4] __attribute__ ((section (".eeprom1text")));
  __IO uint32_t TimingDelay;
 
 typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode}states;
@@ -88,6 +88,7 @@ int aqua_fresh_level = 0;
 int volume_level = 5;
 int fan_level = 7;
 
+const char tim_base_array[] = {5,13,20,25,30,35,40,48,54,60};
  char digits[3];
 // for Display:
  int refresh_counter = 0;
@@ -675,7 +676,8 @@ void ProcessButtons(void)
 				if(curr_status == STATUS_WORKING){
 					if(fan_level<10){
 						fan_level++;
-						percent_fan1 = fan_level * 10;
+						percent_fan1 = fan_level;
+						set_fan1(percent_fan1);
 					}
 				}
 				break;
@@ -683,7 +685,8 @@ void ProcessButtons(void)
 				if(curr_status == STATUS_WORKING){
 					if(fan_level>0){
 						fan_level--;
-						percent_fan1 = fan_level * 10;
+						percent_fan1 = fan_level;
+						set_fan1(percent_fan1);
 					}
 				}
 				break;
@@ -954,7 +957,7 @@ void TimingDelay_Decrement(void)
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512/4)))index+=2;
 	if(index == 0){
 		// Load defaults
 		flash_mem = 0;
@@ -1032,10 +1035,8 @@ void set_fan1(int value){
 	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
 
-	if (value == 100) tim_base = 5;
-	if (value == 75) tim_base = 40;
-	if (value == 50) tim_base = 49;
-	if (value == 25) tim_base = 58;
+	if (value ) tim_base = tim_base_array[value%10];
+
 	TIM_TimeBaseStructure.TIM_Period = tim_base;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
