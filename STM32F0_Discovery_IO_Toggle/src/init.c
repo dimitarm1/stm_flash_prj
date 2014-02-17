@@ -119,7 +119,7 @@ void init_periph(){
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-	TIM_TimeBaseStructure.TIM_Prescaler = 10000 ;
+	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_Period = 70 ;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;

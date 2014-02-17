@@ -88,7 +88,7 @@ int aqua_fresh_level = 0;
 int volume_level = 5;
 int fan_level = 7;
 
-const char tim_pulse_array[] = {1,3,6,9,12,14,17,19,21,23};
+const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
  char digits[3];
 // for Display:
  int refresh_counter = 0;
@@ -637,6 +637,9 @@ void ProcessButtons(void)
 					pre_time = 0;
 					state = state_show_time;
 					update_status();
+					fan_level= 7;
+					percent_fan1 = fan_level;
+					set_fan1(percent_fan1);
 				}
 				if(!pre_time && ! main_time && !cool_time) {
 					if(time_to_set){
@@ -683,7 +686,7 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_FAN_MINUS:
 				if(curr_status == STATUS_WORKING){
-					if(fan_level>0){
+					if(fan_level>1){
 						fan_level--;
 						percent_fan1 = fan_level;
 						set_fan1(percent_fan1);
@@ -838,52 +841,53 @@ void ProcessButtons(void)
 
 			}
 		}
-		if(prev_status != curr_status){
-			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
-				work_hours[2]+=time_to_set;
-				if(work_hours[2]>59){
-					work_hours[2]=work_hours[2]-60;
-					work_hours[1]++;
-					if(work_hours[1]>99){
-						work_hours[1] = 0;
-						work_hours[0]++;
-					}
-				}
-				write_eeprom();
-				time_to_set = 0;
-				percent_aquafresh = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
-				zero_crossed = 0;
-				volume_level = 6;
-				fan_level = 7;
-				percent_fan1 = fan_level * 10;
-				set_lamps(100);
-				set_colarium_lamps(percent_licevi);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-				set_aquafresh(percent_aquafresh);
-			}
-			if (curr_status == STATUS_COOLING){
-				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
-//				set_lamps(0);
-				set_colarium_lamps(percent_licevi);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-				set_aquafresh(percent_aquafresh);
-			}
-			if (curr_status == STATUS_FREE){
-				percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
-//				set_lamps(0);
-				set_colarium_lamps(percent_licevi);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-				set_aquafresh(percent_aquafresh);
-				minute_counter = 0;
-			}
-			prev_status = curr_status;
-
-		}
-		//    LED1_OFF;
 	}
+	if(prev_status != curr_status){
+		if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
+			work_hours[2]+=time_to_set;
+			if(work_hours[2]>59){
+				work_hours[2]=work_hours[2]-60;
+				work_hours[1]++;
+				if(work_hours[1]>99){
+					work_hours[1] = 0;
+					work_hours[0]++;
+				}
+			}
+			write_eeprom();
+			time_to_set = 0;
+			percent_aquafresh = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
+			zero_crossed = 0;
+			volume_level = 6;
+			fan_level = 7;
+			percent_fan1 = fan_level;
+			set_lamps(100);
+			set_colarium_lamps(percent_licevi);
+			set_fan1(percent_fan1);
+			set_fan2(percent_fan2);
+			set_aquafresh(percent_aquafresh);
+		}
+		if (curr_status == STATUS_COOLING){
+			percent_licevi = 0, percent_fan1 = 10, percent_fan2 = 100;
+			//				set_lamps(0);
+			set_colarium_lamps(percent_licevi);
+			set_fan1(percent_fan1);
+			set_fan2(percent_fan2);
+			set_aquafresh(percent_aquafresh);
+		}
+		if (curr_status == STATUS_FREE){
+			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+			//				set_lamps(0);
+			set_colarium_lamps(percent_licevi);
+			set_fan1(percent_fan1);
+			set_fan2(percent_fan2);
+			set_aquafresh(percent_aquafresh);
+			minute_counter = 0;
+		}
+		prev_status = curr_status;
+
+	}
+	//    LED1_OFF;
+
 }
 
 
@@ -1034,18 +1038,21 @@ void set_fan2(int value){
 void set_fan1(int value){
 //	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
-
-	if (value ) TIM_OCInitStructure.TIM_Pulse = tim_pulse_array[value+1];
+	//TIM_Pulse defines the delay value
+	if (value ) TIM_OCInitStructure.TIM_Pulse = tim_pulse_array[value-1];
 	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
 //	  One Pulse value = (TIM_Period - TIM_Pulse)/TIM2 counter clock
-	TIM_TimeBaseStructure.TIM_Period =  TIM_OCInitStructure.TIM_Pulse + 6;
+	TIM_TimeBaseStructure.TIM_Period =  TIM_OCInitStructure.TIM_Pulse + 26;
+	if (value == 10)
+		TIM_TimeBaseStructure.TIM_Period =  100;
+
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-	//TIM_Pulse defines the delay value
+
 //	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-3;
 //	else  TIM_OCInitStructure.TIM_Pulse = 3;
 
