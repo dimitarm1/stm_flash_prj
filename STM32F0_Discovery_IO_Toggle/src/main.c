@@ -126,6 +126,7 @@ void set_colarium_lamps(int value);
 void set_fan1(int value);
 void set_fan2(int value);
 void set_aquafresh(int value);
+void set_volume(int value);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -487,6 +488,7 @@ int main(void)
 				set_fan1(0);
 				set_fan2(0);
 				set_aquafresh(0);
+				set_volume(0);
 //				state = state_set_time;
 			}
 		}
@@ -701,6 +703,7 @@ void ProcessButtons(void)
 				if(curr_status == STATUS_WORKING){
 					if(volume_level<10){
 						volume_level++;
+						set_volume(volume_level);
 					}
 				}
 				break;
@@ -708,6 +711,7 @@ void ProcessButtons(void)
 				if(curr_status == STATUS_WORKING){
 					if(volume_level>0){
 						volume_level--;
+						set_volume(volume_level);
 					}
 				}
 				break;
@@ -788,7 +792,7 @@ void ProcessButtons(void)
 		prev_button = last_button;
 	}
 
-
+/*
 	if (last_button == BUTTON_START)
 	{
 		// LED1_ON;
@@ -841,7 +845,7 @@ void ProcessButtons(void)
 
 			}
 		}
-	}
+	}*/
 	if(prev_status != curr_status){
 		if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
 			work_hours[2]+=time_to_set;
@@ -865,6 +869,7 @@ void ProcessButtons(void)
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
 			set_aquafresh(percent_aquafresh);
+			set_volume(volume_level);
 		}
 		if (curr_status == STATUS_COOLING){
 			percent_licevi = 0, percent_fan1 = 10, percent_fan2 = 100;
@@ -1065,6 +1070,22 @@ void set_aquafresh(int value){
 	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_5;
 	else GPIOB->BRR = GPIO_BSRR_BS_5;
 }
+
+void set_volume(int value){
+	GPIOC->BRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	if (value >8)	{
+		GPIOC->BSRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	}
+	else if (value >5)	{
+		GPIOC->BSRR =  GPIO_BSRR_BS_3;
+	}
+	else if (value >2)	{
+		GPIOC->BSRR = GPIO_BSRR_BS_2 ;
+	}
+	else {
+	}
+}
+
 
 void usart_receive(void){
 
