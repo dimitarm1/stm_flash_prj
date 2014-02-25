@@ -574,7 +574,7 @@ int main(void)
 					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
 					if (pre_time){
 						// Indicate pre_time by moving bars
-						show_level((flash_counter>>5) & 0x07);
+						show_level((flash_counter>>6) & 0x07);
 					} else {
 						show_level(volume_level);
 					}
@@ -583,7 +583,7 @@ int main(void)
 				default:
 					GPIOF->BSRR = GPIO_BSRR_BS_1 ;
 					if (pre_time){
-						show_level(((flash_counter>>5) & 0x07) +3);
+						show_level(((flash_counter>>6) & 0x07) +3);
 					} else {
 						show_level(fan_level);
 					}
@@ -672,8 +672,8 @@ void ProcessButtons(void)
 								work_hours[1] = 0;
 								work_hours[2] = 0;
 							}
-//							write_eeprom();
-//							read_eeprom();
+							write_eeprom();
+							read_eeprom();
 							start_counter = 0;
 							service_mode = mode_null;
 						} else {
@@ -689,6 +689,14 @@ void ProcessButtons(void)
 					main_time = 0;
 					pre_time = 0;
 					update_status();
+					percent_fan1 = 10;
+					set_fan1(percent_fan1);
+				}
+				if(state >= state_enter_service){
+					start_counter = 0;
+					state = state_show_time;
+					write_eeprom();
+					read_eeprom();
 				}
 				break;
 			case BUTTON_FAN_PLUS:
@@ -847,6 +855,8 @@ void ProcessButtons(void)
 				start_counter--;
 				if(!start_counter){
 					state = state_show_time;
+					write_eeprom();
+					read_eeprom();
 				}
 			}
 			else {
@@ -868,7 +878,7 @@ void ProcessButtons(void)
 			}
 			write_eeprom();
 			time_to_set = 0;
-			percent_aquafresh = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
+			percent_aquafresh = 0, percent_licevi = 100, percent_fan2 = 100;
 			zero_crossed = 0;
 //			volume_level = 6;
 			fan_level = 7;
@@ -884,6 +894,7 @@ void ProcessButtons(void)
 			percent_licevi = 0, percent_fan1 = 10, percent_fan2 = 100;
 			//				set_lamps(0);
 			set_colarium_lamps(percent_licevi);
+			fan_level = 10;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
 			set_aquafresh(percent_aquafresh);
@@ -993,7 +1004,7 @@ void read_eeprom(void){
 	flash_mem = (flash_struct*)&eeprom_array[index];
 	preset_pre_time = flash_mem->settings.pre_time ;
 	preset_cool_time = flash_mem->settings.cool_time;
-	controller_address = flash_mem->settings.addresse & 0x0f;
+//	controller_address = flash_mem->settings.addresse & 0x0f;
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
@@ -1059,9 +1070,11 @@ void set_fan1(int value){
 	TIM_Cmd(TIM2, DISABLE);
 
 	if (value == 10) tim_base = 5;
-	else if (value > 7) tim_base = 40;
-	else if (value >5) tim_base = 49;
-	else if (value >0) tim_base = 58;
+	else if (value > 8) tim_base = 35;
+	else if (value >6) tim_base = 43;
+	else if (value >4) tim_base = 52;
+	else if (value >2) tim_base = 62;
+	else if (value >0) tim_base = 70;
 	TIM_TimeBaseStructure.TIM_Period = tim_base;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
