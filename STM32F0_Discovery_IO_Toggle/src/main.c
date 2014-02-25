@@ -85,8 +85,8 @@ int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 
 int minute_counter =0;
 int zero_crossed = 0;
 int aqua_fresh_level = 0;
-int volume_level = 5;
-int fan_level = 7;
+volatile int volume_level = 5;
+volatile int fan_level = 7;
 
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
  char digits[3];
@@ -234,7 +234,7 @@ void show_digit(int digit){
 	// LEDs and bars
 	GPIOA->BSRR = GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
 	GPIOC->BSRR = GPIO_BSRR_BR_10;
-
+	if(flash_mode == 3 && (flash_counter & 0x100)) return;
 	switch (digit) {
 	case 0:
 		GPIOA->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 ;
@@ -402,6 +402,7 @@ int main(void)
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	update_status();
+	set_volume(0);
 	while (1)
 	{
 		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
@@ -420,7 +421,6 @@ int main(void)
 		//		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
 		ProcessButtons();
-		if(pre_time || main_time || cool_time) state = state_show_time; // Working now. Other functions disabled
 		switch (state){
 		case state_show_time:
 		case state_set_time:
@@ -442,12 +442,12 @@ int main(void)
 				flash_mode = 3; // All flashing
 			}
 			{
-				int index = (flash_counter/8)%4;
-				if(index<3){
+				int index = (flash_counter/0x200) & 0x03;
+				if(index<3 ){
 					display_data =  ToBCD(work_hours[index]);
 				}
 				else {
-					display_data = 0x0FF;
+					display_data = 0xFFF;
 				}
 			}
 			break;
@@ -458,23 +458,39 @@ int main(void)
 
 		case state_clear_hours:
 			flash_mode = 3;
-			display_data = 0x00C;
+			if((flash_counter/0x200)&1){
+				display_data = 0xFFC;
+			} else {
+				display_data = 0xFFF;
+			}
 			break;
 		case state_address:
 			flash_mode = 0;
-			display_data = 0xA;
+			if((flash_counter/0x200)&1){
+				display_data = controller_address;
+			} else {
+				display_data = 0xFFA;
+			}
 			break;
 		case state_pre_time:
-			flash_mode = 2;
-			display_data = 0x3 | preset_pre_time;;
+			flash_mode = 3;
+			if((flash_counter/0x200)&1){
+				display_data =  preset_pre_time;
+			} else {
+				display_data = 0xFF3;
+			}
 			break;
 		case state_cool_time:
-			flash_mode = 2;
-			display_data = 0x4 | preset_cool_time;
+			flash_mode = 3;
+			if((flash_counter/0x200)&1){
+				display_data =  preset_cool_time;
+			} else {
+				display_data = 0xFF4;
+			}
 			break;
 		case state_ext_mode:
 			flash_mode = 0;
-			display_data = 0x5;
+			display_data = 0xFF5;
 			break;
 		}
 		//		show_digit(display_data);
@@ -488,7 +504,7 @@ int main(void)
 				set_fan1(0);
 				set_fan2(0);
 				set_aquafresh(0);
-				set_volume(0);
+
 //				state = state_set_time;
 			}
 		}
@@ -523,17 +539,7 @@ int main(void)
 				show_digit(0x8);// DEBUG
 
 			}
-			if(flash_mode < 3 ||(flash_counter & 0x40)){
-
-				// Indicate pre_time by movind bars
-				if (pre_time){
-					volume_level = (flash_counter>>5) & 0x07;
-					fan_level = ((flash_counter>>5) & 0x07) +3;
-				}
-				else {
-
-				}
-
+			{
 				switch (digit_num){
 				case 0:
 					GPIOA->BSRR = GPIO_BSRR_BS_2 ;
@@ -543,9 +549,8 @@ int main(void)
 						GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 					}
 					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-							((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
+																		((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
 					break;
-
 				case 1:
 					GPIOC->BSRR = GPIO_BSRR_BS_0 ;
 					//set Aqua 2 LEDs
@@ -554,8 +559,7 @@ int main(void)
 						GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 					}
 					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-							((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
-
+																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
 					break;
 				case 2:
 					GPIOA->BSRR = GPIO_BSRR_BS_0 ;
@@ -564,17 +568,25 @@ int main(void)
 						GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 					}
 					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-							((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
+																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
 					break;
 				case 3:
 					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
-					show_level(volume_level);
-
+					if (pre_time){
+						// Indicate pre_time by moving bars
+						show_level((flash_counter>>5) & 0x07);
+					} else {
+						show_level(volume_level);
+					}
 					break;
 				case 4:
 				default:
 					GPIOF->BSRR = GPIO_BSRR_BS_1 ;
-					show_level(fan_level);
+					if (pre_time){
+						show_level(((flash_counter>>5) & 0x07) +3);
+					} else {
+						show_level(fan_level);
+					}
 					break;
 				}
 			}
@@ -668,12 +680,15 @@ void ProcessButtons(void)
 							start_counter = START_COUNTER_TIME;
 						}
 						state = state_show_hours;
+						flash_counter = 0;
 					}
 				}
 				break;
 			case BUTTON_STOP:
 				if(curr_status == STATUS_WORKING){
 					main_time = 0;
+					pre_time = 0;
+					update_status();
 				}
 				break;
 			case BUTTON_FAN_PLUS:
@@ -695,11 +710,13 @@ void ProcessButtons(void)
 				}
 				break;
 			case BUTTON_AQUA:
+				aqua_fresh_level++;
+				if (aqua_fresh_level >2)aqua_fresh_level =0;
 				if(minute_counter){
 				}
 				break;
 			case BUTTON_VOL_PLUS:
-				if(curr_status == STATUS_WORKING){
+				if(curr_status != STATUS_WAITING){
 					if(volume_level<10){
 						volume_level++;
 						set_volume(volume_level);
@@ -707,7 +724,7 @@ void ProcessButtons(void)
 				}
 				break;
 			case BUTTON_VOL_MINUS:
-				if(curr_status == STATUS_WORKING){
+				if(curr_status != STATUS_WAITING){
 					if(volume_level>0){
 						volume_level--;
 						set_volume(volume_level);
@@ -730,6 +747,7 @@ void ProcessButtons(void)
 					start_counter = EXIT_SERVICE_TIME;
 					switch (service_mode){
 					case mode_set_address:
+						if(controller_address<9) controller_address++;
 						break;
 					case mode_set_pre_time:
 						if(preset_pre_time<9) preset_pre_time++;
@@ -757,6 +775,7 @@ void ProcessButtons(void)
 					start_counter = EXIT_SERVICE_TIME;
 					switch (service_mode){
 					case mode_set_address:
+						if(controller_address) controller_address--;
 						break;
 					case mode_set_pre_time:
 						if(preset_pre_time) preset_pre_time--;
@@ -785,13 +804,10 @@ void ProcessButtons(void)
 			default:
 				while(0);
 			}
-			prev_button =  last_button;
 		}
-	} else {
-		prev_button = last_button;
 	}
+	prev_button = last_button;
 
-/*
 	if (last_button == BUTTON_START)
 	{
 		// LED1_ON;
@@ -813,12 +829,6 @@ void ProcessButtons(void)
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_cool_time; //
 			}
-		}
-		if(time_to_set && state == state_set_time && start_counter == START_DELAY){
-			// Do start
-			state = state_show_time;
-			//			send_time();
-			//			start_counter = 0;
 		}
 	}
 	else
@@ -844,9 +854,9 @@ void ProcessButtons(void)
 
 			}
 		}
-	}*/
+	}
 	if(prev_status != curr_status){
-		if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
+		if (curr_status == STATUS_WORKING){
 			work_hours[2]+=time_to_set;
 			if(work_hours[2]>59){
 				work_hours[2]=work_hours[2]-60;
@@ -860,7 +870,7 @@ void ProcessButtons(void)
 			time_to_set = 0;
 			percent_aquafresh = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
 			zero_crossed = 0;
-			volume_level = 6;
+//			volume_level = 6;
 			fan_level = 7;
 			percent_fan1 = fan_level;
 			set_lamps(100);
@@ -877,6 +887,8 @@ void ProcessButtons(void)
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
 			set_aquafresh(percent_aquafresh);
+			flash_mode = 3;
+
 		}
 		if (curr_status == STATUS_FREE){
 			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
@@ -886,6 +898,7 @@ void ProcessButtons(void)
 			set_fan2(percent_fan2);
 			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
+			flash_mode = 0;
 		}
 		prev_status = curr_status;
 
@@ -980,6 +993,7 @@ void read_eeprom(void){
 	flash_mem = (flash_struct*)&eeprom_array[index];
 	preset_pre_time = flash_mem->settings.pre_time ;
 	preset_cool_time = flash_mem->settings.cool_time;
+	controller_address = flash_mem->settings.addresse & 0x0f;
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
@@ -1009,7 +1023,7 @@ void write_eeprom(void){
 
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
-		flash_mem.settings.addresse = controller_address;
+		flash_mem.settings.addresse = controller_address & 0x0f;
 		flash_mem.settings.unused = 0x55;
 		flash_mem.time.hours_h = work_hours[0];
 		flash_mem.time.hours_l = work_hours[1];
