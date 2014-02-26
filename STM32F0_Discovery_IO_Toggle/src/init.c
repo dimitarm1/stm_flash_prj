@@ -175,7 +175,7 @@ void init_periph(){
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -189,7 +189,7 @@ void init_periph(){
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(USART1, &USART_InitStructure);
-//		USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
+	USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
 //	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
 //	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
 	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);

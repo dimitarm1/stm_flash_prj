@@ -1069,12 +1069,39 @@ void set_fan1(int value){
 	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
 
-	if (value == 10) tim_base = 5;
-	else if (value > 8) tim_base = 35;
-	else if (value >6) tim_base = 43;
-	else if (value >4) tim_base = 52;
-	else if (value >2) tim_base = 62;
-	else if (value >0) tim_base = 70;
+	switch(value){
+	case 10:
+		tim_base = 6;
+		break;
+	case 9:
+		tim_base = 20;
+		break;
+	case 8:
+		tim_base = 30;
+		break;
+	case 7:
+		tim_base = 40;
+		break;
+	case 6:
+		tim_base = 50;
+		break;
+	case 5:
+		tim_base = 60;
+		break;
+	case 4:
+		tim_base = 70;
+		break;
+	case 3:
+		tim_base = 80;
+		break;
+	case 2:
+		tim_base = 90;
+		break;
+	case 1:
+	default:
+		tim_base = 100;
+		break;
+	}
 	TIM_TimeBaseStructure.TIM_Period = tim_base;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
