@@ -31,7 +31,7 @@
 </editor>
 <editor activePart="true" focus="true" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" partName="main.c" path="D:/stm_flash_prj/STM32F0_Discovery_IO_Toggle/src/main.c" title="main.c" tooltip="D:/stm_flash_prj/STM32F0_Discovery_IO_Toggle/src/main.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/stm_discovery/main.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="396" selectionOffset="31550" selectionTopPixel="18007"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="31642" selectionTopPixel="18007"/>
 </editor>
 <editor id="org.eclipse.cdt.ui.editor.CEditor" name="init.c" partName="init.c" path="D:/stm_flash_prj/STM32F0_Discovery_IO_Toggle/src/init.c" title="init.c" tooltip="D:/stm_flash_prj/STM32F0_Discovery_IO_Toggle/src/init.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/stm_discovery/init.c"/>
@@ -136,7 +136,7 @@
 <fastViewBars>
 <fastViewBar fastViewLocation="1024" id="org.eclipse.ui.internal.ViewStack@73fe03" orientation="256" selectedTabId="org.eclipse.ui.console.ConsoleView" style="0">
 <fastViews>
-<view id="org.eclipse.ui.console.ConsoleView" ratio="0.5455927"/>
+<view id="org.eclipse.ui.console.ConsoleView" ratio="0.5448431"/>
 <view id="org.eclipse.search.ui.views.SearchView" ratio="0.29932734"/>
 </fastViews>
 </fastViewBar>
@@ -465,11 +465,11 @@
 <actionBarAdvisor/>
 </window>
 <mruList>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.S" tooltip="stm_discovery/startup_stm32f0xx.S">
-<persistable path="/stm_discovery/startup_stm32f0xx.S"/>
-</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_tim.h" tooltip="stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.h">
 <persistable path="/stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.h"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.S" tooltip="stm_discovery/startup_stm32f0xx.S">
+<persistable path="/stm_discovery/startup_stm32f0xx.S"/>
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" tooltip="stm_discovery/main.c">
 <persistable path="/stm_discovery/main.c"/>
@@ -498,14 +498,14 @@
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.S" tooltip="stm_discovery/startup_stm32f0xx.S">
 <persistable path="/stm_discovery/startup_stm32f0xx.S"/>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_tim.h" tooltip="stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.h">
-<persistable path="/stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.h"/>
-</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" tooltip="stm_discovery/main.c">
 <persistable path="/stm_discovery/main.c"/>
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="core_cmInstr.h" tooltip="stm_discovery/Libraries/CMSys/core_cmInstr.h">
 <persistable path="/stm_discovery/Libraries/CMSys/core_cmInstr.h"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" tooltip="stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c">
+<persistable path="/stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c"/>
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" tooltip="stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c">
 <persistable path="/stm_discovery/Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c"/>

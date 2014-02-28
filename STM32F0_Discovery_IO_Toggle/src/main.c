@@ -61,7 +61,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
  states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
  modes service_mode;
- unsigned char controller_address = 0x0f;
+ unsigned char controller_address = 0x0e;
  int curr_status;
  int prev_status;
  int curr_time;
@@ -1066,42 +1066,47 @@ void set_fan2(int value){
 
 void set_fan1(int value){
 	//
+//	uint32 counter = 0xFFFFFFF;
 	uint32_t tim_base=5;
 	TIM_Cmd(TIM2, DISABLE);
 
+	zero_crossed = 0;
+//	while (!zero_crossed && (counter--));
 	switch(value){
 	case 10:
-		tim_base = 6;
+		tim_base = 60; //Reverse polarity
 		break;
 	case 9:
-		tim_base = 20;
+		tim_base = 32;
 		break;
 	case 8:
-		tim_base = 30;
+		tim_base = 36;
 		break;
 	case 7:
 		tim_base = 40;
 		break;
 	case 6:
-		tim_base = 50;
+		tim_base = 45;
 		break;
 	case 5:
-		tim_base = 60;
+		tim_base = 50;
 		break;
 	case 4:
-		tim_base = 70;
+		tim_base = 55;
 		break;
 	case 3:
-		tim_base = 80;
+		tim_base = 60;
 		break;
 	case 2:
-		tim_base = 90;
+		tim_base = 65;
 		break;
 	case 1:
 	default:
-		tim_base = 100;
+		tim_base = 70;
 		break;
 	}
+	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+	else  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 	TIM_TimeBaseStructure.TIM_Period = tim_base;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
