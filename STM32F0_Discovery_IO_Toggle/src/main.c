@@ -54,7 +54,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 
- const uint32_t eeprom_array[512/4] __attribute__ ((section (".eeprom1text")));
+ const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
  __IO uint32_t TimingDelay;
 
 typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode}states;
@@ -78,7 +78,7 @@ int prev_button = 0;
 int display_data;
 int pre_time, main_time, cool_time;
 unsigned int Gv_miliseconds = 0;
-int Gv_UART_Timeout = 500; // Timeout in mSec
+int Gv_UART_Timeout = 1000; // Timeout in mSec
 int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 int rx_state= 0;
 int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
@@ -398,7 +398,7 @@ int main(void)
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
 		preset_cool_time = 3;
-		write_eeprom();
+		write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	update_status();
@@ -428,12 +428,12 @@ int main(void)
 				flash_mode = 0;
 				state = state_set_time;
 				display_data = ToBCD(time_to_set);
-				//				display_data = ToBCD(last_button);
+				//				display_data = ToBCD(last_button); //Debug
 			} else {
 				state = state_show_time;
 				//				  time_to_set = 0;
 				display_data = ToBCD(main_time);
-				//				display_data = ToBCD(last_button);
+				//				display_data = ToBCD(last_button); //Debug
 			}
 			break;
 		case state_show_hours:
@@ -457,8 +457,8 @@ int main(void)
 			break;
 
 		case state_clear_hours:
-			flash_mode = 3;
-			if((flash_counter/0x200)&1){
+//			flash_mode = 3;
+			if((flash_counter/0x400)&1){
 				display_data = 0xFFC;
 			} else {
 				display_data = 0xFFF;
@@ -466,23 +466,23 @@ int main(void)
 			break;
 		case state_address:
 			flash_mode = 0;
-			if((flash_counter/0x200)&1){
+			if((flash_counter/0x400)&1){
 				display_data = controller_address;
 			} else {
 				display_data = 0xFFA;
 			}
 			break;
 		case state_pre_time:
-			flash_mode = 3;
-			if((flash_counter/0x200)&1){
+//			flash_mode = 3;
+			if((flash_counter/0x400)&1){
 				display_data =  preset_pre_time;
 			} else {
 				display_data = 0xFF3;
 			}
 			break;
 		case state_cool_time:
-			flash_mode = 3;
-			if((flash_counter/0x200)&1){
+//			flash_mode = 3;
+			if((flash_counter/0x400)&1){
 				display_data =  preset_cool_time;
 			} else {
 				display_data = 0xFF4;
@@ -513,7 +513,7 @@ int main(void)
 		//		int data =  USART_ReceiveData(USART1);
 		//		USART_SendData(USART1,0x80);
 		//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-		if(++led_counter>130){
+		if(++led_counter>130L){
 			static int current_button_read = 0;
 //			if(flash_counter%80 == 0){
 //						data = (STATUS_COOLING<<6)|4;
@@ -523,7 +523,7 @@ int main(void)
 			digit_num++;
 			flash_counter++;
 			//		aqua_fresh_level = 0;
-			if(digit_num>4) {
+			if(digit_num>4L) {
 				digit_num = 0;
 				last_button = current_button_read;
 				current_button_read = 0;
@@ -701,7 +701,7 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_FAN_PLUS:
 				if(curr_status == STATUS_WORKING){
-					if(fan_level<10){
+					if(fan_level<10L){
 						fan_level++;
 						percent_fan1 = fan_level;
 						set_fan1(percent_fan1);
@@ -725,7 +725,7 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_VOL_PLUS:
 				if(curr_status != STATUS_WAITING){
-					if(volume_level<10){
+					if(volume_level<10L){
 						volume_level++;
 						set_volume(volume_level);
 					}
@@ -747,7 +747,7 @@ void ProcessButtons(void)
 					start_counter = 0;
 				}
 				if(state == state_set_time){
-					if(time_to_set < 25){
+					if(time_to_set < 25L){
 						if(!Gv_UART_Timeout) time_to_set++;
 					}
 				}
@@ -755,7 +755,7 @@ void ProcessButtons(void)
 					start_counter = EXIT_SERVICE_TIME;
 					switch (service_mode){
 					case mode_set_address:
-						if(controller_address<9) controller_address++;
+						if(controller_address<15) controller_address++;
 						break;
 					case mode_set_pre_time:
 						if(preset_pre_time<9) preset_pre_time++;
@@ -867,18 +867,18 @@ void ProcessButtons(void)
 	}
 	if(prev_status != curr_status){
 		if (curr_status == STATUS_WORKING){
-			work_hours[2]+=time_to_set;
-			if(work_hours[2]>59){
+			work_hours[2]+=main_time;
+			if(work_hours[2]>59L){
 				work_hours[2]=work_hours[2]-60;
 				work_hours[1]++;
-				if(work_hours[1]>99){
+				if(work_hours[1]>99L){
 					work_hours[1] = 0;
 					work_hours[0]++;
 				}
 			}
 			write_eeprom();
-			time_to_set = 0;
-			percent_aquafresh = 0, percent_licevi = 100, percent_fan2 = 100;
+
+			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
 			zero_crossed = 0;
 //			volume_level = 6;
 			fan_level = 7;
@@ -891,7 +891,7 @@ void ProcessButtons(void)
 			set_volume(volume_level);
 		}
 		if (curr_status == STATUS_COOLING){
-			percent_licevi = 0, percent_fan1 = 10, percent_fan2 = 100;
+			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
 			//				set_lamps(0);
 			set_colarium_lamps(percent_licevi);
 			fan_level = 10;
@@ -960,11 +960,11 @@ void TimingDelay_Decrement(void)
 	{
 		Gv_SystickCounter--;
 	}
-	if( ++ refresh_counter>200){
+	if( ++ refresh_counter>200L){
 		refresh_counter = 0;
 		flash_counter++;
 	}
-	if(Gv_miliseconds++>60000){
+	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
 		if (pre_time)pre_time--;
 		else if (main_time) {
@@ -989,7 +989,13 @@ void TimingDelay_Decrement(void)
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512/4)))index+=2;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+//	for (i = 0; i< 512; i+=2){
+//		val = *pMem;
+//		if (val == 0xffffffff) break;
+//		pMem++;
+//	}
+//	index = i;
 	if(index == 0){
 		// Load defaults
 		flash_mem = 0;
@@ -1004,7 +1010,7 @@ void read_eeprom(void){
 	flash_mem = (flash_struct*)&eeprom_array[index];
 	preset_pre_time = flash_mem->settings.pre_time ;
 	preset_cool_time = flash_mem->settings.cool_time;
-//	controller_address = flash_mem->settings.addresse & 0x0f;
+	controller_address = flash_mem->settings.addresse & 0x0f;
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
@@ -1015,8 +1021,8 @@ void write_eeprom(void){
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
 	uint32_t *p = (uint32_t *)&flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
-	if(index == 512){
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+	if(index > 511){
 		// No more room. Erase the 4 pages
 		FLASH_ErasePage((uint32_t)&eeprom_array[0]);
 		FLASH_ErasePage((uint32_t)&eeprom_array[128]);
@@ -1024,14 +1030,11 @@ void write_eeprom(void){
 		FLASH_ErasePage((uint32_t)&eeprom_array[384]);
 		index = 0;
 	}
-
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index++;
-	if(index == 512){
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+	if(index >511){
 		display_data = 0xE01;
-		for (index = 0; index<20; index++){
-		}
 	} else {
-
+		volatile static FLASH_Status sts;
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
 		flash_mem.settings.addresse = controller_address & 0x0f;
@@ -1040,8 +1043,8 @@ void write_eeprom(void){
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
-		FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
-		FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
+		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
+		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
 		index ++;
 	}
@@ -1148,30 +1151,33 @@ void usart_receive(void){
 	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
 	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
 	data =  USART_ReceiveData(USART1);
-	Gv_UART_Timeout = 500;
+
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
 	if ((data & 0x80)){
 		// Command
+		if((data & (0x0fU<<3U)) == ((controller_address & 0x0fU)<<3U)){
+			Gv_UART_Timeout = 1500;
+		}
 		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
 			data = (curr_status<<6)|curr_time;
 //			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 1U)) //Command 1 - Start
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+1) //Command 1 - Start
 		{
 			pre_time = 0;
 			update_status();
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 2U)) //Command 2 == Pre_time_set
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
 		{
 			rx_state = state_pre_time;
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 5U)) //Command 5 == Main_time_set
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+5) //Command 5 == Main_time_set
 		{
 			rx_state = state_main_time;
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 3U)) //Command 3 == Cool_time_set
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+3) //Command 3 == Cool_time_set
 		{
 			rx_state = state_cool_time;
 		}
@@ -1180,7 +1186,7 @@ void usart_receive(void){
 		// payload
 		int time_in_hex = ToBCD(main_time_sent);
 		if(rx_state == state_get_checksum){
-			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			if(	data == checksum){
 				pre_time = pre_time_sent;
 				main_time = main_time_sent;
@@ -1195,13 +1201,13 @@ void usart_receive(void){
 			rx_state = 0;
 		}
 		if(rx_state == state_main_time){
-			main_time_sent = data;
+			main_time_sent = FromBCD(data);
 			rx_state = 0;
 		}
 		if(rx_state == state_cool_time){
 			cool_time_sent = data;
 			rx_state = state_get_checksum;
-			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			data = checksum;
 			USART_SendData(USART1,data);
 		}
