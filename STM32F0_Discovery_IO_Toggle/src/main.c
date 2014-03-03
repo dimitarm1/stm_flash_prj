@@ -83,6 +83,7 @@ static int percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2
 static int minute_counter =0;
 static int zero_crossed = 0;
 static int auto_exit_fn = 0;
+uint16_t data = 0;
 
 // for Display:
 static int refresh_counter = 0;
@@ -896,30 +897,35 @@ void set_clima(int value){
 void usart_receive(void){
 
 	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
-	int data =  USART_ReceiveData(USART1);
-	Gv_UART_Timeout = 500;
+	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
+	data =  USART_ReceiveData(USART1);
+
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
-	if (data & 0x80){
+	if ((data & 0x80)){
 		// Command
-		if(data == (0x80U | ((controller_address & 0x0fU)<<3U))){
+		if((data & (0x0fU<<3U)) == ((controller_address & 0x0fU)<<3U)){
+			Gv_UART_Timeout = 1500;
+		}
+		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
 			data = (curr_status<<6)|curr_time;
+//			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 1U)) //Command 1 - Start
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+1) //Command 1 - Start
 		{
 			pre_time = 0;
 			update_status();
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 2U)) //Command 2 == Pre_time_set
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
 		{
 			rx_state = state_pre_time;
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 5U)) //Command 5 == Main_time_set
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+5) //Command 5 == Main_time_set
 		{
 			rx_state = state_main_time;
 		}
-		else if (data == (0x80U | ((controller_address & 0x0fU)<<3U) | 3U)) //Command 3 == Cool_time_set
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+3) //Command 3 == Cool_time_set
 		{
 			rx_state = state_cool_time;
 		}
@@ -928,7 +934,7 @@ void usart_receive(void){
 		// payload
 		int time_in_hex = ToBCD(main_time_sent);
 		if(rx_state == state_get_checksum){
-			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			if(	data == checksum){
 				pre_time = pre_time_sent;
 				main_time = main_time_sent;
@@ -943,20 +949,21 @@ void usart_receive(void){
 			rx_state = 0;
 		}
 		if(rx_state == state_main_time){
-			main_time_sent = data;
+			main_time_sent = FromBCD(data);
 			rx_state = 0;
 		}
 		if(rx_state == state_cool_time){
 			cool_time_sent = data;
 			rx_state = state_get_checksum;
-			unsigned char checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			data = checksum;
 			USART_SendData(USART1,data);
 		}
 
 
 	}
-//	USART_SendData(USART1,0x80);
+	//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+	//	USART_SendData(USART1,0x80);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -15,6 +15,8 @@
 #include "stm32f0xx_usart.h"
 #include "stm32f0xx_flash.h"
 #include "stm32f0xx_spi.h"
+#include "stm32f0xx_tim.h"
+#include "stm32f0xx_misc.h"
 
 
 extern SPI_InitTypeDef 				SPI_InitStruct;
