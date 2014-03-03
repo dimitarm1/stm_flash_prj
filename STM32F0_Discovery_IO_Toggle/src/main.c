@@ -1116,15 +1116,14 @@ void set_fan1(int value){
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-//	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
 	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
 	else  TIM_OCInitStructure.TIM_Pulse = 9;
 
 	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
 //	if (value) TIM_Cmd(TIM2, ENABLE);
 //	else TIM_Cmd(TIM2, DISABLE);
-	if(curr_status == STATUS_COOLING || curr_status == STATUS_WORKING) TIM_Cmd(TIM2, ENABLE);
-	else TIM_Cmd(TIM2, DISABLE);
+	TIM_Cmd(TIM2, ENABLE);
 }
 
 void set_aquafresh(int value){
