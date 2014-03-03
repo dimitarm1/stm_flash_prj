@@ -244,7 +244,7 @@ void show_digit(int digit){
 
 		break;
 	case 1:
-		GPIOA->BSRR = GPIO_BSRR_BS_3 ;
+		GPIOA->BSRR = 0;
 		GPIOB->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13;
 		GPIOC->BSRR = 0;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 ;
@@ -317,9 +317,9 @@ void show_digit(int digit){
 		break;
 	case 0x0D:
 		GPIOA->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5  ;
-		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_15;
-		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
-		GPIOF->BSRR = 0 ;
+		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13;
+		GPIOC->BSRR = GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
+		GPIOF->BSRR = GPIO_BSRR_BS_4;
 		break;
 	case 0x0E:
 		GPIOA->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5  ;
@@ -1048,7 +1048,7 @@ void write_eeprom(void){
 		index = sizeof(flash_mem);
 		index ++;
 	}
-	//	FLASH_Lock();
+	FLASH_Lock();
 }
 void set_lamps(int value){
 	//	while(!zero_crossed);
@@ -1070,7 +1070,7 @@ void set_fan2(int value){
 void set_fan1(int value){
 	//
 //	uint32 counter = 0xFFFFFFF;
-	uint32_t tim_base=5;
+	uint32_t tim_base=7;
 	TIM_Cmd(TIM2, DISABLE);
 
 	zero_crossed = 0;
@@ -1116,12 +1116,15 @@ void set_fan1(int value){
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+//	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
 	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
 	else  TIM_OCInitStructure.TIM_Pulse = 9;
 
 	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
-	TIM_Cmd(TIM2, ENABLE);
+//	if (value) TIM_Cmd(TIM2, ENABLE);
+//	else TIM_Cmd(TIM2, DISABLE);
+	if(curr_status == STATUS_COOLING || curr_status == STATUS_WORKING) TIM_Cmd(TIM2, ENABLE);
+	else TIM_Cmd(TIM2, DISABLE);
 }
 
 void set_aquafresh(int value){
