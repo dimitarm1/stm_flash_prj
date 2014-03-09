@@ -5,7 +5,7 @@
  *      Author: didi
  */
 #include "init.h"
-
+extern  unsigned char controller_address;
 
 void init_periph(){
 	/*!< At this stage the microcontroller clock setting is already configured,
@@ -170,34 +170,50 @@ void init_periph(){
 	/* TIM2 enable counter */
 	TIM_Cmd(TIM2, ENABLE);
 
+	if(controller_address !=15){ // Address 15 reserved for external control
 
-	//Configure USART1 pins:  Rx and Tx -------------------------------------------------------------
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1); // USART1_TX
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1); // USART1_RX
+		//Configure USART1 pins:  Rx and Tx -------------------------------------------------------------
+		GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+		GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	USART_InitStructure.USART_BaudRate = 1200;
-	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-	USART_InitStructure.USART_StopBits = USART_StopBits_1;
-	USART_InitStructure.USART_Parity = USART_Parity_No;
-	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART1, &USART_InitStructure);
-	USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
-//	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
-//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
-	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
-//	USART1->CR1 |= USART_CR3_EIE;
-//	USART1->CR2 |= USART_CR2_TXINV;
-//	USART1->CR1 |= USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE ;
-//	USART_ReceiveData(USART1);
-	USART_Cmd(USART1,ENABLE);
+		GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1); // USART1_TX
+		GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1); // USART1_RX
+
+		USART_InitStructure.USART_BaudRate = 1200;
+		USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+		USART_InitStructure.USART_StopBits = USART_StopBits_1;
+		USART_InitStructure.USART_Parity = USART_Parity_No;
+		USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+		USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+		USART_Init(USART1, &USART_InitStructure);
+		USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
+		//	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
+		//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+		USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+		//	USART1->CR1 |= USART_CR3_EIE;
+		//	USART1->CR2 |= USART_CR2_TXINV;
+		//	USART1->CR1 |= USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE ;
+		//	USART_ReceiveData(USART1);
+		USART_Cmd(USART1,ENABLE);
+	}
+	else {
+		//Configure USART1 pins:  Rx and Tx - used to connect to external control
+		GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 ;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+		GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_Init(GPIOA, &GPIO_InitStructure);
+		GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_10;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_Init(GPIOA, &GPIO_InitStructure);
+	}
 
 	/* Enable USART1 IRQ */
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;

@@ -87,6 +87,7 @@ int zero_crossed = 0;
 int aqua_fresh_level = 0;
 volatile int volume_level = 5;
 volatile int fan_level = 7;
+unsigned int external_read = 0;
 
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
  char digits[3];
@@ -121,6 +122,7 @@ void read_eeprom(void);
 void TimingDelay_Decrement(void);
 void ProcessButtons(void);
 void update_status(void);
+void set_start_out_signal(int value);
 void set_lamps(int value);
 void set_colarium_lamps(int value);
 void set_fan1(int value);
@@ -368,7 +370,7 @@ void show_digit(int digit){
  */
 int main(void)
 {
-
+	read_eeprom();
 	init_periph();
 
 	if (SysTick_Config(SystemCoreClock / (1000))){
@@ -394,7 +396,7 @@ int main(void)
 	pre_time = 0;
 	main_time = 0;
 	cool_time = 0;
-	read_eeprom();
+//	read_eeprom();
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
 		preset_cool_time = 3;
@@ -420,6 +422,27 @@ int main(void)
 		//		IWDG_ReloadCounter();
 		//		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
+		// read external input
+		if ((state < state_enter_service) && ((flash_counter>>4)&1)){
+			if (controller_address == 15){
+				external_read = (external_read << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10));
+				if(!main_time && (!external_read)){
+					if(curr_status != STATUS_COOLING){
+						main_time = -1;
+						cool_time = preset_cool_time;
+						Gv_miliseconds = 0;
+						flash_mode = 0;
+						state = state_set_time;
+						update_status();
+					}
+				}
+				if(main_time && !~external_read){
+					main_time = 0;
+					Gv_miliseconds = 0;
+					update_status();
+				}
+			}
+		}
 		ProcessButtons();
 		switch (state){
 		case state_show_time:
@@ -432,7 +455,7 @@ int main(void)
 			} else {
 				state = state_show_time;
 				//				  time_to_set = 0;
-				display_data = ToBCD(main_time);
+				display_data = ToBCD(abs(main_time));
 				//				display_data = ToBCD(last_button); //Debug
 			}
 			break;
@@ -467,7 +490,12 @@ int main(void)
 		case state_address:
 			flash_mode = 0;
 			if((flash_counter/0x400)&1){
-				display_data = controller_address;
+				if(controller_address !=15){ // Address 15 reserved for external control
+					display_data = controller_address;
+				}
+				else {
+					display_data = 0xEAF;
+				}
 			} else {
 				display_data = 0xFFA;
 			}
@@ -676,6 +704,9 @@ void ProcessButtons(void)
 							read_eeprom();
 							start_counter = 0;
 							service_mode = mode_null;
+							if (state == state_address){
+								init_periph();
+							}
 						} else {
 							start_counter = START_COUNTER_TIME;
 						}
@@ -748,7 +779,7 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set < 25L){
-						if(!Gv_UART_Timeout) time_to_set++;
+						if((!Gv_UART_Timeout) && (controller_address !=15)) time_to_set++;
 					}
 				}
 				else if(state > state_enter_service){
@@ -777,7 +808,7 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set) {
-						if(!Gv_UART_Timeout) time_to_set--;
+						if((!Gv_UART_Timeout) && (controller_address !=15))  time_to_set--;
 					}
 				}else if(state > state_enter_service){
 					start_counter = EXIT_SERVICE_TIME;
@@ -838,9 +869,11 @@ void ProcessButtons(void)
 				service_mode = mode_set_cool_time; //
 			}
 		}
+		set_start_out_signal(1);
 	}
 	else
 	{
+		set_start_out_signal(0);
 		if(start_counter){
 			if(state == state_show_hours){
 				start_counter--;
@@ -867,16 +900,18 @@ void ProcessButtons(void)
 	}
 	if(prev_status != curr_status){
 		if (curr_status == STATUS_WORKING){
-			work_hours[2]+=main_time;
-			if(work_hours[2]>59L){
-				work_hours[2]=work_hours[2]-60;
-				work_hours[1]++;
-				if(work_hours[1]>99L){
-					work_hours[1] = 0;
-					work_hours[0]++;
+			if(controller_address != 15){
+				work_hours[2]+=main_time;
+				if(work_hours[2]>59L){
+					work_hours[2]=work_hours[2]-60;
+					work_hours[1]++;
+					if(work_hours[1]>99L){
+						work_hours[1] = 0;
+						work_hours[0]++;
+					}
 				}
+				write_eeprom();
 			}
-			write_eeprom();
 
 			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
 			zero_crossed = 0;
@@ -887,17 +922,29 @@ void ProcessButtons(void)
 			set_colarium_lamps(percent_licevi);
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
-			set_aquafresh(percent_aquafresh);
+//			set_aquafresh(percent_aquafresh);
 			set_volume(volume_level);
 		}
 		if (curr_status == STATUS_COOLING){
+			if(controller_address == 15){
+				work_hours[2]+=abs(main_time);
+				if(work_hours[2]>59L){
+					work_hours[2]=work_hours[2]-60;
+					work_hours[1]++;
+					if(work_hours[1]>99L){
+						work_hours[1] = 0;
+						work_hours[0]++;
+					}
+				}
+				write_eeprom();
+			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
 			//				set_lamps(0);
 			set_colarium_lamps(percent_licevi);
 			fan_level = 10;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
-			set_aquafresh(percent_aquafresh);
+//			set_aquafresh(percent_aquafresh);
 			flash_mode = 3;
 
 		}
@@ -907,7 +954,7 @@ void ProcessButtons(void)
 			set_colarium_lamps(percent_licevi);
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
-			set_aquafresh(percent_aquafresh);
+//			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
 			flash_mode = 0;
 		}
@@ -963,6 +1010,25 @@ void TimingDelay_Decrement(void)
 	if( ++ refresh_counter>200L){
 		refresh_counter = 0;
 		flash_counter++;
+	}
+	if(aqua_fresh_level == 1){
+		if(Gv_miliseconds>59000L ){
+			set_aquafresh(1);
+		}
+		else {
+			set_aquafresh(0);
+		}
+	}
+	else if(aqua_fresh_level == 2){
+		if(Gv_miliseconds %15000 >14000L ){
+			set_aquafresh(1);
+		}
+		else {
+			set_aquafresh(0);
+		}
+	}
+	else {
+		set_aquafresh(0);
 	}
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
@@ -1050,6 +1116,11 @@ void write_eeprom(void){
 	}
 	FLASH_Lock();
 }
+void set_start_out_signal(int value){
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_9;
+		else GPIOA->BRR = GPIO_BSRR_BS_9;
+}
+
 void set_lamps(int value){
 	//	while(!zero_crossed);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
@@ -1127,7 +1198,7 @@ void set_fan1(int value){
 }
 
 void set_aquafresh(int value){
-	return;
+
 	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_5;
 	else GPIOB->BRR = GPIO_BSRR_BS_5;
 }
@@ -1162,7 +1233,7 @@ void usart_receive(void){
 			Gv_UART_Timeout = 1500;
 		}
 		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
-			data = (curr_status<<6)|curr_time;
+			data = (curr_status<<6)| ToBCD(curr_time);
 //			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
