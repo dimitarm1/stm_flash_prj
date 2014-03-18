@@ -32,6 +32,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "tsl_acq.h"
 #include "tsl_object.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx_conf.h"
 
 /* Exported types ------------------------------------------------------------*/
 

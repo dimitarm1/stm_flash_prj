@@ -74,6 +74,7 @@ static long durations[255];
 static int start_note = 0; // Or current note
 static int end_note = 0;
 static char digits[3];
+static int ping_counter=0;
 static __IO uint32_t TimingDelay;
 TSL_tMeas_T measurment;
 static int display_data=0;
@@ -82,7 +83,7 @@ USART_ClockInitTypeDef USART_ClockInitStruct;
 
 typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,
 	state_pre_time,state_cool_time,state_ext_mode}states;
-static states state;
+static states state = 0;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
 static modes service_mode;
 static unsigned char controller_address = 0x10;
@@ -99,8 +100,8 @@ static int counter_hours = 0;
 static int flash_counter_prev = 0;
 
 // for Display:
-static int led_counter = 0;
-static int flash_counter = 0;
+static unsigned int led_counter = 0;
+static unsigned int flash_counter = 0;
 static int digit_num = 0;
 typedef struct time_str{
 	uint8_t used_flag :8;
@@ -274,7 +275,7 @@ void show_digit(int digit){
 }
 
 int get_controller_status(int n){
-	int counter = 10000;
+	int counter = 1000;
 	static int sts, data;
 	// clear in fifo
 	// send conmmand
@@ -500,10 +501,6 @@ int main(void)
 //		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) != RESET)
 //			  USART_SendData(USART1,0x80 );
 //	  }
-	  while(0){
-		  get_controller_status(8);
-	  }
-//	  get_address();
 
 	  read_eeprom();
 	  if(!preset_pre_time || ! preset_cool_time){
@@ -513,12 +510,13 @@ int main(void)
 	  }
 	  while (1)
 	  {
+
 		  //		  measurment = MyChannels_Data[0].Meas;
 		  //		  display_data = measurment;
 
 		  // Execute STMTouch Driver state machine
 		  if(controller_address >15){
-			  display_data = 0xEEE;
+			  display_data = 0x1EE;
 			  // Try to get controller address continuously
 			  get_address();
 		  }
@@ -528,8 +526,9 @@ int main(void)
 			  {
 				  ProcessSensors(); // Execute sensors related tasks
 			  }
-			  ping_status();
 
+			  ping_status(); // Get current status
+			  display_data = state;
 			  switch (state){
 			  case state_show_time:
 			  case state_set_time:
@@ -538,6 +537,7 @@ int main(void)
 					  state = state_set_time;
 					  display_data = ToBCD(time_to_set);
 				  } else {
+
 					  state = state_show_time;
 					  //				  time_to_set = 0;
 					  display_data = ToBCD(curr_time);
@@ -548,10 +548,13 @@ int main(void)
 					  } else  if(curr_status == STATUS_COOLING ){
 						  flash_mode = 3; // All flashing
 					  } else {
-						  display_data = 0xEEE;
-						  flash_mode = 3; // All flashing
+						 // display_data = 0x555;
+						  display_data = ping_counter;
+						 // flash_mode = 3; // All flashing
 					  }
+
 				  }
+
 				  break;
 			  case state_show_hours:
 
@@ -976,6 +979,7 @@ void KeyPressed_1(void){// START Key (Right)
 	KeyPressed_0();
 }
 void KeyPressed_2(void){ // +
+	return;
 	if(state == state_show_hours) {
 		state = state_set_time;
 		start_counter = 0;
@@ -1004,6 +1008,7 @@ void KeyPressed_2(void){ // +
 	push_note(A3,8);
 }
 void KeyPressed_3(void){ // -
+	return;
 	if(state == state_show_hours) {
 		state = state_set_time;
 		start_counter = 0;
@@ -1034,12 +1039,23 @@ void KeyPressed_3(void){ // -
 }
 
 void ping_status(void){
-	static int ping_counter=0;
-	// Ping solarium for status
-	if(++ping_counter>600){
-		ping_counter = 0;
 
-		int sts = get_controller_status(controller_address);
+	static int ping_index = 0;
+	static int status_codes[4];
+	// Ping solarium for status
+	if(!(flash_counter&0x3f)){
+		int sts;
+		ping_counter = 0;
+		ping_index = (ping_index + 1) & 0x03;
+		status_codes[ping_index] = get_controller_status(controller_address);
+		if(status_codes[ping_index]==status_codes[0] && status_codes[ping_index]==status_codes[1] &&
+				status_codes[ping_index]==status_codes[2] && status_codes[ping_index]==status_codes[3] ){
+			sts = status_codes[ping_index];
+		}
+		else {
+			return;
+		}
+
 		if(sts != -1){
 			curr_status = (sts & 0xC0)>>6;
 			curr_time = sts & 0x3F;
@@ -1214,6 +1230,7 @@ void read_eeprom(void){
 
 void write_eeprom(void){
 	int index = 0;
+	return;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
 	uint32_t *p = (uint32_t *)&flash_mem;
