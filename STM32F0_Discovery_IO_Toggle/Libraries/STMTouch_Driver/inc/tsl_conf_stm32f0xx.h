@@ -385,7 +385,7 @@
 /** Environment Change System delay in msec (range=0..5000)
   - The ECS will be started after this delay and when all sensors are in Release state.
 */
-#define TSLPRM_ECS_DELAY (500)
+#define TSLPRM_ECS_DELAY (2000)
 
 /** @} Common_Parameters_ECS */
 
@@ -407,7 +407,7 @@
 @note The DTO can be changed in run-time by the application only if the
       default value is between 1 and 63.
 */
-#define TSLPRM_DTO (62)
+#define TSLPRM_DTO (1)
 
 /** @} Common_Parameters_DTO */
 

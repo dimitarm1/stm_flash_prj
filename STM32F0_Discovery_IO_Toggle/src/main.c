@@ -60,9 +60,9 @@
 #define STATUS_WORKING (1)
 #define STATUS_COOLING (2)
 #define START_COUNTER_TIME  1000
-#define ENTER_SERVICE_DELAY 2000
-#define SERVICE_NEXT_DELAY  200
-#define EXIT_SERVICE_TIME   400
+#define ENTER_SERVICE_DELAY 2500
+#define SERVICE_NEXT_DELAY  400
+#define EXIT_SERVICE_TIME   600
 #define START_DELAY         200
 
 
@@ -275,17 +275,19 @@ void show_digit(int digit){
 }
 
 int get_controller_status(int n){
-	int counter = 1000;
+	int counter = 10;
 	static int sts, data;
 	// clear in fifo
 	// send conmmand
 	while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	data =  USART_ReceiveData(USART1); // Flush input
     while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 	USART_SendData(USART1,0x80 | ((n & 0x0f)<<3) | 0);
+    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 //    delta = (delta + 1)& 0xff;
 //	USART_SendData(USART1,delta);
 
 //	USART_SendData(USART1,0x0f);
+	SystickDelay(20);
 	while(counter){
 		//read Rx buffer
 		sts = USART_GetFlagStatus(USART1,USART_FLAG_RXNE);
@@ -305,6 +307,7 @@ void get_address(void){
 	for (i = 0; i<16; i++){
 		result = get_controller_status(i);
 		if (result!=-1) break;
+		SystickDelay(20);
 	}
 	controller_address = i;
 }
@@ -508,6 +511,7 @@ int main(void)
 		  preset_cool_time = 3;
 		  write_eeprom();
 	  }
+//	  controller_address = 1;
 	  while (1)
 	  {
 
@@ -516,7 +520,7 @@ int main(void)
 
 		  // Execute STMTouch Driver state machine
 		  if(controller_address >15){
-			  display_data = 0x1EE;
+			  display_data = 0xEAF;
 			  // Try to get controller address continuously
 			  get_address();
 		  }
@@ -528,7 +532,8 @@ int main(void)
 			  }
 
 			  ping_status(); // Get current status
-			  display_data = state;
+//			  display_data = state + ((curr_status&0x0f)<<4);
+//			  display_data =ping_counter;
 			  switch (state){
 			  case state_show_time:
 			  case state_set_time:
@@ -548,8 +553,9 @@ int main(void)
 					  } else  if(curr_status == STATUS_COOLING ){
 						  flash_mode = 3; // All flashing
 					  } else {
-						 // display_data = 0x555;
-						  display_data = ping_counter;
+						  controller_address = 16;
+//						  display_data = 0x555;
+//						  display_data = ping_counter;
 						 // flash_mode = 3; // All flashing
 					  }
 
@@ -570,6 +576,12 @@ int main(void)
 					  else {
 						  display_data = 0xFFF;
 					  }
+//					  if (TEST_TKEY(0)||TEST_TKEY(1)){
+//						  display_data = 0xFF1;
+//					  } else{
+//						  display_data = 0xFF0;
+//					  }
+
 					  if(flash_counter_prev != (flash_counter & 0x40)){
 						  if(flash_counter_prev) counter_hours++;
 						  flash_counter_prev = (flash_counter & 0x40);
@@ -692,7 +704,7 @@ void ProcessSensors(void)
 	{
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
-		if(start_counter== START_COUNTER_TIME + ENTER_SERVICE_DELAY){
+		if(start_counter>= START_COUNTER_TIME + ENTER_SERVICE_DELAY){
 			if(curr_status == STATUS_FREE &&(state < state_enter_service))
 			{
 				push_note(C2,4);
@@ -806,14 +818,15 @@ void ProcessSensors(void)
   */
 void MyTKeys_ErrorStateProcess(void)
 {
+	int err_count;
   // Add here your own processing when a sensor is in Error state
   TSL_tkey_SetStateOff();
   LED1_ON;
   LED2_OFF;
 
-  for (;;)
+  for (err_count=0;err_count<100;err_count++)
   {
-	display_data = 0xEEE;
+	display_data = 0xE01;
     LED1_TOGGLE;
     SystickDelay(100);
     display_data = 0x000;
@@ -979,7 +992,6 @@ void KeyPressed_1(void){// START Key (Right)
 	KeyPressed_0();
 }
 void KeyPressed_2(void){ // +
-	return;
 	if(state == state_show_hours) {
 		state = state_set_time;
 		start_counter = 0;
@@ -1008,7 +1020,6 @@ void KeyPressed_2(void){ // +
 	push_note(A3,8);
 }
 void KeyPressed_3(void){ // -
-	return;
 	if(state == state_show_hours) {
 		state = state_set_time;
 		start_counter = 0;
@@ -1041,11 +1052,11 @@ void KeyPressed_3(void){ // -
 void ping_status(void){
 
 	static int ping_index = 0;
-	static int status_codes[4];
+	volatile static int status_codes[4];
 	// Ping solarium for status
-	if(!(flash_counter&0x3f)){
+	if(!(flash_counter&0x0f)){
 		int sts;
-		ping_counter = 0;
+		ping_counter ++;
 		ping_index = (ping_index + 1) & 0x03;
 		status_codes[ping_index] = get_controller_status(controller_address);
 		if(status_codes[ping_index]==status_codes[0] && status_codes[ping_index]==status_codes[1] &&
@@ -1208,7 +1219,13 @@ void send_start(void){
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+//	for (i = 0; i< 512; i+=2){
+//		val = *pMem;
+//		if (val == 0xffffffff) break;
+//		pMem++;
+//	}
+//	index = i;
 	if(index == 0){
 		// Load defaults
 		flash_mem = 0;
@@ -1223,19 +1240,22 @@ void read_eeprom(void){
 	flash_mem = (flash_struct*)&eeprom_array[index];
 	preset_pre_time = flash_mem->settings.pre_time ;
 	preset_cool_time = flash_mem->settings.cool_time;
+	controller_address = flash_mem->settings.addresse & 0x0f;
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
 }
 
 void write_eeprom(void){
-	int index = 0;
-	return;
+	volatile int index = 0;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
 	uint32_t *p = (uint32_t *)&flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index+=2;
-	if(index == 512){
+	for(index = 0; index<512; index+=2){
+		if(eeprom_array[index]!=0xFFFFFFFFUL) break;
+	}
+//	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+	if(index > 511){
 		// No more room. Erase the 4 pages
 		FLASH_ErasePage((uint32_t)&eeprom_array[0]);
 		FLASH_ErasePage((uint32_t)&eeprom_array[128]);
@@ -1243,30 +1263,31 @@ void write_eeprom(void){
 		FLASH_ErasePage((uint32_t)&eeprom_array[384]);
 		index = 0;
 	}
-
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<512))index++;
-	if(index == 512){
+	for(index = 0; index<512; index+=2){
+			if(eeprom_array[index]!=0xFFFFFFFFUL) break;
+	}
+	if(index >511){
 		display_data = 0xE01;
 		for (index = 0; index<20; index++){
 			push_note(E2,3);
 			push_note(D4,3);
 		}
 	} else {
-
+		volatile static FLASH_Status sts;
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
-		flash_mem.settings.addresse = controller_address;
+		flash_mem.settings.addresse = controller_address & 0x0f;
 		flash_mem.settings.unused = 0x55;
 		flash_mem.time.hours_h = work_hours[0];
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
-		FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
-		FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
+		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
+		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
 		index ++;
 	}
-//	FLASH_Lock();
+	FLASH_Lock();
 }
 
 
