@@ -275,29 +275,26 @@ void show_digit(int digit){
 }
 
 int get_controller_status(int n){
-	int counter = 10;
+
 	static int sts, data;
 	// clear in fifo
 	// send conmmand
 	while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	data =  USART_ReceiveData(USART1); // Flush input
     while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 	USART_SendData(USART1,0x80 | ((n & 0x0f)<<3) | 0);
-    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 //    delta = (delta + 1)& 0xff;
 //	USART_SendData(USART1,delta);
 
 //	USART_SendData(USART1,0x0f);
-	SystickDelay(20);
-	while(counter){
-		//read Rx buffer
-		sts = USART_GetFlagStatus(USART1,USART_FLAG_RXNE);
-		if(sts) {
-			data =  USART_ReceiveData(USART1);
-//			while(1);
-			return (data);
-			break;
-		}
-		counter--;
+    SystickDelay(70);
+
+    //read Rx buffer
+    sts = USART_GetFlagStatus(USART1,USART_FLAG_RXNE);
+    if(sts) {
+    	data =  USART_ReceiveData(USART1);
+    	//			while(1);
+    	return (data);
 	}
 	return -1;
 }
@@ -307,7 +304,7 @@ void get_address(void){
 	for (i = 0; i<16; i++){
 		result = get_controller_status(i);
 		if (result!=-1) break;
-		SystickDelay(20);
+		SystickDelay(60);
 	}
 	controller_address = i;
 }
@@ -320,7 +317,6 @@ void get_address(void){
   */
 int main(void)
 {
-
 	 TSL_Status_enum_T sts = 0;
   /*!< At this stage the microcontroller clock setting is already configured, 
        this is done through SystemInit() function which is called from startup
@@ -509,12 +505,13 @@ int main(void)
 	  if(!preset_pre_time || ! preset_cool_time){
 		  preset_pre_time = 7;
 		  preset_cool_time = 3;
+		  controller_address = 16;
 		  write_eeprom();
 	  }
 //	  controller_address = 1;
 	  while (1)
 	  {
-
+		  //controller_address = 11;
 		  //		  measurment = MyChannels_Data[0].Meas;
 		  //		  display_data = measurment;
 
@@ -967,6 +964,7 @@ void KeyPressed_0(void){//START Key(Left)
 		//send_start();
 	}
 	if((curr_status == STATUS_FREE)) {
+		push_note(C3,6);
 		if(time_to_set){
 // Send of time moved elsewhere
 		} else {
@@ -980,9 +978,10 @@ void KeyPressed_0(void){//START Key(Left)
 				write_eeprom();
 				read_eeprom();
 				start_counter = 0;
-				service_mode = mode_null;
+
 			} else {
 				start_counter = START_COUNTER_TIME;
+
 			}
 			state = state_show_hours;
 		}
@@ -1219,21 +1218,20 @@ void send_start(void){
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
-//	for (i = 0; i< 512; i+=2){
-//		val = *pMem;
-//		if (val == 0xffffffff) break;
-//		pMem++;
-//	}
-//	index = i;
+	uint32_t *p = eeprom_array;
+	for(index = 0; index<512; index+=2){
+		if(*(p + index)==0xFFFFFFFF) break;
+	}
 	if(index == 0){
 		// Load defaults
 		flash_mem = 0;
 		preset_pre_time = 7;
 		preset_cool_time = 3;
+		controller_address = 16;
 		work_hours[0] = 0;
 		work_hours[1] = 0;
 		work_hours[2] = 0;
+		write_eeprom();
 		return;
 	}
 	index-=2;
@@ -1250,10 +1248,12 @@ void write_eeprom(void){
 	volatile int index = 0;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
-	uint32_t *p = (uint32_t *)&flash_mem;
+	uint32_t *p = eeprom_array;
+//	uint32_t *p = (uint32_t *)&flash_mem;
 	for(index = 0; index<512; index+=2){
-		if(eeprom_array[index]!=0xFFFFFFFFUL) break;
+		if(*(p + index)==0xFFFFFFFF) break;
 	}
+
 //	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
 	if(index > 511){
 		// No more room. Erase the 4 pages
@@ -1264,7 +1264,7 @@ void write_eeprom(void){
 		index = 0;
 	}
 	for(index = 0; index<512; index+=2){
-			if(eeprom_array[index]!=0xFFFFFFFFUL) break;
+		if(*(p + index)==0xFFFFFFFF) break;
 	}
 	if(index >511){
 		display_data = 0xE01;
@@ -1274,6 +1274,7 @@ void write_eeprom(void){
 		}
 	} else {
 		volatile static FLASH_Status sts;
+		p = (uint32_t *)&flash_mem;
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
 		flash_mem.settings.addresse = controller_address & 0x0f;
