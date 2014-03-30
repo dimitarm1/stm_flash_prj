@@ -62,11 +62,6 @@
 #define CHANNEL_2_SRC       (5) // Index in source register (TSC->IOGXCR[])
 #define CHANNEL_2_DEST      (2) // Index in destination result array
 
-#define CHANNEL_3_IO_MSK    (TSL_GROUP6_IO4)
-#define CHANNEL_3_GRP_MSK   (TSL_GROUP6)
-#define CHANNEL_3_SRC       (5) // Index in source register (TSC->IOGXCR[])
-#define CHANNEL_3_DEST      (3) // Index in destination result array
-
 //======================
 // Shield IOs definition
 //======================
@@ -84,8 +79,8 @@
 
 
 #define BANK_1_NBCHANNELS    (2)
-#define BANK_1_MSK_CHANNELS  (CHANNEL_1_IO_MSK  | CHANNEL_3_IO_MSK )
-#define BANK_1_MSK_GROUPS    (CHANNEL_1_GRP_MSK | CHANNEL_3_GRP_MSK) // Only these groups will be acquired
+#define BANK_1_MSK_CHANNELS  (CHANNEL_1_IO_MSK )
+#define BANK_1_MSK_GROUPS    (CHANNEL_1_GRP_MSK) // Only these groups will be acquired
 
 //#define BANK_2_NBCHANNELS    (0)
 //#define BANK_2_MSK_CHANNELS  (0)
