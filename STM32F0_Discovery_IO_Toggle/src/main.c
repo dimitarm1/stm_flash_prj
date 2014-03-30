@@ -660,6 +660,11 @@ void get_next_note(){
 	}
 }
 
+clear_notes(){
+	start_note = end_note = 0;
+	buzz_counter = 0;
+}
+
 void TIM6_DAC_IRQHandler() {
 	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
 		if(buzz_counter){
@@ -731,6 +736,7 @@ void ProcessSensors(void)
 		if(start_counter>= START_COUNTER_TIME + ENTER_SERVICE_DELAY){
 			if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) &&(state < state_enter_service))
 			{
+				clear_notes();
 				push_note(C2,4);
 				push_note(E2,4);
 				push_note(G2,4);
@@ -756,6 +762,8 @@ void ProcessSensors(void)
 		if(time_to_set && state == state_set_time && start_counter == START_DELAY){
 			// Do start
 			state = state_show_time;
+			clear_notes();
+
 			push_note(A3,6);
 			push_note(A2,4);
 			push_note(A3,6);
@@ -765,6 +773,8 @@ void ProcessSensors(void)
 		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
 			// Cancel start
 			state = state_show_time;
+			clear_notes();
+
 			push_note(C3,6);
 			push_note(A3,4);
 			push_note(A2,6);
@@ -986,11 +996,15 @@ void KeyPressed_0(void){//START Key(Left)
 //	push_note(G2,2);
 //	push_note(C3,2);
 	if( curr_status == STATUS_WAITING ){
+		clear_notes();
+
 		push_note(C3,6);
 		push_note(E3,4);
 		//send_start();
 	}
 	if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) ) {
+		clear_notes();
+
 		push_note(C3,6);
 		if(time_to_set){
 // Send of time moved elsewhere
@@ -1045,6 +1059,8 @@ void KeyPressed_2(void){ // +
 			break;
 		}
 	}
+	clear_notes();
+
 	push_note(A3,8);
 }
 void KeyPressed_1(void){ // -
@@ -1074,6 +1090,8 @@ void KeyPressed_1(void){ // -
 	}
 
 //	if((time_to_set & 0x0F)>9) time_to_set -=6;
+	clear_notes();
+
 	push_note(A3,8);
 
 }
@@ -1299,6 +1317,8 @@ void write_eeprom(void){
 	if(index >511){
 		display_data = 0xE01;
 		for (index = 0; index<20; index++){
+			clear_notes();
+
 			push_note(E2,3);
 			push_note(D4,3);
 		}

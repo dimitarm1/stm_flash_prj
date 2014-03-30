@@ -174,7 +174,7 @@
 /** TouchKeys Detect state input threshold (range=0..255)
   - Enter Detect state if delta is above
 */
-#define TSLPRM_TKEY_DETECT_IN_TH (20) //(20)
+#define TSLPRM_TKEY_DETECT_IN_TH (30) //(20)
 
 /** TouchKeys Detect state output threshold (range=0..255)
   - Exit Detect state if delta is below
@@ -185,7 +185,7 @@
   - @warning The value is inverted in the sensor state machine
   - Enter Calibration state if delta is below
 */
-#define TSLPRM_TKEY_CALIB_TH (5) //(20)
+#define TSLPRM_TKEY_CALIB_TH (20) //(20)
 
 /** TouchKey, Linear and Rotary sensors thresholds coefficient (range=0..4)
     This multiplier coefficient is applied on Detect thresholds only.
@@ -343,7 +343,7 @@
   - A Low value will result in a higher sensitivity during the detection but with less noise filtering.
   - A High value will result in improving the system noise immunity but will increase the system response time.
 */
-#define TSLPRM_DEBOUNCE_DETECT (10)
+#define TSLPRM_DEBOUNCE_DETECT (20)
 
 /** Release state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity during the end-detection but with less noise filtering.
@@ -355,13 +355,13 @@
   - A Low value will result in a higher sensitivity during the recalibration but with less noise filtering.
   - A High value will result in a lower sensitivity during the recalibration but with more noise filtering.
 */
-#define TSLPRM_DEBOUNCE_CALIB (10)
+#define TSLPRM_DEBOUNCE_CALIB (20)
 
 /** Error state debounce in samples unit (range=0..63)
   - A Low value will result in a higher sensitivity to enter in error state.
   - A High value will result in a lower sensitivity to enter in error state.
 */
-#define TSLPRM_DEBOUNCE_ERROR (6)
+#define TSLPRM_DEBOUNCE_ERROR (60)
 
 /** @} Common_Parameters_Debounce */
 
