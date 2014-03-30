@@ -96,7 +96,7 @@
 
 /** Proximity detection usage (0=No, 1=Yes)
 */
-#define TSLPRM_USE_PROX (0)
+#define TSLPRM_USE_PROX (1)
 
 /** Use the Timer tick callback (0=No, 1=Yes)
   - When equal to 1, the function TSL_CallBack_TimerTick must be defined in
@@ -144,13 +144,13 @@
   - Low value = faster calibration but less precision.
   - High value = slower calibration but more precision.
 */
-#define TSLPRM_CALIB_SAMPLES (4)
+#define TSLPRM_CALIB_SAMPLES (8)
 
 /** Delay in measurement samples before starting the calibration (range=0..40)
   - This is usefull if a noise filter is used.
   - Write 0 to disable the delay.
 */
-#define TSLPRM_CALIB_DELAY (2)
+#define TSLPRM_CALIB_DELAY (20)
 
 /** @} Common_Parameters_Calibration */
 
@@ -407,7 +407,7 @@
 @note The DTO can be changed in run-time by the application only if the
       default value is between 1 and 63.
 */
-#define TSLPRM_DTO (1)
+#define TSLPRM_DTO (0)
 
 /** @} Common_Parameters_DTO */
 

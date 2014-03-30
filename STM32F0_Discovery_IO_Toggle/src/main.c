@@ -55,6 +55,7 @@
 
 #define TEST_TKEY(NB) (MyTKeys[(NB)].p_Data->StateId == TSL_STATEID_DETECT)
 
+#define STATUS_ERROR   (-1)
 #define STATUS_FREE    (0)
 #define STATUS_WAITING (3)
 #define STATUS_WORKING (1)
@@ -505,23 +506,29 @@ int main(void)
 	  if(!preset_pre_time || ! preset_cool_time){
 		  preset_pre_time = 7;
 		  preset_cool_time = 3;
-		  controller_address = 16;
+		  controller_address = 14;
 		  write_eeprom();
 	  }
-
+	  if(controller_address == 15){
+		  display_data = 0xEAF;
+		  // Try to get controller address continuously
+		  get_address();
+		  if(controller_address != 15)write_eeprom();
+	  }
 	  while (1)
 	  {
-		  controller_address = 14;
+//		  controller_address = 14;
 		  //		  measurment = MyChannels_Data[0].Meas;
 		  //		  display_data = measurment;
 
 		  // Execute STMTouch Driver state machine
-		  if(controller_address >15){
+/*		  if(controller_address >15){
 			  display_data = 0xEAF;
 			  // Try to get controller address continuously
 			  get_address();
 		  }
-		  else  {
+		  else*/
+		  {
 			  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 
 			  {
@@ -558,8 +565,11 @@ int main(void)
 					  } else  if(curr_status == STATUS_COOLING ){
 						  flash_mode = 3; // All flashing
 					  } else {
-						  controller_address = 16;
-//						  display_data = 0x555;
+//						  controller_address = 16;
+						  if((flash_counter/0x80)&1){
+							  display_data = 0xEEE;
+						  }
+
 //						  display_data = ping_counter;
 						 // flash_mode = 3; // All flashing
 					  }
@@ -604,7 +614,16 @@ int main(void)
 				  break;
 			  case state_address:
 				  flash_mode = 0;
-				  display_data = 0xFFA;
+				  if((flash_counter/0x80)&1){
+					  if(controller_address !=15){ // Address 15 reserved for external control
+						  display_data = controller_address;
+					  }
+					  else {
+						  display_data = 0xAAA;
+					  }
+				  } else {
+					  display_data = 0xFFA;
+				  }
 				  break;
 			  case state_pre_time:
 				  flash_mode = 2;
@@ -710,7 +729,7 @@ void ProcessSensors(void)
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
 		if(start_counter>= START_COUNTER_TIME + ENTER_SERVICE_DELAY){
-			if(curr_status == STATUS_FREE &&(state < state_enter_service))
+			if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) &&(state < state_enter_service))
 			{
 				push_note(C2,4);
 				push_note(E2,4);
@@ -720,6 +739,7 @@ void ProcessSensors(void)
 				push_note(C3,8);
 				state = state_enter_service;
 				service_mode = mode_clear_hours; // Clear Hours
+				time_to_set = 0;
 			}
 		}
 		if(state == state_enter_service){
@@ -970,7 +990,7 @@ void KeyPressed_0(void){//START Key(Left)
 		push_note(E3,4);
 		//send_start();
 	}
-	if((curr_status == STATUS_FREE)) {
+	if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) ) {
 		push_note(C3,6);
 		if(time_to_set){
 // Send of time moved elsewhere
@@ -985,12 +1005,13 @@ void KeyPressed_0(void){//START Key(Left)
 				write_eeprom();
 				read_eeprom();
 				start_counter = 0;
-
+				flash_mode = 0;
+				state = state_set_time;
 			} else {
 				start_counter = START_COUNTER_TIME;
-
+				state = state_show_hours;
 			}
-			state = state_show_hours;
+
 		}
 	}
 }
@@ -1012,6 +1033,7 @@ void KeyPressed_2(void){ // +
 		start_counter = EXIT_SERVICE_TIME;
 		switch (service_mode){
 		case mode_set_address:
+			if(controller_address<15) controller_address++;
 			break;
 		case mode_set_pre_time:
 			if(preset_pre_time<9) preset_pre_time++;
@@ -1038,6 +1060,7 @@ void KeyPressed_1(void){ // -
 		start_counter = EXIT_SERVICE_TIME;
 		switch (service_mode){
 		case mode_set_address:
+			if(controller_address) controller_address--;
 			break;
 		case mode_set_pre_time:
 			if(preset_pre_time) preset_pre_time--;
