@@ -35,16 +35,16 @@
 CONST TSL_ChannelSrc_T MyChannels_Src[TSLPRM_TOTAL_CHANNELS] =
 {
   { CHANNEL_0_SRC, CHANNEL_0_IO_MSK, CHANNEL_0_GRP_MSK },
-  { CHANNEL_2_SRC, CHANNEL_2_IO_MSK, CHANNEL_2_GRP_MSK },
-  { CHANNEL_1_SRC, CHANNEL_1_IO_MSK, CHANNEL_1_GRP_MSK }
+  { CHANNEL_1_SRC, CHANNEL_1_IO_MSK, CHANNEL_1_GRP_MSK },
+  { CHANNEL_2_SRC, CHANNEL_2_IO_MSK, CHANNEL_2_GRP_MSK }
 };
 
 // Destination (ROM)
 CONST TSL_ChannelDest_T MyChannels_Dest[TSLPRM_TOTAL_CHANNELS] =
 {
   { CHANNEL_0_DEST },
-  { CHANNEL_2_DEST },
-  { CHANNEL_1_DEST }
+  { CHANNEL_1_DEST },
+  { CHANNEL_2_DEST }
 };
 
 // Data (RAM)
@@ -58,7 +58,8 @@ TSL_ChannelData_T MyChannels_Data[TSLPRM_TOTAL_CHANNELS];
 
 CONST TSL_Bank_T MyBanks[TSLPRM_TOTAL_BANKS] = {
   {&MyChannels_Src[0], &MyChannels_Dest[0], MyChannels_Data, BANK_0_NBCHANNELS, BANK_0_MSK_CHANNELS, BANK_0_MSK_GROUPS},
-  {&MyChannels_Src[2], &MyChannels_Dest[2], MyChannels_Data, BANK_1_NBCHANNELS, BANK_1_MSK_CHANNELS, BANK_1_MSK_GROUPS}
+  {&MyChannels_Src[1], &MyChannels_Dest[1], MyChannels_Data, BANK_1_NBCHANNELS, BANK_1_MSK_CHANNELS, BANK_1_MSK_GROUPS},
+  {&MyChannels_Src[2], &MyChannels_Dest[2], MyChannels_Data, BANK_2_NBCHANNELS, BANK_2_MSK_CHANNELS, BANK_2_MSK_GROUPS}
 };
 
 //==============================================================================
@@ -298,11 +299,11 @@ TSL_Status_enum_T TSL_user_Action(void)
     {
       if (TSL_ecs_Process(&MyObjGroup) == TSL_STATUS_OK)
       {
-        LED2_TOGGLE;
+//        LED2_TOGGLE;
       }
       else
       {
-        LED2_OFF;
+//        LED2_OFF;
       }
     }
     

@@ -483,11 +483,11 @@ int main(void)
 	  //============================================================================
 	  // Init STMTouch driver
 	  //============================================================================
-	  if (SysTick_Config(SystemCoreClock / 1000))
-	  {
-		  /* Capture error */
-		  while (1);
-	  }
+//	  if (SysTick_Config(SystemCoreClock / 1000)) //This is in tsl_user_init();
+//	  {
+//		  /* Capture error */
+//		  while (1);
+//	  }
 	  TSL_user_Init();
 
 
@@ -508,10 +508,10 @@ int main(void)
 		  controller_address = 16;
 		  write_eeprom();
 	  }
-//	  controller_address = 1;
+
 	  while (1)
 	  {
-		  //controller_address = 11;
+		  controller_address = 14;
 		  //		  measurment = MyChannels_Data[0].Meas;
 		  //		  display_data = measurment;
 
@@ -531,6 +531,14 @@ int main(void)
 			  ping_status(); // Get current status
 //			  display_data = state + ((curr_status&0x0f)<<4);
 //			  display_data =ping_counter;
+//			  display_data =
+//					  MyTKeys[0].p_Data->StateId |
+//					  MyTKeys[1].p_Data->StateId<<4|
+//					  MyTKeys[2].p_Data->StateId<<8;
+//					  MyChannels_Data[0].Flags.ObjStatus|
+//					  MyChannels_Data[1].Flags.ObjStatus<<4|
+//					  MyChannels_Data[2].Flags.ObjStatus<<8;
+//			  state = 30;
 			  switch (state){
 			  case state_show_time:
 			  case state_set_time:
@@ -697,7 +705,7 @@ void ProcessSensors(void)
 {
 
 	// TKEY 0
-	if (TEST_TKEY(0)||TEST_TKEY(1))
+	if (TEST_TKEY(0))
 	{
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
@@ -817,17 +825,16 @@ void MyTKeys_ErrorStateProcess(void)
 {
 	int err_count;
   // Add here your own processing when a sensor is in Error state
-  TSL_tkey_SetStateOff();
-  LED1_ON;
-  LED2_OFF;
+ // TSL_tkey_SetStateOff();
+//  LED1_ON;
+//  LED2_OFF;
 
-  for (err_count=0;err_count<100;err_count++)
+  for (err_count=0;err_count<1;err_count++)
   {
-	display_data = 0xE01;
-    LED1_TOGGLE;
-    SystickDelay(100);
-    display_data = 0x000;
-    SystickDelay(100);
+//	display_data = 0xE01;
+//    LED1_TOGGLE;
+//    SystickDelay(1000);
+
   }
 }
 
@@ -871,12 +878,12 @@ void assert_failed(uint8_t* file, uint32_t line)
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
   /* Infinite loop */
-  LED1_OFF;
-  LED2_ON;
+//  LED1_OFF;
+//  LED2_ON;
   for (;;)
   {
-    LED1_TOGGLE;
-    LED2_TOGGLE;
+//    LED1_TOGGLE;
+//    LED2_TOGGLE;
     SystickDelay(100);
   }
 }
@@ -987,7 +994,7 @@ void KeyPressed_0(void){//START Key(Left)
 		}
 	}
 }
-void KeyPressed_1(void){// START Key (Right)
+void KeyPressed_3(void){// START Key (Right)
 	KeyPressed_0();
 }
 void KeyPressed_2(void){ // +
@@ -1018,7 +1025,7 @@ void KeyPressed_2(void){ // +
 	}
 	push_note(A3,8);
 }
-void KeyPressed_3(void){ // -
+void KeyPressed_1(void){ // -
 	if(state == state_show_hours) {
 		state = state_set_time;
 		start_counter = 0;

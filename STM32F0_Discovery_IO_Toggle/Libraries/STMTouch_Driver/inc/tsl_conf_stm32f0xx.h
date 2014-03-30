@@ -51,7 +51,7 @@
 
 /** Total number of banks in application (range=1..255)
 */
-#define TSLPRM_TOTAL_BANKS (2)
+#define TSLPRM_TOTAL_BANKS (3)
 
 /** Total number of "Extended" TouchKeys in application (range=0..255)
 */
@@ -88,7 +88,7 @@
 /** Record the last measure (0=No, 1=Yes)
   - If No the measure is recalculated using the Reference and Delta
 */
-#define TSLPRM_USE_MEAS (1)
+#define TSLPRM_USE_MEAS (0)
 
 /** Zone management usage (0=No, 1=Yes)
 */
@@ -108,7 +108,7 @@
   - If No the TS interrupt is not used.
   - If Yes the TS interrupt is used.
 */
-#define TSLPRM_USE_ACQ_INTERRUPT (1)
+#define TSLPRM_USE_ACQ_INTERRUPT (0)
 
 /** @} Common_Parameters_Options */
 
@@ -123,7 +123,7 @@
   - This is the minimum acceptable value for the acquisition measure.
   - The acquisition will be in error if the measure is below this value.
 */
-#define TSLPRM_ACQ_MIN (10) //(10) // DEBUG is 1
+#define TSLPRM_ACQ_MIN (5) //(10) // DEBUG is 1
 
 /** Maximum acquisition measurement (range=255, 511, 1023, 2047, 8191, 16383)
   - This is the maximum acceptable value for the acquisition measure.
@@ -499,7 +499,7 @@
 
 #define TSLPRM_TSC_GROUP6_IO1  NU       // PB11
 #define TSLPRM_TSC_GROUP6_IO2  SAMPCAP  // PB12
-#define TSLPRM_TSC_GROUP6_IO3  CHANNEL  // PB13
+#define TSLPRM_TSC_GROUP6_IO3  SHIELD   // PB13
 #define TSLPRM_TSC_GROUP6_IO4  CHANNEL  // PB14
 
 /** @} STM32F0xx_Parameters_GPIO_Config */
