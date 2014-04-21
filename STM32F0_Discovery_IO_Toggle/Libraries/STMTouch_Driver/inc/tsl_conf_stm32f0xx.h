@@ -499,7 +499,7 @@
 
 #define TSLPRM_TSC_GROUP6_IO1  NU       // PB11
 #define TSLPRM_TSC_GROUP6_IO2  SAMPCAP  // PB12
-#define TSLPRM_TSC_GROUP6_IO3  SHIELD   // PB13
+#define TSLPRM_TSC_GROUP6_IO3  NU       // PB13
 #define TSLPRM_TSC_GROUP6_IO4  CHANNEL  // PB14
 
 /** @} STM32F0xx_Parameters_GPIO_Config */

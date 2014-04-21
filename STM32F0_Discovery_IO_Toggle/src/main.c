@@ -147,9 +147,9 @@ static const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")
 //  TSL_tkey_Process
 //};
 
-TSL_TouchKeyData_T          MyTKeys_Data[4];        /**< Data (state id, counter, flags, ...) */
-TSL_TouchKeyParam_T         MyTKeys_Param[4];       /**< Parameters (thresholds, debounce, ...) */
-TSL_ChannelData_T           MyChannels_Data[4];     /**< Channel Data (Meas, Ref, Delta, ...) */
+//TSL_TouchKeyData_T          MyTKeys_Data[4];        /**< Data (state id, counter, flags, ...) */
+//TSL_TouchKeyParam_T         MyTKeys_Param[4];       /**< Parameters (thresholds, debounce, ...) */
+//TSL_ChannelData_T           MyChannels_Data[4];     /**< Channel Data (Meas, Ref, Delta, ...) */
 //// "basic" touchkeys: Always placed in ROM
 //const TSL_TouchKeyB_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
 //{
@@ -660,7 +660,7 @@ void get_next_note(){
 	}
 }
 
-clear_notes(){
+void clear_notes(){
 	start_note = end_note = 0;
 	buzz_counter = 0;
 }
@@ -1266,7 +1266,7 @@ void send_start(void){
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	uint32_t *p = eeprom_array;
+	uint32_t *p = (uint32_t *)eeprom_array;
 	for(index = 0; index<512; index+=2){
 		if(*(p + index)==0xFFFFFFFF) break;
 	}
@@ -1296,7 +1296,7 @@ void write_eeprom(void){
 	volatile int index = 0;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
-	uint32_t *p = eeprom_array;
+	uint32_t *p = (uint32_t *)eeprom_array;
 //	uint32_t *p = (uint32_t *)&flash_mem;
 	for(index = 0; index<512; index+=2){
 		if(*(p + index)==0xFFFFFFFF) break;
