@@ -28,7 +28,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "defines.h"
 #include "init.h"
-
+#include "stdint.h"
 #include "stm32f0xx_iwdg.h"
 
 
