@@ -18,8 +18,12 @@ void init_periph(){
 	/* GPIO Periph clock enable */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF, ENABLE);
 	/* UART1 Clock enable; SPI1 Clock enable*/
-	RCC_APB1PeriphClockCmd( RCC_APB2Periph_SPI1,ENABLE);
+	RCC_APB2PeriphClockCmd( RCC_APB2Periph_SPI1,ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
+    RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
+    RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);
+
 
 
 	/* Configure PA in output push-pull mode (for segments)*/
@@ -224,9 +228,123 @@ void init_periph(){
 
 
 
+
 //	if (SysTick_Config(SystemCoreClock / (1000))){
 //		while(1); // Capture error
 //	}
 //	NVIC_SetPriority (SysTick_IRQn, 3);
 
 }
+
+
+void i2c_config_1(){
+	I2C_DeInit(I2C1);
+	I2C_DeInit(I2C2);
+
+	/* Un-Configure PB */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_10 | GPIO_Pin_11 ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	/* Configure PB */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	/* Configure PF */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 ;
+	GPIO_Init(GPIOF, &GPIO_InitStructure);
+
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource8, GPIO_AF_1); //I2C1 SDA
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_1); //I2C1 SCL
+
+//	Port F has only 1 AF!!
+//	GPIO_PinAFConfig(GPIOF, GPIO_PinSource6, GPIO_AF_1); //I2C2 SDA
+//	GPIO_PinAFConfig(GPIOF, GPIO_PinSource7, GPIO_AF_1); //I2C2 SCL
+
+	I2C_InitTypeDef i2c_init_str;
+	I2C_StructInit(&i2c_init_str);
+
+	I2C_Init(I2C1,&i2c_init_str);
+	I2C_Init(I2C2,&i2c_init_str);
+
+}
+
+void i2c_config_2(){
+	I2C_DeInit(I2C1);
+	I2C_DeInit(I2C2);
+
+	/* Un-Configure PB */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	/* Un-Configure PF */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 ;
+	GPIO_Init(GPIOF, &GPIO_InitStructure);
+
+	/* Configure PB */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_10 | GPIO_Pin_11 ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_1); //I2C1 SDA
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_1); //I2C1 SCL
+
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_1); //I2C2 SDA
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_1); //I2C2 SCL
+
+	I2C_InitTypeDef i2c_init_str;
+	I2C_StructInit(&i2c_init_str);
+
+	I2C_Init(I2C1,&i2c_init_str);
+	I2C_Init(I2C2,&i2c_init_str);
+
+}
+
+
+// From forum https://my.st.com/public/STe2ecommunities/mcu/Lists/STM32Discovery/Flat.aspx?RootFolder=%2Fpublic%2FSTe2ecommunities%2Fmcu%2FLists%2FSTM32Discovery%2FI2C%20Wrong&FolderCTID=0x01200200770978C69A1141439FE559EB459D75800084C20D8867EAD444A5987D47BE638E0F&currentviews=563
+void I2C_PCF_init()
+ {
+     RCC->AHBENR|=RCC_AHBENR_GPIOBEN;
+     GPIOB->MODER|= GPIO_MODER_MODER6_1|GPIO_MODER_MODER7_1;
+     GPIOB->OSPEEDR|=GPIO_OSPEEDER_OSPEEDR6|GPIO_OSPEEDER_OSPEEDR7;//predkosc 50MHZ
+     GPIOB->AFR[0]|=0x11000000;    //AF1
+
+     RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
+
+     I2C1->CR1|=I2C_CR1_PE;                    //set PE
+     I2C1->CR1&=~I2C_CR1_PE;                    //reset PE
+     while(I2C1->CR1&I2C_CR1_PE);            //while PE ==1
+
+   //  I2C1->TIMINGR|=(PRESC << 28)|(SCLL<<0)|(SCLH<<8)|(SCLDEL<<20)|(SDADEL<<16); //configure for 48Mhz clock
+
+     I2C1->CR1|=I2C_CR1_PE;                    //set PE
+ }
+
+void I2C_PCF_send(int address, int length)
+ {
+
+     while ((I2C1->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
+     I2C1->CR2|=(address<<0)|(length<<16)| I2C_CR2_AUTOEND ;    //address SLAVE 7bits
+     I2C1->CR2 &=~ I2C_CR2_RD_WRN;                        //write
+     I2C1->CR2 |= I2C_CR2_START;
+     while ((I2C1->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
+     I2C1->TXDR=0xff;//example data
+ }
+
+
+

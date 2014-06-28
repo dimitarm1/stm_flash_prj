@@ -19,6 +19,7 @@
 #include "stm32f0xx_misc.h"
 #include "stm32f0xx_exti.h"
 #include "stm32f0xx_syscfg.h"
+#include "stm32f0xx_i2c.h"
 
 
 extern SPI_InitTypeDef 				SPI_InitStruct;
