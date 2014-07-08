@@ -42,77 +42,40 @@
  */
 
 /* Private typedef -----------------------------------------------------------*/
+ typedef struct time_str{
+	 uint8_t used_flag :8;
+	 uint8_t hours_h   :8;
+	 uint8_t hours_l   :8;
+	 uint8_t minutes   :8;
+ }time_str;
+ typedef struct settings_str{
+	 uint8_t addresse  :8;
+	 uint8_t pre_time  :8;
+	 uint8_t cool_time :8;
+	 uint8_t unused    :8;
+	 uint8_t volume_in_l  :8;
+	 uint8_t volume_in_r  :8;
+	 uint8_t volume_dac_l :8;
+	 uint8_t volume_dac_r :8;
+ }settings_str;
+ typedef struct flash_struct{
+	 time_str time;
+	 settings_str settings;
+ }flash_struct;
+
+typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode, state_volume_1, state_volume_2}states;
+ states state;
+typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume_1, mode_set_volume_2}modes;
+modes service_mode;
+
+
 /* Private define ------------------------------------------------------------*/
 #define BSRR_VAL        0x0300
 
 
 /* Private macros ------------------------------------------------------------*/
 
-
-
-
 /* Private variables ---------------------------------------------------------*/
-
-
- const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
- __IO uint32_t TimingDelay;
-
-typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode}states;
- states state;
-typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
- modes service_mode;
- unsigned char controller_address = 0x0e;
- int curr_status;
- int prev_status;
- int curr_time;
- int flash_mode = 0;
-
- uint16_t data = 0;
-unsigned char  time_to_set = 0;
-unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
-unsigned char  preset_pre_time = 7;
-unsigned char  preset_cool_time = 3;
-int start_counter = 0;
-int last_button = 0;
-int prev_button = 0;
-int display_data;
-int pre_time, main_time, cool_time;
-unsigned int Gv_miliseconds = 0;
-int Gv_UART_Timeout = 1000; // Timeout in mSec
-int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-int rx_state= 0;
-int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
-int minute_counter =0;
-int zero_crossed = 0;
-int aqua_fresh_level = 0;
-volatile int volume_level = 5;
-volatile int fan_level = 7;
-unsigned int external_read = 0;
-
-const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
- char digits[3];
-// for Display:
- int refresh_counter = 0;
- int flash_counter = 0;
-// for Display:
- int led_counter = 0;
- int digit_num = 0;
-typedef struct time_str{
-	uint8_t used_flag :8;
-	uint8_t hours_h   :8;
-	uint8_t hours_l   :8;
-	uint8_t minutes   :8;
-}time_str;
-typedef struct settings_str{
-	uint8_t addresse  :8;
-	uint8_t pre_time  :8;
-	uint8_t cool_time :8;
-	uint8_t unused    :8;
-}settings_str;
-typedef struct flash_struct{
-	time_str time;
-	settings_str settings;
-}flash_struct;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystickDelay(__IO uint32_t nTime);
@@ -134,7 +97,6 @@ void set_volume(int value);
 
 __IO uint32_t Gv_SystickCounter;
 
-
 SPI_InitTypeDef 			SPI_InitStruct;
 TIM_TimeBaseInitTypeDef  	TIM_TimeBaseStructure;
 TIM_OCInitTypeDef  			TIM_OCInitStructure;
@@ -144,6 +106,59 @@ EXTI_InitTypeDef   			EXTI_InitStructure;
 USART_InitTypeDef 			USART_InitStructure;
 USART_ClockInitTypeDef 		USART_ClockInitStruct;
 NVIC_InitTypeDef 			NVIC_InitStructure;
+DAC_InitTypeDef             DAC_InitStructure;
+
+
+char dac_buffer[2][512];
+const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
+const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
+const int message_sector_offset[] = {10,40,70,100,130,160,190};
+const int message_sector_counts[] = {30,30,30,30,30,30,30};
+
+__IO uint32_t TimingDelay;
+
+unsigned char controller_address = 0x0e;
+int curr_status;
+int prev_status;
+int curr_time;
+int flash_mode = 0;
+int dac_out_counter;
+int dac_ping_pong_state;
+int dac_current_block;
+int dac_current_message;
+int dac_fade_out_counter;
+int dac_fade_in_counter;
+
+uint16_t data = 0;
+unsigned char  time_to_set = 0;
+unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
+unsigned char  preset_pre_time = 7;
+unsigned char  preset_cool_time = 3;
+unsigned char  volume[4];
+int start_counter = 0;
+int last_button = 0;
+int prev_button = 0;
+int display_data;
+int pre_time, main_time, cool_time;
+unsigned int Gv_miliseconds = 0;
+int Gv_UART_Timeout = 1000; // Timeout in mSec
+int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+int rx_state= 0;
+int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+int minute_counter =0;
+int zero_crossed = 0;
+int aqua_fresh_level = 0;
+volatile int volume_level = 5;
+volatile int fan_level = 7;
+unsigned int external_read = 0;
+
+char digits[3];
+// for Display:
+int refresh_counter = 0;
+int flash_counter = 0;
+// for Display:
+int led_counter = 0;
+int digit_num = 0;
 
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
@@ -396,6 +411,7 @@ int main(void)
 	pre_time = 0;
 	main_time = 0;
 	cool_time = 0;
+	dac_current_message = -1;
 //	read_eeprom();
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
@@ -405,6 +421,7 @@ int main(void)
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	update_status();
 	set_volume(0);
+//	play_message(0);
 	while (1)
 	{
 		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
@@ -1221,7 +1238,7 @@ void set_volume(int value){
 
 void usart_receive(void){
 
-	enum rxstates {state_none, state_pre_time, state_main_time, state_cool_time, state_get_checksum};
+	enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
 	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
 	data =  USART_ReceiveData(USART1);
 
@@ -1244,21 +1261,21 @@ void usart_receive(void){
 		}
 		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
 		{
-			rx_state = state_pre_time;
+			rx_state = rx_state_pre_time;
 		}
 		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+5) //Command 5 == Main_time_set
 		{
-			rx_state = state_main_time;
+			rx_state = rx_state_main_time;
 		}
 		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+3) //Command 3 == Cool_time_set
 		{
-			rx_state = state_cool_time;
+			rx_state = rx_state_cool_time;
 		}
 
 	} else if (rx_state){
 		// payload
 		int time_in_hex = ToBCD(main_time_sent);
-		if(rx_state == state_get_checksum){
+		if(rx_state == rx_state_get_checksum){
 			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			if(	data == checksum){
 				pre_time = pre_time_sent;
@@ -1269,17 +1286,17 @@ void usart_receive(void){
 			}
 			rx_state = 0;
 		}
-		if(rx_state == state_pre_time){
+		if(rx_state == rx_state_pre_time){
 			pre_time_sent = data;
 			rx_state = 0;
 		}
-		if(rx_state == state_main_time){
+		if(rx_state == rx_state_main_time){
 			main_time_sent = FromBCD(data);
 			rx_state = 0;
 		}
-		if(rx_state == state_cool_time){
+		if(rx_state == rx_state_cool_time){
 			cool_time_sent = data;
-			rx_state = state_get_checksum;
+			rx_state = rx_state_get_checksum;
 			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
 			data = checksum;
 			USART_SendData(USART1,data);

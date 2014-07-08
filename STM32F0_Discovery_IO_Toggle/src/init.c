@@ -7,6 +7,9 @@
 #include "init.h"
 extern  unsigned char controller_address;
 
+int selected_I2C_pair = 0;
+
+
 void init_periph(){
 	/*!< At this stage the microcontroller clock setting is already configured,
        this is done through SystemInit() function which is called from startup
@@ -238,6 +241,8 @@ void init_periph(){
 
 
 void i2c_config_1(){
+	// These channels are used for analog input
+	selected_I2C_pair = 1;
 	I2C_DeInit(I2C1);
 	I2C_DeInit(I2C2);
 
@@ -277,6 +282,8 @@ void i2c_config_1(){
 }
 
 void i2c_config_2(){
+	// These channels are used for DAC out
+	selected_I2C_pair = 2;
 	I2C_DeInit(I2C1);
 	I2C_DeInit(I2C2);
 
@@ -333,17 +340,6 @@ void I2C_PCF_init()
    //  I2C1->TIMINGR|=(PRESC << 28)|(SCLL<<0)|(SCLH<<8)|(SCLDEL<<20)|(SDADEL<<16); //configure for 48Mhz clock
 
      I2C1->CR1|=I2C_CR1_PE;                    //set PE
- }
-
-void I2C_PCF_send(int address, int length)
- {
-
-     while ((I2C1->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
-     I2C1->CR2|=(address<<0)|(length<<16)| I2C_CR2_AUTOEND ;    //address SLAVE 7bits
-     I2C1->CR2 &=~ I2C_CR2_RD_WRN;                        //write
-     I2C1->CR2 |= I2C_CR2_START;
-     while ((I2C1->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
-     I2C1->TXDR=0xff;//example data
  }
 
 
