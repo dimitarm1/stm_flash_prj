@@ -228,10 +228,36 @@ void init_periph(){
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
+	// Timer 6 used for DAC playback
+	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
+	TIM6->PSC = 41; // Set prescaler to 41999
+	TIM6->ARR = 599; // Set auto-reload to 5999
+	// TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
+	TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
+	TIM6->EGR |= TIM_EGR_UG; // Force update
+	TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
+	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
+	//TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
 
 
-
+	/* Configure PA.04 (DAC_OUT1) as analog */
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	while (1);
+	/* DAC channel1 Configuration */
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
+	DAC_DeInit();
+	DAC_StructInit(&DAC_InitStructure);
+	DAC_Init(DAC_Channel_1, &DAC_InitStructure);
+	disk_initialize(0);
+//	   RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
+	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
+	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);
+	i2c_config_1();
 //	if (SysTick_Config(SystemCoreClock / (1000))){
 //		while(1); // Capture error
 //	}
