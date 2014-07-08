@@ -1360,4 +1360,103 @@ void usart_receive(void){
 	//	USART_SendData(USART1,0x80);
 }
 
+void play_message(int index){
+	if(disk_status(0) == STA_NOINIT) return;
+
+	dac_current_message = index;
+	dac_out_counter = 511;
+	disk_read(0, dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
+	dac_current_block = 2;
+	TIM6->CR1 |= TIM_CR1_CEN;
+	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	dac_ping_pong_state = 0;
+	dac_fade_in_counter = 10 * volume[0];
+}
+
+void I2C_MCP_send_byte(I2C_TypeDef* I2Cx, char data)
+{
+	int address = 0x2F; // MCP4018's fixed address
+	int length = 1;
+	while ((I2Cx->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
+	I2Cx->CR2|=(address<<0)|(length<<16)| I2C_CR2_AUTOEND ;    //address SLAVE 7bits
+	I2Cx->CR2 &=~ I2C_CR2_RD_WRN;                        //write
+	I2Cx->CR2 |= I2C_CR2_START;
+	while ((I2Cx->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
+	I2Cx->TXDR=data;//example data
+}
+
+void set_pot_level(int channel, char level){
+	switch(channel){
+	case 1:
+		i2c_config_1();
+		I2C_MCP_send_byte(I2C1, level);
+	case 2:
+		i2c_config_1();
+		I2C_MCP_send_byte(I2C2, level);
+		break;
+	case 3:
+		i2c_config_2();
+		I2C_MCP_send_byte(I2C1, level);
+	case 4:
+		i2c_config_2();
+		I2C_MCP_send_byte(I2C2, level);
+		break;
+	default:
+		break;
+
+	}
+}
+
+void TIM6_DAC_IRQHandler() {
+	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
+	{
+		if(dac_fade_in_counter){
+			dac_fade_in_counter--;
+			if(!(dac_fade_in_counter%100)){
+				set_pot_level(3, dac_fade_in_counter/10);
+				set_pot_level(4, dac_fade_in_counter/10);
+			}
+			if(!dac_fade_in_counter){
+				set_pot_level(1, 50);
+				set_pot_level(2, 50);
+			}
+			goto finish_TIM6_isr;
+		}
+
+		if(dac_fade_out_counter){
+			dac_fade_out_counter--;
+			if(!(dac_fade_out_counter%100)){
+				set_pot_level(3, volume[2] - dac_fade_out_counter/10);
+				set_pot_level(4, volume[2] - dac_fade_out_counter/10);
+			}
+			if(!dac_fade_out_counter){
+				TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
+			}
+			goto finish_TIM6_isr;
+		}
+
+		DAC_SetChannel1Data(DAC_Align_8b_R, dac_buffer[dac_ping_pong_state][dac_out_counter]);
+
+		if(dac_out_counter<512){
+			dac_out_counter++;
+		} else {
+			dac_out_counter = 0;
+			dac_ping_pong_state = !dac_ping_pong_state;
+
+			if (dac_current_block < message_sector_counts[dac_current_message]){
+				disk_read(0, dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+			} else if (dac_current_block > message_sector_counts[dac_current_message]){
+				dac_fade_out_counter = 10 * volume[2];
+			}
+			dac_current_block++;
+			dac_ping_pong_state = !dac_ping_pong_state;
+		}
+	}
+	finish_TIM6_isr:
+	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+}
+
+
+
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
