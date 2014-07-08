@@ -20,12 +20,13 @@ void init_periph(){
 
 	/* GPIO Periph clock enable */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF, ENABLE);
+	/* Zero cross timr (TIM2) */
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 	/* UART1 Clock enable; SPI1 Clock enable*/
 	RCC_APB2PeriphClockCmd( RCC_APB2Periph_SPI1,ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-    RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
-    RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
-    RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);
+
+	/* DAC Periph clock enable */
 
 
 
@@ -132,8 +133,6 @@ void init_periph(){
 
 	// Zero cross detection timer
 
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
 	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_Period = 70 ;
@@ -174,6 +173,7 @@ void init_periph(){
 
 	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
+
 	/* TIM2 enable counter */
 	TIM_Cmd(TIM2, ENABLE);
 
@@ -321,6 +321,7 @@ void i2c_config_2(){
 	I2C_Init(I2C2,&i2c_init_str);
 
 }
+
 
 
 // From forum https://my.st.com/public/STe2ecommunities/mcu/Lists/STM32Discovery/Flat.aspx?RootFolder=%2Fpublic%2FSTe2ecommunities%2Fmcu%2FLists%2FSTM32Discovery%2FI2C%20Wrong&FolderCTID=0x01200200770978C69A1141439FE559EB459D75800084C20D8867EAD444A5987D47BE638E0F&currentviews=563

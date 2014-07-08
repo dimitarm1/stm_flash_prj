@@ -537,6 +537,24 @@ int main(void)
 			flash_mode = 0;
 			display_data = 0xFF5;
 			break;
+
+		case state_volume_1:
+			flash_mode = 0;
+			if((flash_counter/0x400)&1){
+				display_data =  preset_cool_time;
+			} else {
+				display_data = 0xFF6;
+			}
+			break;
+
+		case state_volume_2:
+			flash_mode = 0;
+			if((flash_counter/0x400)&1){
+				display_data =  preset_cool_time;
+			} else {
+				display_data = 0xFF7;
+			}
+			break;
 		}
 		//		show_digit(display_data);
 		if (state == state_show_time){
@@ -811,6 +829,12 @@ void ProcessButtons(void)
 					case mode_set_cool_time:
 						if(preset_cool_time<9) preset_cool_time++;
 						break;
+					case mode_set_volume_1:
+						if(volume[0] < 99) volume[1] = ++ volume[0];
+						break;
+					case mode_set_volume_2:
+						if(volume[2] < 99) volume[3] = ++ volume[2];
+						break;
 					default:
 						break;
 					}
@@ -838,6 +862,12 @@ void ProcessButtons(void)
 						break;
 					case mode_set_cool_time:
 						if(preset_cool_time) preset_cool_time--;
+						break;
+					case mode_set_volume_1:
+						if(volume[0] > 0) volume[1] = -- volume[0];
+						break;
+					case mode_set_volume_2:
+						if(volume[2] > 0) volume[3] = -- volume[2];
 						break;
 					default:
 						break;
@@ -884,6 +914,15 @@ void ProcessButtons(void)
 			}
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_cool_time; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_ext_mode; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_volume_1; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_volume_2; //
 			}
 		}
 		set_start_out_signal(1);
