@@ -1111,7 +1111,7 @@ void TimingDelay_Decrement(void)
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=3;
 //	for (i = 0; i< 512; i+=2){
 //		val = *pMem;
 //		if (val == 0xffffffff) break;
@@ -1126,6 +1126,8 @@ void read_eeprom(void){
 		work_hours[0] = 0;
 		work_hours[1] = 0;
 		work_hours[2] = 0;
+		volume[0] = volume[1] = 100;
+		volume[2] = volume[3] = 50;
 		return;
 	}
 	index-=2;
@@ -1136,6 +1138,10 @@ void read_eeprom(void){
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
+	volume[0] = flash_mem->settings.volume_in_l;
+	volume[1] = flash_mem->settings.volume_in_r;
+	volume[2] = flash_mem->settings.volume_dac_l;
+	volume[3] = flash_mem->settings.volume_dac_r;
 }
 
 void write_eeprom(void){
@@ -1143,7 +1149,7 @@ void write_eeprom(void){
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
 	uint32_t *p = (uint32_t *)&flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=3;
 	if(index > 511){
 		// No more room. Erase the 4 pages
 		FLASH_ErasePage((uint32_t)&eeprom_array[0]);
@@ -1165,10 +1171,17 @@ void write_eeprom(void){
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
+		flash_mem.settings.volume_in_l = volume[0];
+		flash_mem.settings.volume_in_r = volume[1];
+		flash_mem.settings.volume_dac_l = volume[2];
+		flash_mem.settings.volume_dac_r = volume[3];
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
 		index ++;
+		if (sts){
+			// Debug code here...
+		}
 	}
 	FLASH_Lock();
 }
