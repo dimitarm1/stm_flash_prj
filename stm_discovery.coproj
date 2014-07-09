@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Project version="2G - 1.7.6" name="stm_discovery">
   <Target name="stm_discovery" isCurrent="1">
-    <Device manufacturerId="9" manufacturerName="ST" chipId="247" chipName="STM32F051R4" boardId="" boardName=""/>
+    <Device manufacturerId="9" manufacturerName="ST" chipId="249" chipName="STM32F051R8" boardId="" boardName=""/>
     <BuildOption>
       <Compile>
         <Option name="OptimizationLevel" value="0"/>
@@ -12,11 +12,11 @@
           <Includepath path="."/>
         </Includepaths>
         <DefinedSymbols>
-          <Define name="STM32F0XX_MD"/>
-          <Define name="STM32F051R4"/>
           <Define name="STM32F0XX"/>
           <Define name="USE_STDPERIPH_DRIVER"/>
           <Define name="__ASSEMBLY__"/>
+          <Define name="STM32F051R8"/>
+          <Define name="STM32F0XX_MD"/>
         </DefinedSymbols>
       </Compile>
       <Link useDefault="0">
@@ -30,8 +30,8 @@
         <Option name="DiscardUnusedSections" value="1"/>
         <LinkedLibraries/>
         <MemoryAreas debugInFlashNotRAM="1">
-          <Memory name="IROM1" type="ReadOnly" size="0x00004000" startValue="0x08000000"/>
-          <Memory name="IRAM1" type="ReadWrite" size="0x00001000" startValue="0x20000000"/>
+          <Memory name="IROM1" type="ReadOnly" size="0x00010000" startValue="0x08000000"/>
+          <Memory name="IRAM1" type="ReadWrite" size="0x00002000" startValue="0x20000000"/>
           <Memory name="IROM2" type="ReadOnly" size="" startValue=""/>
           <Memory name="IRAM2" type="ReadWrite" size="" startValue=""/>
         </MemoryAreas>
@@ -66,7 +66,7 @@
       <Option name="org.coocox.codebugger.gdbjtag.core.autoDownload" value="1"/>
       <Option name="org.coocox.codebugger.gdbjtag.core.verify" value="1"/>
       <Option name="org.coocox.codebugger.gdbjtag.core.downloadFuction" value="Erase Full Chip"/>
-      <Option name="org.coocox.codebugger.gdbjtag.core.defaultAlgorithm" value="STM32F05xx_16.elf"/>
+      <Option name="org.coocox.codebugger.gdbjtag.core.defaultAlgorithm" value="STM32F05xx_64.elf"/>
     </DebugOption>
     <ExcludeFile/>
   </Target>
@@ -146,9 +146,9 @@
     <File name="system_stm32f0xx.c" path="STM32F0_Discovery_IO_Toggle/src/system_stm32f0xx.c" type="1"/>
     <File name="SDcard.c" path="STM32F0_Discovery_IO_Toggle/src/SDcard.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dma.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dma.h" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
     <File name="Libraries/CMSys/core_cm0.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm0.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_usart.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_i2c.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_i2c.c" type="1"/>
     <File name="defines.h" path="STM32F0_Discovery_IO_Toggle/src/defines.h" type="1"/>

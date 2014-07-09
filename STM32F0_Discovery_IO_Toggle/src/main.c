@@ -383,8 +383,10 @@ void show_digit(int digit){
  * @param  None
  * @retval None
  */
+volatile int stop=1;
 int main(void)
 {
+//	while (stop);
 	read_eeprom();
 	init_periph();
 

@@ -247,7 +247,6 @@ void init_periph(){
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	while (1);
 	/* DAC channel1 Configuration */
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
 	DAC_DeInit();
