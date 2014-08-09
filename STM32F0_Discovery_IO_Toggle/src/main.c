@@ -423,7 +423,7 @@ int main(void)
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	update_status();
 	set_volume(0);
-//	play_message(0);
+	play_message(0);
 	while (1)
 	{
 		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){

@@ -24,36 +24,36 @@
 
 
 /* SPIx Communication boards Interface */
-#define GPIO_AF_SPI2      GPIO_AF_0
-#define SPIx_SD                         SPI2
-#define SPIx_SD_CLK                     RCC_APB1Periph_SPI2
-#define SPIx_SD_CLK_INIT                RCC_APB1PeriphClockCmd
-#define SPIx_SD_IRQn                    SPI2_IRQn
-#define SPIx_SD_IRQHANDLER              SPI2_IRQHandler
+#define GPIO_AF_SPI1      GPIO_AF_0
+#define SPIx_SD                         SPI1
+#define SPIx_SD_CLK                     RCC_APB2Periph_SPI1
+#define SPIx_SD_CLK_INIT                RCC_APB2PeriphClockCmd
+#define SPIx_SD_IRQn                    SPI1_IRQn
+#define SPIx_SD_IRQHANDLER              SPI1_IRQHandler
 
-#define SPIx_SD_SCK_PIN                 GPIO_Pin_13
-#define SPIx_SD_SCK_GPIO_PORT           GPIOB
-#define SPIx_SD_SCK_GPIO_CLK            RCC_AHBPeriph_GPIOB
-#define SPIx_SD_SCK_SOURCE              GPIO_PinSource13
-#define SPIx_SD_SCK_AF                  GPIO_AF_SPI2
+#define SPIx_SD_SCK_PIN                 GPIO_Pin_5
+#define SPIx_SD_SCK_GPIO_PORT           GPIOA
+#define SPIx_SD_SCK_GPIO_CLK            RCC_AHBPeriph_GPIOA
+#define SPIx_SD_SCK_SOURCE              GPIO_PinSource5
+#define SPIx_SD_SCK_AF                  GPIO_AF_SPI1
 
-#define SPIx_SD_MISO_PIN                GPIO_Pin_14
-#define SPIx_SD_MISO_GPIO_PORT          GPIOB
-#define SPIx_SD_MISO_GPIO_CLK           RCC_AHBPeriph_GPIOB
-#define SPIx_SD_MISO_SOURCE             GPIO_PinSource14
-#define SPIx_SD_MISO_AF                 GPIO_AF_SPI2
+#define SPIx_SD_MISO_PIN                GPIO_Pin_7
+#define SPIx_SD_MISO_GPIO_PORT          GPIOA
+#define SPIx_SD_MISO_GPIO_CLK           RCC_AHBPeriph_GPIOA
+#define SPIx_SD_MISO_SOURCE             GPIO_PinSource7
+#define SPIx_SD_MISO_AF                 GPIO_AF_SPI1
 
-#define SPIx_SD_MOSI_PIN                GPIO_Pin_15
-#define SPIx_SD_MOSI_GPIO_PORT          GPIOB
-#define SPIx_SD_MOSI_GPIO_CLK           RCC_AHBPeriph_GPIOB
-#define SPIx_SD_MOSI_SOURCE             GPIO_PinSource15
-#define SPIx_SD_MOSI_AF                 GPIO_AF_SPI2
+#define SPIx_SD_MOSI_PIN                GPIO_Pin_6
+#define SPIx_SD_MOSI_GPIO_PORT          GPIOA
+#define SPIx_SD_MOSI_GPIO_CLK           RCC_AHBPeriph_GPIOA
+#define SPIx_SD_MOSI_SOURCE             GPIO_PinSource6
+#define SPIx_SD_MOSI_AF                 GPIO_AF_SPI1
 
-#define SPIx_SD_NSS_PIN                 GPIO_Pin_12
-#define SPIx_SD_NSS_GPIO_PORT           GPIOB
+#define SPIx_SD_NSS_PIN                 GPIO_Pin_15
+#define SPIx_SD_NSS_GPIO_PORT           GPIOA
 #define SPIx_SD_NSS_GPIO_CLK            RCC_AHBPeriph_GPIOB
-#define SPIx_SD_NSS_SOURCE              GPIO_PinSource12
-#define SPIx_SD_NSS_AF                  GPIO_AF_SPI2
+#define SPIx_SD_NSS_SOURCE              GPIO_PinSource15
+#define SPIx_SD_NSS_AF                  GPIO_AF_SPI1
 
 #define SPIx_SD_BAUDRATE_SLOW           SPI_BaudRatePrescaler_128
 #define SPIx_SD_BAUDRATE_FAST           SPI_BaudRatePrescaler_2
@@ -82,8 +82,8 @@
 #define SD2_BLOCK       0x0C        /* SD Ver.2 (Block address) */
 
 //pin select
-#define SDSELECT()        GPIOB->BRR = (1<<12) //pin low, MMC CS = L
-#define SDDESELECT()      GPIOB->BSRR = (1<<12) //pin high,MMC CS = H
+#define SDSELECT()        GPIOA->BRR = (1<<15) //pin low, MMC CS = L
+#define SDDESELECT()      GPIOA->BSRR = (1<<15) //pin high,MMC CS = H
 /*--------------------------------------------------------------------------
 
  Module Private Functions and Variables

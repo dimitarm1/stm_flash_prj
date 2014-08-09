@@ -23,7 +23,7 @@ void init_periph(){
 	/* Zero cross timr (TIM2) */
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 	/* UART1 Clock enable; SPI1 Clock enable*/
-	RCC_APB2PeriphClockCmd( RCC_APB2Periph_SPI1,ENABLE);
+//	RCC_APB2PeriphClockCmd( RCC_APB2Periph_SPI1,ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
 	/* DAC Periph clock enable */
@@ -88,6 +88,7 @@ void init_periph(){
 	GPIO_Init(GPIOF, &GPIO_InitStructure);
 
 	//Configure SPI pins:   -----------------------------------------------------------------------
+	/* in sdcard.c!!
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_15;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -111,6 +112,7 @@ void init_periph(){
 	SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256;
 	SPI_Init(SPI1,&SPI_InitStruct);
 	SPI_Cmd(SPI1, ENABLE);
+	*/
 
 	// Zero cross
 	// Zero cross detection timer
