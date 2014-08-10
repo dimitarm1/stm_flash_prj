@@ -131,7 +131,7 @@ int dac_fade_in_counter;
 
 uint16_t data = 0;
 unsigned char  time_to_set = 0;
-unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
+unsigned int   work_hours[3] = {0,0,0}; //HH HL MM - Hours[2], Minutes[1]
 unsigned char  preset_pre_time = 7;
 unsigned char  preset_cool_time = 3;
 unsigned char  volume[4];
@@ -1113,13 +1113,16 @@ void TimingDelay_Decrement(void)
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=3;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=(sizeof(flash_struct)/sizeof(uint32_t));
 //	for (i = 0; i< 512; i+=2){
 //		val = *pMem;
 //		if (val == 0xffffffff) break;
 //		pMem++;
 //	}
 //	index = i;
+	if(index > 511){
+			index = 0;
+	}
 	if(index == 0){
 		// Load defaults
 		flash_mem = 0;
@@ -1132,7 +1135,7 @@ void read_eeprom(void){
 		volume[2] = volume[3] = 50;
 		return;
 	}
-	index-=2;
+	index-=sizeof(flash_struct)/sizeof(uint32_t);
 	flash_mem = (flash_struct*)&eeprom_array[index];
 	preset_pre_time = flash_mem->settings.pre_time ;
 	preset_cool_time = flash_mem->settings.cool_time;
@@ -1431,8 +1434,9 @@ void TIM6_DAC_IRQHandler() {
 				set_pot_level(3, volume[2] - dac_fade_out_counter/10);
 				set_pot_level(4, volume[2] - dac_fade_out_counter/10);
 			}
-			if(!dac_fade_out_counter){
-				TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
+			if(!dac_fade_out_counter<=0){
+				//TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
+				TIM_Cmd(TIM6, DISABLE);
 			}
 			goto finish_TIM6_isr;
 		}
