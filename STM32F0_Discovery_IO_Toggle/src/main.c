@@ -1415,6 +1415,12 @@ void set_pot_level(int channel, char level){
 void TIM6_DAC_IRQHandler() {
 	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
 	{
+//		static int dummy = 0;
+//		if (!dummy) dummy = 255;
+//		else dummy = 0;
+//		DAC_SetChannel1Data(DAC_Align_8b_R, dummy);
+//		goto finish_TIM6_isr;
+
 		if(dac_fade_in_counter){
 			dac_fade_in_counter--;
 			if(!(dac_fade_in_counter%100)){
