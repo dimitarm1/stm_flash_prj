@@ -2,11 +2,11 @@
 <breakpoints>
 <breakpoint enabled="true" persistant="true" registered="true">
 <resource path="/stm_discovery/SDcard.c" type="1"/>
-<marker lineNumber="503" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
-<attrib name="message" value="Line breakpoint: SDcard.c [line: 503]"/>
+<marker lineNumber="493" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint: SDcard.c [line: 493]"/>
 <attrib name="org.eclipse.cdt.debug.core.condition" value=""/>
 <attrib name="org.eclipse.debug.core.id" value="org.eclipse.cdt.debug.core"/>
-<attrib name="org.eclipse.cdt.debug.core.installCount" value="0"/>
+<attrib name="org.eclipse.cdt.debug.core.installCount" value="1"/>
 <attrib name="org.eclipse.cdt.debug.core.sourceHandle" value="D:\stm_upravlenie\STM32F0_Discovery_IO_Toggle\src\SDcard.c"/>
 <attrib name="org.eclipse.cdt.debug.core.breakpointType" value="0"/>
 <attrib name="org.eclipse.cdt.debug.core.ignoreCount" value="0"/>

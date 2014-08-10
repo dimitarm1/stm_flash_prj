@@ -501,6 +501,11 @@ DSTATUS disk_initialize(uint8_t drv) {
 
   /* Initialise SDType ------------------------------------- */
   SDType = 0;
+// DEBUG
+//  SDSELECT();
+//  while (1) stm32_spi_rw(0xaa);
+// END DEBUG
+
 
   /* Initialise la SDCard en mode SPI ---------------------- */
   if (send_cmd(CMD0, 0) == 1) {
