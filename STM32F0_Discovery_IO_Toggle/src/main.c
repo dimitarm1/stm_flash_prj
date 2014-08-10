@@ -92,6 +92,7 @@ void set_fan1(int value);
 void set_fan2(int value);
 void set_aquafresh(int value);
 void set_volume(int value);
+void play_message(int index);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -109,11 +110,11 @@ NVIC_InitTypeDef 			NVIC_InitStructure;
 DAC_InitTypeDef             DAC_InitStructure;
 
 
-char dac_buffer[2][512];
+uint8_t dac_buffer[2][512];
 const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
-const int message_sector_offset[] = {10,40,70,100,130,160,190};
-const int message_sector_counts[] = {30,30,30,30,30,30,30};
+const uint32_t message_sector_offset[] = {00,1140,1170,1100,1130,1160,1190};
+const uint32_t message_sector_counts[] = {90,30,30,30,30,30,30};
 
 __IO uint32_t TimingDelay;
 
@@ -1369,13 +1370,14 @@ void play_message(int index){
 	if(disk_status(0) == STA_NOINIT) return;
 
 	dac_current_message = index;
-	dac_out_counter = 511;
-	disk_read(0, dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
-	dac_current_block = 2;
+	dac_out_counter = 0;
+	DRESULT result = disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
+	dac_current_block = 0;
 	TIM6->CR1 |= TIM_CR1_CEN;
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	dac_ping_pong_state = 0;
 	dac_fade_in_counter = 10 * volume[0];
+	if (result) dac_out_counter = dac_out_counter;
 }
 
 void I2C_MCP_send_byte(I2C_TypeDef* I2Cx, char data)
@@ -1456,7 +1458,7 @@ void TIM6_DAC_IRQHandler() {
 			dac_ping_pong_state = !dac_ping_pong_state;
 
 			if (dac_current_block < message_sector_counts[dac_current_message]){
-				disk_read(0, dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+				disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
 			} else if (dac_current_block > message_sector_counts[dac_current_message]){
 				dac_fade_out_counter = 10 * volume[2];
 			}

@@ -233,6 +233,7 @@ void init_periph(){
 	// Timer 6 used for DAC playback
 	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
 	TIM6->PSC = 41; // Set prescaler to 41999
+	TIM6->PSC = 10; // Set prescaler to 41999
 	TIM6->ARR = 599; // Set auto-reload to 5999
 	// TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
 	TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
