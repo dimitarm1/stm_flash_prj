@@ -371,15 +371,15 @@ static uint8_t rcvr_datablock(uint8_t *buff, uint16_t btr) {
     return 0; /* If not valid data token, return with error */
 
   do { /* Receive the data block into buffer */
-//    rcvr_spi_m(buff++);
-//    rcvr_spi_m(buff++);
-//    rcvr_spi_m(buff++);
-//    rcvr_spi_m(buff++);
-	  rcvr_spi_m(buff+3);
-	  rcvr_spi_m(buff+2);
-	  rcvr_spi_m(buff+1);
-	  rcvr_spi_m(buff+0);
-	  buff+=4;
+    rcvr_spi_m(buff++);
+    rcvr_spi_m(buff++);
+    rcvr_spi_m(buff++);
+    rcvr_spi_m(buff++);
+//	  rcvr_spi_m(buff+3);
+//	  rcvr_spi_m(buff+2);
+//	  rcvr_spi_m(buff+1);
+//	  rcvr_spi_m(buff+0);
+//	  buff+=4;
   } while (btr -= 4);
 
   rcvr_spi(); /* Discard CRC */

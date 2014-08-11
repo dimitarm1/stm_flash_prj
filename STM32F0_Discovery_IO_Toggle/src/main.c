@@ -113,7 +113,7 @@ DAC_InitTypeDef             DAC_InitStructure;
 uint8_t dac_buffer[2][512];
 const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
-const uint32_t message_sector_offset[] = {00,1140,1170,1100,1130,1160,1190};
+const uint32_t message_sector_offset[] = {00,100,200,300,400,500,600};
 const uint32_t message_sector_counts[] = {90,30,30,30,30,30,30};
 
 __IO uint32_t TimingDelay;
@@ -125,6 +125,7 @@ int curr_time;
 int flash_mode = 0;
 int dac_out_counter;
 int dac_ping_pong_state;
+int dac_prev_ping_pong_state;
 int dac_current_block;
 int dac_current_message;
 int dac_fade_out_counter;
@@ -660,6 +661,20 @@ int main(void)
 				GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
 			}
 		}
+
+		if(dac_current_message>=0){
+			if(dac_prev_ping_pong_state != dac_ping_pong_state){
+				if (dac_current_block < message_sector_counts[dac_current_message]){
+					disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+				} else if (dac_current_block > message_sector_counts[dac_current_message]){
+					dac_fade_out_counter = 10 * volume[2];
+				}
+				dac_current_block++;
+				dac_prev_ping_pong_state = dac_ping_pong_state;
+			}
+		}
+
+
 		IWDG_ReloadCounter(); //DEBUG
 	}
 }
@@ -730,6 +745,7 @@ void ProcessButtons(void)
 						time_to_set = 0;
 						Gv_miliseconds = 0;
 						update_status();
+						play_message(0);
 					} else {
 						if (state > state_enter_service){
 							// Write EEPROM
@@ -1373,11 +1389,15 @@ void play_message(int index){
 	dac_out_counter = 0;
 	DRESULT result = disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
 	dac_current_block = 0;
-	TIM6->CR1 |= TIM_CR1_CEN;
-	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+
 	dac_ping_pong_state = 0;
+	dac_prev_ping_pong_state = dac_ping_pong_state;
 	dac_fade_in_counter = 10 * volume[0];
 	if (result) dac_out_counter = dac_out_counter;
+	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	TIM_Cmd(TIM6, ENABLE);
+//	TIM6->CR1 |= TIM_CR1_CEN;
+
 }
 
 void I2C_MCP_send_byte(I2C_TypeDef* I2Cx, char data)
@@ -1457,13 +1477,13 @@ void TIM6_DAC_IRQHandler() {
 			dac_out_counter = 0;
 			dac_ping_pong_state = !dac_ping_pong_state;
 
-			if (dac_current_block < message_sector_counts[dac_current_message]){
-				disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
-			} else if (dac_current_block > message_sector_counts[dac_current_message]){
-				dac_fade_out_counter = 10 * volume[2];
-			}
-			dac_current_block++;
-			dac_ping_pong_state = !dac_ping_pong_state;
+//			if (dac_current_block < message_sector_counts[dac_current_message]){
+//				disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+//			} else if (dac_current_block > message_sector_counts[dac_current_message]){
+//				dac_fade_out_counter = 10 * volume[2];
+//			}
+//			dac_current_block++;
+
 		}
 	}
 	finish_TIM6_isr:
