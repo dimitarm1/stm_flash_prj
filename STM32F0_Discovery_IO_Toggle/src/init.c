@@ -255,8 +255,8 @@ void init_periph(){
 	DAC_DeInit();
 	DAC_StructInit(&DAC_InitStructure);
 	DAC_Init(DAC_Channel_1, &DAC_InitStructure);
-	DAC_Cmd(DAC_Channel_1, ENABLE);
-	disk_initialize(0);
+//	DAC_Cmd(DAC_Channel_1, ENABLE);
+//	disk_initialize(0);
 //	   RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);

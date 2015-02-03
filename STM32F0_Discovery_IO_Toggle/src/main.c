@@ -114,7 +114,7 @@ uint8_t dac_buffer[2][512];
 const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
 const uint32_t message_sector_offset[] = {00,100,200,300,400,500,600};
-const uint32_t message_sector_counts[] = {90,30,30,30,30,30,30};
+const uint32_t message_sector_counts[] = {90,90,90,90,90,90,90};
 
 __IO uint32_t TimingDelay;
 
@@ -1383,17 +1383,22 @@ void usart_receive(void){
 }
 
 void play_message(int index){
-	if(disk_status(0) == STA_NOINIT) return;
 
+	disk_initialize(0);
+	if(disk_status(0) == STA_NOINIT) return;
+	dac_ping_pong_state = 0;
 	dac_current_message = index;
+	DRESULT result;
 	dac_out_counter = 0;
-	DRESULT result = disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
+
+	result = disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
 	dac_current_block = 0;
 
 	dac_ping_pong_state = 0;
 	dac_prev_ping_pong_state = dac_ping_pong_state;
 	dac_fade_in_counter = 10 * volume[0];
 	if (result) dac_out_counter = dac_out_counter;
+	DAC_Cmd(DAC_Channel_1, ENABLE);
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	TIM_Cmd(TIM6, ENABLE);
 //	TIM6->CR1 |= TIM_CR1_CEN;
@@ -1404,8 +1409,10 @@ void I2C_MCP_send_byte(I2C_TypeDef* I2Cx, char data)
 {
 	int address = 0x2F; // MCP4018's fixed address
 	int length = 1;
+	uint32_t val = (address<<0)|(length<<16)| I2C_CR2_AUTOEND ;    //address SLAVE 7bits
 	while ((I2Cx->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
-	I2Cx->CR2|=(address<<0)|(length<<16)| I2C_CR2_AUTOEND ;    //address SLAVE 7bits
+	I2Cx->CR2&= ~val;
+	I2Cx->CR2|= val;
 	I2Cx->CR2 &=~ I2C_CR2_RD_WRN;                        //write
 	I2Cx->CR2 |= I2C_CR2_START;
 	while ((I2Cx->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
@@ -1465,6 +1472,7 @@ void TIM6_DAC_IRQHandler() {
 			if(!dac_fade_out_counter<=0){
 				//TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
 				TIM_Cmd(TIM6, DISABLE);
+				DAC_Cmd(DAC_Channel_1, DISABLE);
 			}
 			goto finish_TIM6_isr;
 		}
