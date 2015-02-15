@@ -423,9 +423,11 @@ int main(void)
 		write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
+	GPIOB->BSRR = GPIO_BSRR_BR_7; // Enable power amplifier
+	GPIOB->BSRR = GPIO_BSRR_BS_7; // Enable power amplifier
 	update_status();
-	set_volume(0);
-	play_message(0);
+	set_volume(10);
+	while(1)play_message(0);
 	while (1)
 	{
 		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
@@ -1449,7 +1451,7 @@ void TIM6_DAC_IRQHandler() {
 //		else dummy = 0;
 //		DAC_SetChannel1Data(DAC_Align_8b_R, dummy);
 //		goto finish_TIM6_isr;
-
+/*
 		if(dac_fade_in_counter){
 			dac_fade_in_counter--;
 			if(!(dac_fade_in_counter%100)){
@@ -1476,9 +1478,9 @@ void TIM6_DAC_IRQHandler() {
 			}
 			goto finish_TIM6_isr;
 		}
-
-		DAC_SetChannel1Data(DAC_Align_8b_R, dac_buffer[dac_ping_pong_state][dac_out_counter]);
-
+*/
+		//DAC_SetChannel1Data(DAC_Align_8b_R, dac_buffer[dac_ping_pong_state][dac_out_counter]);
+		DAC_SetChannel1Data(DAC_Align_8b_R, (((dac_out_counter)&1)<<8)-1);
 		if(dac_out_counter<512){
 			dac_out_counter++;
 		} else {

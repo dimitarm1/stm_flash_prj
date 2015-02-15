@@ -40,7 +40,7 @@ void init_periph(){
 
 	/* Configure PB in output push-pull mode (for segments  )*/
 	//	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_4  | GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_12 |  GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_7 | GPIO_Pin_12 |  GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -260,7 +260,7 @@ void init_periph(){
 //	   RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);
-	i2c_config_1();
+	//i2c_config_1();
 //	if (SysTick_Config(SystemCoreClock / (1000))){
 //		while(1); // Capture error
 //	}
