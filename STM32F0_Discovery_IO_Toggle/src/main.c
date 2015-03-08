@@ -32,7 +32,7 @@
 #include "stm32f0xx_iwdg.h"
 
 
-
+#define PCBVERSION 3
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
  * @{
  */
@@ -173,14 +173,14 @@ void Delay(__IO uint32_t nTime)
 void show_level(int level){
 	level = level & 0x0F;
 	//Digits and bars
-	GPIOA->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
-	GPIOB->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2 | GPIO_BSRR_BR_12 | GPIO_BSRR_BR_13 | GPIO_BSRR_BR_14 | GPIO_BSRR_BR_15;
-	GPIOC->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7 | GPIO_BSRR_BR_10 | GPIO_BSRR_BR_15 ;
-	GPIOF->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5;
+	GPIOA->BRR = GPIO_BRR_BR_4 | GPIO_BRR_BR_5 | GPIO_BRR_BR_8 | GPIO_BRR_BR_11 | GPIO_BRR_BR_12;
+	GPIOB->BRR = GPIO_BRR_BR_0 | GPIO_BRR_BR_1 | GPIO_BRR_BR_2 | GPIO_BRR_BR_4 | GPIO_BRR_BR_12 | GPIO_BRR_BR_13 | GPIO_BRR_BR_14 | GPIO_BRR_BR_15;
+	GPIOC->BRR = GPIO_BRR_BR_4 | GPIO_BRR_BR_5 | GPIO_BRR_BR_6 | GPIO_BRR_BR_7 | GPIO_BRR_BR_10 | GPIO_BRR_BR_15 ;
+	GPIOF->BRR = GPIO_BRR_BR_0 | GPIO_BRR_BR_4 | GPIO_BRR_BR_5;
 
 	// LEDs and bars
-	GPIOA->BSRR = GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
-	GPIOC->BSRR = GPIO_BSRR_BR_10;
+	GPIOA->BRR = GPIO_BRR_BR_8 | GPIO_BRR_BR_11 | GPIO_BRR_BR_12;
+	GPIOC->BRR = GPIO_BRR_BR_10;
 
 	switch (level) {
 	case 0:
@@ -205,37 +205,37 @@ void show_level(int level){
 		break;
 	case 5:
 		GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13;
+		GPIOB->BSRR = GPIO_BSRR_BS_4 |GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13;
 		GPIOC->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 |GPIO_BSRR_BS_10;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 ;
 		break;
 	case 6:
 		GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14;
+		GPIOB->BSRR = GPIO_BSRR_BS_4 |GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14;
 		GPIOC->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 |GPIO_BSRR_BS_10;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 7:
 		GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14;
+		GPIOB->BSRR = GPIO_BSRR_BS_4 |GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14;
 		GPIOC->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 |GPIO_BSRR_BS_10 | GPIO_BSRR_BS_15;
 		GPIOF->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 8:
 		GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_15;
+		GPIOB->BSRR = GPIO_BSRR_BS_4 |GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_15;
 		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 |GPIO_BSRR_BS_10 | GPIO_BSRR_BS_15;
 		GPIOF->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 9:
 		GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_15;
+		GPIOB->BSRR = GPIO_BSRR_BS_4 |GPIO_BSRR_BS_0 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_15;
 		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 |GPIO_BSRR_BS_10 | GPIO_BSRR_BS_15;
 		GPIOF->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 0x0A:
 		GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12 ;
-		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_15 ;
+		GPIOB->BSRR = GPIO_BSRR_BS_4 |GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_12 | GPIO_BSRR_BS_13 | GPIO_BSRR_BS_14 | GPIO_BSRR_BS_15 ;
 		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_15;
 		GPIOF->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
@@ -245,14 +245,14 @@ void show_level(int level){
 void show_digit(int digit){
 	digit = digit & 0x0F;
 	//Digits and bars
-	GPIOA->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
-	GPIOB->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2 | GPIO_BSRR_BR_12 | GPIO_BSRR_BR_13 | GPIO_BSRR_BR_14 | GPIO_BSRR_BR_15;
-	GPIOC->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7 | GPIO_BSRR_BR_10 | GPIO_BSRR_BR_15 ;
-	GPIOF->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5;
+	GPIOA->BRR = GPIO_BRR_BR_4 | GPIO_BRR_BR_5 | GPIO_BRR_BR_8 | GPIO_BRR_BR_11 | GPIO_BRR_BR_12;
+	GPIOB->BRR = GPIO_BRR_BR_0 | GPIO_BRR_BR_1 | GPIO_BRR_BR_2 | GPIO_BRR_BR_4 | GPIO_BRR_BR_12 | GPIO_BRR_BR_13 | GPIO_BRR_BR_14 | GPIO_BRR_BR_15;
+	GPIOC->BRR = GPIO_BRR_BR_4 | GPIO_BRR_BR_5 | GPIO_BRR_BR_6 | GPIO_BRR_BR_7 | GPIO_BRR_BR_10 | GPIO_BRR_BR_15 ;
+	GPIOF->BRR = GPIO_BRR_BR_0 | GPIO_BRR_BR_4 | GPIO_BRR_BR_5;
 
 	// LEDs and bars
-	GPIOA->BSRR = GPIO_BSRR_BR_8 | GPIO_BSRR_BR_11 | GPIO_BSRR_BR_12;
-	GPIOC->BSRR = GPIO_BSRR_BR_10;
+	GPIOA->BRR = GPIO_BRR_BR_8 | GPIO_BRR_BR_11 | GPIO_BRR_BR_12;
+	GPIOC->BRR = GPIO_BRR_BR_10;
 	if(flash_mode == 3 && (flash_counter & 0x100)) return;
 	switch (digit) {
 	case 0:
@@ -486,7 +486,7 @@ int main(void)
 				flash_mode = 3; // All flashing
 			}
 			{
-				int index = (flash_counter/0x200) & 0x03;
+				int index = ((flash_counter/0x200)+3) %4;
 				if(index<3 ){
 					display_data =  ToBCD(work_hours[index]);
 				}
@@ -588,7 +588,7 @@ int main(void)
 //			}
 			led_counter = 0;
 			digit_num++;
-			flash_counter++;
+
 			//		aqua_fresh_level = 0;
 			if(digit_num>4L) {
 				digit_num = 0;
@@ -603,51 +603,55 @@ int main(void)
 				show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
 //				show_digit(last_button>>(digit_num*4));
 			} else {
-				show_digit(0x8);// DEBUG
+				//show_digit(0x8);// DEBUG
 
 			}
 			{
 				switch (digit_num){
 				case 0:
-					GPIOA->BSRR = GPIO_BSRR_BS_2 ;
+
 					//set Aqua 2 LED
 					if(aqua_fresh_level>0){
 						GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 						GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 					}
+					GPIOA->BSRR = GPIO_BSRR_BS_2 ;
 					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
 																		((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
 					break;
 				case 1:
-					GPIOC->BSRR = GPIO_BSRR_BS_0 ;
+
 					//set Aqua 2 LEDs
 					if(aqua_fresh_level>1){
 						GPIOA->BSRR = GPIO_BSRR_BS_8 | GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 						GPIOC->BSRR = GPIO_BSRR_BS_10 ;
 					}
+					GPIOC->BSRR = GPIO_BSRR_BS_0 ;
 					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
 																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
 					break;
 				case 2:
-					GPIOA->BSRR = GPIO_BSRR_BS_0 ;
+
 					//set Aqua 1 LEDs
 					if(aqua_fresh_level>1){
 						GPIOA->BSRR = GPIO_BSRR_BS_11 | GPIO_BSRR_BS_12;
 					}
+					GPIOA->BSRR = GPIO_BSRR_BS_0 ;
 					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
 																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
 					break;
 				case 3:
-					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
+
 					if (pre_time){
 						// Indicate pre_time by moving bars
 						show_level((flash_counter>>6) & 0x07);
 					} else {
 						show_level(volume_level);
 					}
+					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
 					break;
 				case 4:
-				default:
+
 					GPIOF->BSRR = GPIO_BSRR_BS_1 ;
 					if (pre_time){
 						show_level(((flash_counter>>6) & 0x07) +3);
@@ -655,11 +659,14 @@ int main(void)
 						show_level(fan_level);
 					}
 					break;
+				default:
+					break;
 				}
 			}
 			if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
 				GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
 			}
+			flash_counter++;
 		}
 
 		if(dac_current_message>=0){
