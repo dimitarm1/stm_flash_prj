@@ -392,6 +392,14 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+	  /* Configure PA in input mode with PullUp for P3, P2 buttons*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
 
 	  /* Configure PB in output push-pull mode (for segments  )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11;
@@ -399,6 +407,14 @@ int main(void)
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	  /* Configure PB in inpu mode with PullUp for button P4*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_14;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	  /* Configure PB6 -  PB7 for UART*/
@@ -489,7 +505,7 @@ int main(void)
 //		  /* Capture error */
 //		  while (1);
 //	  }
-	  TSL_user_Init();
+	//  TSL_user_Init();
 
 
 	  digits[0] = 0;
@@ -529,11 +545,11 @@ int main(void)
 		  }
 		  else*/
 		  {
-			  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
+//			  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
 
-			  {
+//			  {
 				  ProcessSensors(); // Execute sensors related tasks
-			  }
+//			  }
 
 			  ping_status(); // Get current status
 //			  display_data = state + ((curr_status&0x0f)<<4);

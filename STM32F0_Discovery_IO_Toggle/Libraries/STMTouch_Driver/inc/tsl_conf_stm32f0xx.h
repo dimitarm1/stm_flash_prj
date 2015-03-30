@@ -129,7 +129,7 @@
   - This is the maximum acceptable value for the acquisition measure.
   - The acquisition will be in error if the measure is above this value.
 */
-#define TSLPRM_ACQ_MAX (1000)
+#define TSLPRM_ACQ_MAX (16000)
 
 /** @} Common_Parameters_Acquisition_Limits */
 
