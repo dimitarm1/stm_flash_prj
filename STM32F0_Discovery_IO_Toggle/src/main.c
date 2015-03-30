@@ -121,11 +121,13 @@ typedef struct flash_struct{
 	settings_str settings;
 }flash_struct;
 
+static int key_states[3] = {-1,-1,-1};
+static int last_key_states[3] = {-1,-1,-1};
+
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
 void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
-void TSL_tim_ProcessIT(void);
 void ping_status(void);
 int ToBCD(int value);
 void send_time(void);
@@ -137,27 +139,7 @@ void read_eeprom(void);
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
-extern __IO uint32_t Gv_EOA; // Set by TS interrupt routine to indicate the End Of Acquisition
-
 static const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
-
-//const TSL_TouchKeyMethods_T MyTKeys_Methods =
-//{
-//  TSL_tkey_Init,
-//  TSL_tkey_Process
-//};
-
-//TSL_TouchKeyData_T          MyTKeys_Data[4];        /**< Data (state id, counter, flags, ...) */
-//TSL_TouchKeyParam_T         MyTKeys_Param[4];       /**< Parameters (thresholds, debounce, ...) */
-//TSL_ChannelData_T           MyChannels_Data[4];     /**< Channel Data (Meas, Ref, Delta, ...) */
-//// "basic" touchkeys: Always placed in ROM
-//const TSL_TouchKeyB_T MyTKeys[TSLPRM_TOTAL_TKEYS] =
-//{
-//  { &MyTKeys_Data[0], &MyTKeys_Param[0], &MyChannels_Data[0] },
-//  { &MyTKeys_Data[1], &MyTKeys_Param[1], &MyChannels_Data[1] },
-//  { &MyTKeys_Data[2], &MyTKeys_Param[2], &MyChannels_Data[2] }
-//};
-
 
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
@@ -410,7 +392,7 @@ int main(void)
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	  /* Configure PB in inpu mode with PullUp for button P4*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_14;
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -545,11 +527,11 @@ int main(void)
 		  }
 		  else*/
 		  {
-//			  if ((sts = TSL_user_Action()) == TSL_STATUS_OK)
-
-//			  {
-				  ProcessSensors(); // Execute sensors related tasks
-//			  }
+			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10)); // +
+			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
+			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_14)); // Start
+			  ProcessSensors(); // Execute sensors related tasks
+			  // Scan buttons
 
 			  ping_status(); // Get current status
 //			  display_data = state + ((curr_status&0x0f)<<4);
@@ -743,9 +725,23 @@ void assert_failed(uint8_t* file, uint32_t line)
   */
 void ProcessSensors(void)
 {
+	if(!last_key_states[0] != !key_states[0])
+	{
+		KeyPressed_0();
+		last_key_states[0] = !!key_states[0];
+	}
+	if(!last_key_states[1] != !key_states[1])
+	{
+		KeyPressed_1();
+		last_key_states[1] = !!key_states[1];
+	}
+	if(!last_key_states[2] != !key_states[2])
+	{
+		KeyPressed_2();
+		last_key_states[2] = !!key_states[2];
+	}
 
-	// TKEY 0
-	if (TEST_TKEY(0))
+	if (!key_states[0])
 	{
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
@@ -844,7 +840,7 @@ void ProcessSensors(void)
 	}
 
 	// TKEY 1
-	if (TEST_TKEY(2))
+	if (!key_states[2])
 	{
 //		LED2_ON;
 	}
@@ -858,55 +854,6 @@ void ProcessSensors(void)
 #if USE_LCD > 0
 	LcdDisplayStatus();
 #endif
-}
-
-
-
-/**
-  * @brief  Executed when a sensor is in Error state
-  * @param  None
-  * @retval None
-  */
-void MyTKeys_ErrorStateProcess(void)
-{
-	int err_count;
-  // Add here your own processing when a sensor is in Error state
- // TSL_tkey_SetStateOff();
-//  LED1_ON;
-//  LED2_OFF;
-
-  for (err_count=0;err_count<1;err_count++)
-  {
-//	display_data = 0xE01;
-//    LED1_TOGGLE;
-//    SystickDelay(1000);
-
-  }
-}
-
-
-/**
-  * @brief  Executed when a sensor is in Off state
-  * @param  None
-  * @retval None
-  */
-void MyTKeys_OffStateProcess(void)
-{
-  // Add here your own processing when a sensor is in Off state
-}
-
-
-//-------------------
-// CallBack functions
-//-------------------
-
-/**
-  * @brief  Executed at each timer interruption (option must be enabled)
-  * @param  None
-  * @retval None
-  */
-void TSL_CallBack_TimerTick(void)
-{
 }
 
 
@@ -958,7 +905,7 @@ void TimingDelay_Decrement(void)
 	{
 		Gv_SystickCounter--;
 	}
-	TSL_tim_ProcessIT();
+	//TSL_tim_ProcessIT();
 
 	if(++led_counter>6){
 		led_counter = 0;
@@ -991,20 +938,6 @@ void TimingDelay_Decrement(void)
 	}
 }
 
-void Process_TS_Int(void){
-	Gv_EOA = 1 +  (0!=(TSC->ISR & 0x02)); // Indicate Error also by MCEIF (MaxCount Error)
-
-}
-
-void key_pressed_event(void){
-	TSL_tkey_DetectStateProcess();
-
-	if(TSL_Globals.This_TKey->p_Data->Change == TSL_STATE_CHANGED){
-		if(TSL_Globals.This_TKey->p_Data->StateId == TSL_STATEID_DETECT){
-			TSL_Globals.This_TKey->p_Methods->Callback();
-		}
-	}
-}
 
 void KeyPressed_0(void){//START Key(Left)
 
@@ -1045,9 +978,7 @@ void KeyPressed_0(void){//START Key(Left)
 		}
 	}
 }
-void KeyPressed_3(void){// START Key (Right)
-	KeyPressed_0();
-}
+
 void KeyPressed_2(void){ // +
 	if(state == state_show_hours) {
 		state = state_set_time;
