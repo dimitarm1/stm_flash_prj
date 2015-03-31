@@ -100,11 +100,6 @@ void SysTick_Handler(void)
 	 TimingDelay_Decrement();
 }
 
-void TS_IRQHandler(void)
-{
-	Process_TS_Int();
-	TSC->ICR = 03;
-}
 
 
 /******************************************************************************/

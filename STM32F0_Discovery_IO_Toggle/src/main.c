@@ -54,7 +54,7 @@
 /* Private macros ------------------------------------------------------------*/
 
 #define TEST_TKEY(NB) (MyTKeys[(NB)].p_Data->StateId == TSL_STATEID_DETECT)
-
+void SystickDelay(__IO uint32_t nTime);
 #define STATUS_ERROR   (-1)
 #define STATUS_FREE    (0)
 #define STATUS_WAITING (3)
@@ -513,13 +513,15 @@ int main(void)
 		  get_address();
 		  if(controller_address != 15)write_eeprom();
 	  }
+	  if (SysTick_Config(SystemCoreClock / (1000))){
+	  		while(1); // Capture error
+	  }
+	  NVIC_SetPriority (SysTick_IRQn, 3);
+
 	  while (1)
 	  {
 //		  controller_address = 14;
-		  //		  measurment = MyChannels_Data[0].Meas;
-		  //		  display_data = measurment;
 
-		  // Execute STMTouch Driver state machine
 /*		  if(controller_address >15){
 			  display_data = 0xEAF;
 			  // Try to get controller address continuously
@@ -536,13 +538,6 @@ int main(void)
 			  ping_status(); // Get current status
 //			  display_data = state + ((curr_status&0x0f)<<4);
 //			  display_data =ping_counter;
-//			  display_data =
-//					  MyTKeys[0].p_Data->StateId |
-//					  MyTKeys[1].p_Data->StateId<<4|
-//					  MyTKeys[2].p_Data->StateId<<8;
-//					  MyChannels_Data[0].Flags.ObjStatus|
-//					  MyChannels_Data[1].Flags.ObjStatus<<4|
-//					  MyChannels_Data[2].Flags.ObjStatus<<8;
 //			  state = 30;
 			  switch (state){
 			  case state_show_time:
@@ -637,6 +632,7 @@ int main(void)
 				  break;
 			  }
 		  }
+		  SystickDelay(1);
 	  }
 }
 
@@ -727,18 +723,18 @@ void ProcessSensors(void)
 {
 	if(!last_key_states[0] != !key_states[0])
 	{
-		KeyPressed_0();
 		last_key_states[0] = !!key_states[0];
+		if(!last_key_states[0]) KeyPressed_0();
 	}
 	if(!last_key_states[1] != !key_states[1])
 	{
-		KeyPressed_1();
 		last_key_states[1] = !!key_states[1];
+		if(!last_key_states[1]) KeyPressed_1();
 	}
 	if(!last_key_states[2] != !key_states[2])
 	{
-		KeyPressed_2();
 		last_key_states[2] = !!key_states[2];
+		if(!last_key_states[2]) KeyPressed_2();
 	}
 
 	if (!key_states[0])
@@ -850,10 +846,6 @@ void ProcessSensors(void)
 	}
 
 
-
-#if USE_LCD > 0
-	LcdDisplayStatus();
-#endif
 }
 
 
@@ -936,6 +928,10 @@ void TimingDelay_Decrement(void)
 			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
 		}
 	}
+
+	key_states[0] = (key_states[0] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10)); // +
+	key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
+	key_states[2] = (key_states[2] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_14)); // Start
 }
 
 
