@@ -56,13 +56,19 @@ void init_periph(){
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-	/* Configure PC in output open drain for volume regulator*/
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_2|GPIO_Pin_3;
+	/* Configure PC in output for volume regulator*/
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3; //Input choice External or internal sound
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6|GPIO_Pin_7;
+	GPIO_Init(GPIOF, &GPIO_InitStructure);
 
 	//	Keypad inputs
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_11 | GPIO_Pin_12;
@@ -260,7 +266,7 @@ void init_periph(){
 //	   RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);
-	i2c_config_1();
+	//i2c_config_1();
 //	if (SysTick_Config(SystemCoreClock / (1000))){
 //		while(1); // Capture error
 //	}

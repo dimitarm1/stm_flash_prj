@@ -423,6 +423,8 @@ int main(void)
 		write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
+	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
+
 	update_status();
 	set_volume(0);
 	play_message(0);
@@ -1302,17 +1304,48 @@ void set_aquafresh(int value){
 }
 
 void set_volume(int value){
-	GPIOC->BRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
-	if (value >8)	{
-		GPIOC->BSRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	GPIOB->BRR = GPIO_BRR_BR_6;
+	GPIOF->BRR = GPIO_BRR_BR_6 | GPIO_BRR_BR_7;
+
+	if (value >9)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+	}
+	else if (value >7)	{
+		GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+	}
+	else if (value >6)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		GPIOF->BSRR = GPIO_BSRR_BS_7;
 	}
 	else if (value >5)	{
-		GPIOC->BSRR =  GPIO_BSRR_BS_3;
-	}
-	else if (value >2)	{
-		GPIOC->BSRR = GPIO_BSRR_BS_2 ;
-	}
+		GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else if (value >4)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else if (value >3)	{
+		GPIOB->BSRR = GPIO_BSRR_BS_6;
+		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else if (value >1)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
 	else {
+		GPIOB->BSRR = GPIO_BSRR_BS_6;
+		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		GPIOF->BSRR = GPIO_BSRR_BS_7;
 	}
 }
 

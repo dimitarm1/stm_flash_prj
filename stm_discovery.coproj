@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Project version="2G - 2.0.2" name="stm_discovery">
   <Target name="stm_discovery" isCurrent="1">
-    <Device manufacturerId="9" manufacturerName="ST" chipId="405" chipName="STM32F051R8T6" boardId="" boardName="" coreId="1" coreName="Cortex M0"/>
+    <Device manufacturerId="9" manufacturerName="ST" chipId="405" chipName="STM32F051R8T6" boardId="" boardName="" coreId="" coreName=""/>
     <BuildOption>
       <Compile>
-        <Option name="OptimizationLevel" value="0"/>
+        <Option name="OptimizationLevel" value="4"/>
         <Option name="UseFPU" value="0"/>
         <Option name="UserEditCompiler" value=""/>
         <Option name="SupportCPlusplus" value="0"/>
-        <Option name="DEBUG" value="2"/>
+        <Option name="DEBUG" value="0"/>
         <Option name="WARNING" value="1"/>
+        <Option name="STANDARD" value="4"/>
         <Includepaths>
           <Includepath path="."/>
         </Includepaths>
@@ -38,7 +39,7 @@
           <Memory name="IROM2" type="ReadOnly" size="" startValue=""/>
           <Memory name="IRAM2" type="ReadWrite" size="" startValue=""/>
         </MemoryAreas>
-        <LocateLinkFile path="./stm32f0_discovery_io_toggle/stm32_flash.ld" type="0"/>
+        <LocateLinkFile path="./link.ld" type="0"/>
       </Link>
       <Output>
         <Option name="OutputFileType" value="0"/>
@@ -144,9 +145,9 @@
     <File name="system_stm32f0xx.c" path="STM32F0_Discovery_IO_Toggle/src/system_stm32f0xx.c" type="1"/>
     <File name="SDcard.c" path="STM32F0_Discovery_IO_Toggle/src/SDcard.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dma.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dma.h" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
     <File name="Libraries/CMSys/core_cm0.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm0.h" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_usart.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_i2c.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_i2c.c" type="1"/>
     <File name="defines.h" path="STM32F0_Discovery_IO_Toggle/src/defines.h" type="1"/>
