@@ -60,11 +60,11 @@ void SystickDelay(__IO uint32_t nTime);
 #define STATUS_WAITING (3)
 #define STATUS_WORKING (1)
 #define STATUS_COOLING (2)
-#define START_COUNTER_TIME  1000
-#define ENTER_SERVICE_DELAY 2500
-#define SERVICE_NEXT_DELAY  400
-#define EXIT_SERVICE_TIME   600
-#define START_DELAY         200
+#define START_COUNTER_TIME  3000
+#define ENTER_SERVICE_DELAY 7500
+#define SERVICE_NEXT_DELAY  1200
+#define EXIT_SERVICE_TIME   1800
+#define START_DELAY         600
 
 
 /* Private variables ---------------------------------------------------------*/
