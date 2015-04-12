@@ -39,6 +39,7 @@ extern void i2c_config_1();
 extern void i2c_config_2();
 
 
+#define PCBVERSION_2
 
 
 #endif /* INIT_H_ */

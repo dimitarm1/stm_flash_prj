@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Project version="2G - 2.0.2" name="stm_discovery">
   <Target name="stm_discovery" isCurrent="1">
-    <Device manufacturerId="9" manufacturerName="ST" chipId="405" chipName="STM32F051R8T6" boardId="" boardName="" coreId="" coreName=""/>
+    <Device manufacturerId="9" manufacturerName="ST" chipId="249" chipName="STM32F051R8" boardId="" boardName=""/>
     <BuildOption>
       <Compile>
         <Option name="OptimizationLevel" value="4"/>
@@ -70,12 +70,11 @@
       <Option name="org.coocox.codebugger.gdbjtag.core.autoDownload" value="1"/>
       <Option name="org.coocox.codebugger.gdbjtag.core.verify" value="1"/>
       <Option name="org.coocox.codebugger.gdbjtag.core.downloadFuction" value="Erase Full Chip"/>
-      <Option name="org.coocox.codebugger.gdbjtag.core.defaultAlgorithm" value="d:/coocox/coide_v2beta/flash/stm32f05xx_64.elf"/>
+      <Option name="org.coocox.codebugger.gdbjtag.core.defaultAlgorithm" value="STM32F05xx_64.elf"/>
     </DebugOption>
     <ExcludeFile/>
   </Target>
   <Components path="./"/>
-  <LocalComponents/>
   <Files>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_gpio.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_gpio.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_exti.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_exti.h" type="1"/>
@@ -145,9 +144,9 @@
     <File name="system_stm32f0xx.c" path="STM32F0_Discovery_IO_Toggle/src/system_stm32f0xx.c" type="1"/>
     <File name="SDcard.c" path="STM32F0_Discovery_IO_Toggle/src/SDcard.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dma.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dma.h" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
     <File name="Libraries/CMSys/core_cm0.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm0.h" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_usart.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_i2c.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_i2c.c" type="1"/>
     <File name="defines.h" path="STM32F0_Discovery_IO_Toggle/src/defines.h" type="1"/>
@@ -156,5 +155,4 @@
     <File name="main.c" path="STM32F0_Discovery_IO_Toggle/src/main.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_rtc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_rtc.c" type="1"/>
   </Files>
-  <Bookmarks/>
 </Project>

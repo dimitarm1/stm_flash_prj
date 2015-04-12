@@ -32,7 +32,6 @@
 #include "stm32f0xx_iwdg.h"
 
 
-#define PCBVERSION 3
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
  * @{
  */
@@ -584,6 +583,8 @@ int main(void)
 		//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 		if(++led_counter>130L){
 			static int current_button_read = 0;
+			static int button_buffer[16];
+			static int read_counter = 0;
 //			if(flash_counter%80 == 0){
 //						data = (STATUS_COOLING<<6)|4;
 //						USART_SendData(USART1,data);
@@ -594,7 +595,15 @@ int main(void)
 			//		aqua_fresh_level = 0;
 			if(digit_num>4L) {
 				digit_num = 0;
-				last_button = current_button_read;
+				int i;
+				button_buffer[read_counter] = current_button_read;
+				if(read_counter++ == 15){
+					read_counter = 0;
+					last_button = button_buffer[0];
+					for (i = 1; i<16; i++){
+						last_button = last_button & button_buffer[i];
+					}
+				}
 				current_button_read = 0;
 			}
 			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2 ; // Turn off the lights while changing them
@@ -1304,6 +1313,19 @@ void set_aquafresh(int value){
 }
 
 void set_volume(int value){
+#ifdef PCBVERSION_2
+	GPIOC->BRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	if (value >8)	{
+		GPIOC->BSRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	}
+	else if (value >5)	{
+		GPIOC->BSRR =  GPIO_BSRR_BS_3;
+	}
+	else if (value >2)	{
+		GPIOC->BSRR = GPIO_BSRR_BS_2 ;
+	}
+
+#else  //PCBVERSION_3
 	GPIOB->BRR = GPIO_BRR_BR_6;
 	GPIOF->BRR = GPIO_BRR_BR_6 | GPIO_BRR_BR_7;
 
@@ -1347,6 +1369,7 @@ void set_volume(int value){
 		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
 		GPIOF->BSRR = GPIO_BSRR_BS_7;
 	}
+#endif
 }
 
 
