@@ -600,7 +600,7 @@ int main(void)
 				if(read_counter++ == 15){
 					read_counter = 0;
 					last_button = button_buffer[0];
-					for (i = 1; i<16; i++){
+					for (i = 1; i<8; i++){
 						last_button = last_button & button_buffer[i];
 					}
 				}
