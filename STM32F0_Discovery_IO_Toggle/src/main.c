@@ -280,7 +280,7 @@ int main(void)
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
 		preset_cool_time = 3;
-		write_eeprom();
+		//write_eeprom();
 	}
 	update_status();
 	while (1)
@@ -453,7 +453,7 @@ void ProcessButtons(void)
 								work_hours[1] = 0;
 								work_hours[2] = 0;
 							}
-							write_eeprom();
+							//write_eeprom();
 							read_eeprom();
 							start_counter = 0;
 							service_mode = mode_null;
@@ -503,8 +503,8 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set < 25){
-						if(!Gv_UART_Timeout)
-							time_to_set ++;
+						if(!Gv_UART_Timeout);
+							//time_to_set ++;
 						//			if((time_to_set & 0x0F)>9) time_to_set +=6;
 					}
 				}
@@ -669,7 +669,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-				write_eeprom();
+				//write_eeprom();
 				time_to_set = 0;
 				percent_clima = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
 				zero_crossed = 0;
