@@ -66,6 +66,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
  states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume_1, mode_set_volume_2}modes;
 modes service_mode;
+int useUart=0;
 
 
 /* Private define ------------------------------------------------------------*/
@@ -851,7 +852,7 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set < 25L){
-						if((!Gv_UART_Timeout) && (controller_address !=15)) time_to_set++;
+						if((!useUart && (volume_level == 1)) && (controller_address !=15)) time_to_set++;
 					}
 				}
 				else if(state > state_enter_service){
@@ -886,7 +887,7 @@ void ProcessButtons(void)
 				}
 				if(state == state_set_time){
 					if(time_to_set) {
-						if((!Gv_UART_Timeout) && (controller_address !=15))  time_to_set--;
+						if((!useUart) && (controller_address !=15))  time_to_set--;
 					}
 				}else if(state > state_enter_service){
 					start_counter = EXIT_SERVICE_TIME;
@@ -1374,7 +1375,7 @@ void set_volume(int value){
 
 
 void usart_receive(void){
-
+	useUart = 1;
 	enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
 	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
 	data =  USART_ReceiveData(USART1);
