@@ -507,15 +507,16 @@ int main(void)
 		  controller_address = 14;
 		  write_eeprom();
 	  }
+	  if (SysTick_Config(SystemCoreClock / (1000))){
+		  		while(1); // Capture error
+	  }
 	  if(controller_address == 15){
 		  display_data = 0xEAF;
 		  // Try to get controller address continuously
 		  get_address();
 		  if(controller_address != 15)write_eeprom();
 	  }
-	  if (SysTick_Config(SystemCoreClock / (1000))){
-	  		while(1); // Capture error
-	  }
+
 	  NVIC_SetPriority (SysTick_IRQn, 3);
 
 	  while (1)
