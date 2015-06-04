@@ -51,11 +51,11 @@
 	 uint8_t addresse  :8;
 	 uint8_t pre_time  :8;
 	 uint8_t cool_time :8;
-	 uint8_t unused    :8;
-	 uint8_t volume_in_l  :8;
-	 uint8_t volume_in_r  :8;
-	 uint8_t volume_dac_l :8;
-	 uint8_t volume_dac_r :8;
+	 uint8_t volume_dac:8;
+	 uint8_t temperatue_max:8;
+	 uint8_t unused_2  :8;
+	 uint8_t unused_3  :8;
+	 uint8_t checksum  :8;
  }settings_str;
  typedef struct flash_struct{
 	 time_str time;
@@ -136,7 +136,9 @@ unsigned char  time_to_set = 0;
 unsigned int   work_hours[3] = {0,0,0}; //HH HL MM - Hours[2], Minutes[1]
 unsigned char  preset_pre_time = 7;
 unsigned char  preset_cool_time = 3;
-unsigned char  volume[4];
+unsigned char  volume_message;
+unsigned char  temperature_threshold;
+unsigned char  temperature_current;
 int start_counter = 0;
 int last_button = 0;
 int prev_button = 0;
@@ -427,7 +429,9 @@ int main(void)
 
 	update_status();
 	set_volume(0);
+
 	play_message(0);
+
 	while (1)
 	{
 		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
@@ -547,7 +551,7 @@ int main(void)
 		case state_volume_1:
 			flash_mode = 0;
 			if((flash_counter/0x400)&1){
-				display_data =  preset_cool_time;
+				display_data =  volume_message;
 			} else {
 				display_data = 0xFF6;
 			}
@@ -556,7 +560,7 @@ int main(void)
 		case state_volume_2:
 			flash_mode = 0;
 			if((flash_counter/0x400)&1){
-				display_data =  preset_cool_time;
+				display_data =  temperature_threshold;
 			} else {
 				display_data = 0xFF7;
 			}
@@ -686,7 +690,7 @@ int main(void)
 				if (dac_current_block < message_sector_counts[dac_current_message]){
 					disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
 				} else if (dac_current_block > message_sector_counts[dac_current_message]){
-					dac_fade_out_counter = 10 * volume[2];
+					dac_fade_out_counter = 100;
 				}
 				dac_current_block++;
 				dac_prev_ping_pong_state = dac_ping_pong_state;
@@ -868,10 +872,10 @@ void ProcessButtons(void)
 						if(preset_cool_time<9) preset_cool_time++;
 						break;
 					case mode_set_volume_1:
-						if(volume[0] < 99) volume[1] = ++ volume[0];
+						if(volume_message < 9) volume_message++;
 						break;
 					case mode_set_volume_2:
-						if(volume[2] < 99) volume[3] = ++ volume[2];
+						if(temperature_threshold < 99) temperature_threshold++;
 						break;
 					default:
 						break;
@@ -902,10 +906,10 @@ void ProcessButtons(void)
 						if(preset_cool_time) preset_cool_time--;
 						break;
 					case mode_set_volume_1:
-						if(volume[0] > 0) volume[1] = -- volume[0];
+						if(volume_message > 0) volume_message--;
 						break;
 					case mode_set_volume_2:
-						if(volume[2] > 0) volume[3] = -- volume[2];
+						if(temperature_threshold > 10) temperature_threshold--;
 						break;
 					default:
 						break;
@@ -953,13 +957,13 @@ void ProcessButtons(void)
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_cool_time; //
 			}
-			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 4*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_ext_mode; //
 			}
-			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 5*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_volume_1; //
 			}
-			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_volume_2; //
 			}
 		}
@@ -1013,7 +1017,8 @@ void ProcessButtons(void)
 			fan_level = 7;
 			percent_fan1 = fan_level;
 			set_lamps(100);
-			set_colarium_lamps(percent_licevi);
+			zero_crossed = 0;
+			set_colarium_lamps(100);
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
 //			set_aquafresh(percent_aquafresh);
@@ -1031,10 +1036,13 @@ void ProcessButtons(void)
 					}
 				}
 				write_eeprom();
+				play_message(1);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
-			//				set_lamps(0);
-			set_colarium_lamps(percent_licevi);
+			zero_crossed = 0;
+			set_lamps(0);
+			zero_crossed = 0;
+			set_colarium_lamps(0);
 			fan_level = 10;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
@@ -1045,9 +1053,9 @@ void ProcessButtons(void)
 		if (curr_status == STATUS_FREE){
 			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 			//				set_lamps(0);
-			set_colarium_lamps(percent_licevi);
-			set_fan1(percent_fan1);
-			set_fan2(percent_fan2);
+			//set_colarium_lamps(0);
+			set_fan1(0);
+			set_fan2(0);
 //			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
 			flash_mode = 0;
@@ -1167,8 +1175,8 @@ void read_eeprom(void){
 		work_hours[0] = 0;
 		work_hours[1] = 0;
 		work_hours[2] = 0;
-		volume[0] = volume[1] = 100;
-		volume[2] = volume[3] = 50;
+		volume_message = 5;
+		temperature_threshold = 90;
 		return;
 	}
 	index-=sizeof(flash_struct)/sizeof(uint32_t);
@@ -1179,10 +1187,8 @@ void read_eeprom(void){
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
-	volume[0] = flash_mem->settings.volume_in_l;
-	volume[1] = flash_mem->settings.volume_in_r;
-	volume[2] = flash_mem->settings.volume_dac_l;
-	volume[3] = flash_mem->settings.volume_dac_r;
+	volume_message = flash_mem->settings.volume_dac;
+	temperature_threshold = flash_mem->settings.temperatue_max;
 }
 
 void write_eeprom(void){
@@ -1207,15 +1213,13 @@ void write_eeprom(void){
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
 		flash_mem.settings.addresse = controller_address & 0x0f;
-		flash_mem.settings.unused = 0x55;
+		flash_mem.settings.unused_2 = 0x55;
 		flash_mem.time.hours_h = work_hours[0];
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
-		flash_mem.settings.volume_in_l = volume[0];
-		flash_mem.settings.volume_in_r = volume[1];
-		flash_mem.settings.volume_dac_l = volume[2];
-		flash_mem.settings.volume_dac_r = volume[3];
+		flash_mem.settings.volume_dac = volume_message;
+		flash_mem.settings.temperatue_max = temperature_threshold;
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
@@ -1232,14 +1236,16 @@ void set_start_out_signal(int value){
 }
 
 void set_lamps(int value){
-	//	while(!zero_crossed);
+	int counter = 0;
+ 	while(!zero_crossed && --counter);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-	else GPIOC->BRR = GPIO_BSRR_BS_8;
+	else GPIOC->BRR = GPIO_BRR_BR_8;
 }
 void set_colarium_lamps(int value){
-	//	while(!zero_crossed);
+	int counter = 0;
+	while(!zero_crossed && --counter);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-	else GPIOC->BRR = GPIO_BSRR_BS_9;
+	else GPIOC->BRR = GPIO_BRR_BR_9;
 }
 void set_fan2(int value){
 	if (value)
@@ -1460,11 +1466,12 @@ void play_message(int index){
 
 	dac_ping_pong_state = 0;
 	dac_prev_ping_pong_state = dac_ping_pong_state;
-	dac_fade_in_counter = 10 * volume[0];
+	dac_fade_in_counter =  100;
 	if (result) dac_out_counter = dac_out_counter;
-	DAC_Cmd(DAC_Channel_1, ENABLE);
+	//DAC_Cmd(DAC_Channel_1, ENABLE);
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	TIM_Cmd(TIM6, ENABLE);
+	TIM_Cmd(TIM14, ENABLE);
 //	TIM6->CR1 |= TIM_CR1_CEN;
 
 }
@@ -1517,31 +1524,32 @@ void TIM6_DAC_IRQHandler() {
 		if(dac_fade_in_counter){
 			dac_fade_in_counter--;
 			if(!(dac_fade_in_counter%100)){
-				set_pot_level(3, dac_fade_in_counter/10);
-				set_pot_level(4, dac_fade_in_counter/10);
+				set_volume(dac_fade_in_counter/10);
 			}
 			if(!dac_fade_in_counter){
-				set_pot_level(1, 50);
-				set_pot_level(2, 50);
+				GPIOC->BSRR =  GPIO_BSRR_BS_3; // External sound
 			}
 			goto finish_TIM6_isr;
 		}
 
 		if(dac_fade_out_counter){
+			GPIOC->BRR =  GPIO_BRR_BR_3; // Internal sound
+
 			dac_fade_out_counter--;
 			if(!(dac_fade_out_counter%100)){
-				set_pot_level(3, volume[2] - dac_fade_out_counter/10);
-				set_pot_level(4, volume[2] - dac_fade_out_counter/10);
+				set_volume(10 - dac_fade_out_counter/10);
 			}
 			if(!dac_fade_out_counter<=0){
 				//TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
 				TIM_Cmd(TIM6, DISABLE);
-				DAC_Cmd(DAC_Channel_1, DISABLE);
+				TIM_Cmd(TIM14, DISABLE);
+				//DAC_Cmd(DAC_Channel_1, DISABLE);
+
 			}
 			goto finish_TIM6_isr;
 		}
-
-		DAC_SetChannel1Data(DAC_Align_8b_R, dac_buffer[dac_ping_pong_state][dac_out_counter]);
+		unsigned char vol = 10-volume_message%10;
+		TIM_SetCompare1(TIM14, dac_buffer[dac_ping_pong_state][dac_out_counter]/vol);
 
 		if(dac_out_counter<512){
 			dac_out_counter++;
@@ -1549,12 +1557,12 @@ void TIM6_DAC_IRQHandler() {
 			dac_out_counter = 0;
 			dac_ping_pong_state = !dac_ping_pong_state;
 
-//			if (dac_current_block < message_sector_counts[dac_current_message]){
-//				disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
-//			} else if (dac_current_block > message_sector_counts[dac_current_message]){
-//				dac_fade_out_counter = 10 * volume[2];
-//			}
-//			dac_current_block++;
+			if (dac_current_block < message_sector_counts[dac_current_message]){
+				disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+			} else if (dac_current_block > message_sector_counts[dac_current_message]){
+				dac_fade_out_counter = 100;
+			}
+			dac_current_block++;
 
 		}
 	}

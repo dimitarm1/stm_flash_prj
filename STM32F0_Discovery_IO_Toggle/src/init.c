@@ -258,8 +258,35 @@ void init_periph(){
 	NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
 	//TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
+	/* Configure PA.04 (TIM14_CH1) as AF4 */
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_4); // Tim14_CH1
+
+	RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; // Enable TIM14 clock
+
+	TIM_TimeBaseStructure.TIM_Prescaler = 10 ;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_Period = 255 ;
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInit(TIM14, &TIM_TimeBaseStructure);
+
+	/* TIM2 PWM2 Mode configuration: Channel4 */
+	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OCInitStructure.TIM_Pulse = 128;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+
+	TIM_OC1Init(TIM14, &TIM_OCInitStructure);
+	TIM_OC1PreloadConfig(TIM14, TIM_OCPreload_Enable);
+	TIM_Cmd(TIM14, ENABLE);
 
 
+#ifdef USE_DAC
 	/* Configure PA.04 (DAC_OUT1) as analog */
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
@@ -273,6 +300,7 @@ void init_periph(){
 //	DAC_Cmd(DAC_Channel_1, ENABLE);
 //	disk_initialize(0);
 //	   RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
+#endif
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1,ENABLE);
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2,ENABLE);
 	//i2c_config_1();
