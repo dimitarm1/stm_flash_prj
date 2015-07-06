@@ -366,16 +366,16 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PA0 -  PA2 in output push-pull mode (for Digits 0-2 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 |GPIO_Pin_1 |GPIO_Pin_2 ;
+	  /* Configure PA0 -  PA2 in output push-pull mode (for Digits 0,2 )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PA in input mode with PullUp for P3, P2 buttons*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
+	  /* Configure PA in input mode with PullUp for P2 buttons*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -391,8 +391,8 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	  /* Configure PB in inpu mode with PullUp for button P4*/
-	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_14;
+	  /* Configure PB in inpu mode with PullUp for buttons P3,P4*/
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -409,8 +409,8 @@ int main(void)
 	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
 	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
-	  /* Configure PC in output push-pull mode (for segments )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5 | GPIO_Pin_6|GPIO_Pin_7;
+	  /* Configure PC in output push-pull mode (for segments and Digit 1 )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -530,7 +530,7 @@ int main(void)
 		  }
 		  else*/
 		  {
-			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10)); // +
+			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_13)); // +
 			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
 			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // Start
 			  ProcessSensors(); // Execute sensors related tasks
@@ -905,23 +905,26 @@ void TimingDelay_Decrement(void)
 		digit_num++;
 		flash_counter++;
 		if(digit_num>2) digit_num = 0;
-		GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2; // Turn off the lights while changing them
+		GPIOA->BSRR = GPIO_BSRR_BR_0  | GPIO_BSRR_BR_2; // Turn off the lights while changing them
+		GPIOC->BSRR = GPIO_BSRR_BR_3;
 		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
 		if(flash_mode < 3 ||(flash_counter & 0x40)){
 			switch (digit_num){
 			case 2:
 				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+				GPIOA->BSRR = GPIO_BSRR_BR_0 ;
+				GPIOC->BSRR = GPIO_BSRR_BR_3;
 				break;
 
 			case 1:
-				GPIOA->BSRR = GPIO_BSRR_BS_1 ;
+				GPIOC->BSRR = GPIO_BSRR_BS_3 ;
 				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
 				break;
 			case 0:
 			default:
 				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2;
+				GPIOA->BSRR = GPIO_BSRR_BR_2;
+				GPIOC->BSRR = GPIO_BSRR_BR_3;
 				break;
 			}
 		}
