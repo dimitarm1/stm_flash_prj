@@ -395,7 +395,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
@@ -530,9 +530,9 @@ int main(void)
 		  }
 		  else*/
 		  {
-			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_13)); // +
+			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_13)); // Start
 			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
-			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // Start
+			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // +
 			  ProcessSensors(); // Execute sensors related tasks
 			  // Scan buttons
 
