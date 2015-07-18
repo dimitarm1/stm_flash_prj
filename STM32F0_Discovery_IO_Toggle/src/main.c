@@ -110,7 +110,7 @@ NVIC_InitTypeDef 			NVIC_InitStructure;
 DAC_InitTypeDef             DAC_InitStructure;
 
 
-uint8_t dac_buffer[2][512];
+uint8_t dac_buffer[2][1024];
 const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
 const uint32_t message_sector_offset[] = {00,100,200,300,400,500,600};
@@ -390,6 +390,7 @@ void show_digit(int digit){
 volatile int stop=1;
 int main(void)
 {
+	SystemInit();
 //	while (stop);
 	read_eeprom();
 	init_periph();
@@ -426,7 +427,7 @@ int main(void)
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
-
+	GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
 	update_status();
 	set_volume(0);
 
@@ -688,12 +689,15 @@ int main(void)
 		if(dac_current_message>=0){
 			if(dac_prev_ping_pong_state != dac_ping_pong_state){
 				if (dac_current_block < message_sector_counts[dac_current_message]){
-					disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+					disk_read(0, &dac_buffer[dac_prev_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+					dac_current_block++;
+					dac_current_block++;
+					dac_prev_ping_pong_state = dac_ping_pong_state;
 				} else if (dac_current_block > message_sector_counts[dac_current_message]){
 					dac_fade_out_counter = 100;
+					dac_current_message = -1;
 				}
-				dac_current_block++;
-				dac_prev_ping_pong_state = dac_ping_pong_state;
+
 			}
 		}
 
@@ -1469,9 +1473,25 @@ void play_message(int index){
 	dac_fade_in_counter =  100;
 	if (result) dac_out_counter = dac_out_counter;
 	//DAC_Cmd(DAC_Channel_1, ENABLE);
-	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	TIM_Cmd(TIM6, ENABLE);
+	//TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	//TIM_Cmd(TIM6, ENABLE);
 	TIM_Cmd(TIM14, ENABLE);
+	//while(1)
+	{
+		if (dac_current_block < message_sector_counts[dac_current_message]){
+			if(dac_prev_ping_pong_state != dac_ping_pong_state)
+			{
+				dac_prev_ping_pong_state = dac_ping_pong_state;
+				//TIM14->CCER &= ~TIM_OutputState_Enable;
+				disk_read(0, &dac_buffer[dac_prev_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+				dac_current_block++;
+				dac_current_block++;
+				//TIM14->CCER |= TIM_OutputState_Enable;
+			}
+		}
+		//dac_current_block = 0;
+	}
+
 //	TIM6->CR1 |= TIM_CR1_CEN;
 
 }
@@ -1512,10 +1532,13 @@ void set_pot_level(int channel, char level){
 	}
 }
 
-void TIM6_DAC_IRQHandler() {
-	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
-	{
-//		static int dummy = 0;
+void TIM14_IRQHandler() {
+	if(!(TIM14->SR & TIM_SR_UIF) != 0) return;
+	// If update flag is set
+
+		static int dummy = 0;
+		if (dummy++<10) goto finish_TIM14_isr;
+		dummy = 0;
 //		if (!dummy) dummy = 255;
 //		else dummy = 0;
 //		DAC_SetChannel1Data(DAC_Align_8b_R, dummy);
@@ -1529,7 +1552,7 @@ void TIM6_DAC_IRQHandler() {
 			if(!dac_fade_in_counter){
 				GPIOC->BSRR =  GPIO_BSRR_BS_3; // External sound
 			}
-			goto finish_TIM6_isr;
+			goto finish_TIM14_isr;
 		}
 
 		if(dac_fade_out_counter){
@@ -1541,33 +1564,30 @@ void TIM6_DAC_IRQHandler() {
 			}
 			if(!dac_fade_out_counter<=0){
 				//TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
-				TIM_Cmd(TIM6, DISABLE);
+				//TIM_Cmd(TIM6, DISABLE);
 				TIM_Cmd(TIM14, DISABLE);
 				//DAC_Cmd(DAC_Channel_1, DISABLE);
 
 			}
-			goto finish_TIM6_isr;
+			goto finish_TIM14_isr;
 		}
-		unsigned char vol = 10-volume_message%10;
+		unsigned char vol = 1; //10-volume_message%10;
 		TIM_SetCompare1(TIM14, dac_buffer[dac_ping_pong_state][dac_out_counter]/vol);
+		//TIM_SetCompare1(TIM14, 50);
+		//TIM_SetCompare1(TIM14, dac_current_block);
 
-		if(dac_out_counter<512){
+		if(dac_out_counter<1024){
 			dac_out_counter++;
 		} else {
 			dac_out_counter = 0;
 			dac_ping_pong_state = !dac_ping_pong_state;
 
-			if (dac_current_block < message_sector_counts[dac_current_message]){
-				disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
-			} else if (dac_current_block > message_sector_counts[dac_current_message]){
-				dac_fade_out_counter = 100;
-			}
-			dac_current_block++;
+
 
 		}
-	}
-	finish_TIM6_isr:
-	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+
+	finish_TIM14_isr:
+	TIM14->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 }
 
 

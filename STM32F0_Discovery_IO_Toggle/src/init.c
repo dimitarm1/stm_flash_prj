@@ -247,15 +247,14 @@ void init_periph(){
 
 	// Timer 6 used for DAC playback
 	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
-	TIM6->PSC = 41; // Set prescaler to 41999
 	TIM6->PSC = 10; // Set prescaler to 41999
-	TIM6->ARR = 599; // Set auto-reload to 5999
+	TIM6->ARR = 20; // Set auto-reload to 5999
 	// TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
 	TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
 	TIM6->EGR |= TIM_EGR_UG; // Force update
 	TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
+	//NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
 	//TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
 	/* Configure PA.04 (TIM14_CH1) as AF4 */
@@ -268,7 +267,7 @@ void init_periph(){
 
 	RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; // Enable TIM14 clock
 
-	TIM_TimeBaseStructure.TIM_Prescaler = 10 ;
+	TIM_TimeBaseStructure.TIM_Prescaler = 1 ;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_Period = 255 ;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
@@ -283,7 +282,9 @@ void init_periph(){
 
 	TIM_OC1Init(TIM14, &TIM_OCInitStructure);
 	TIM_OC1PreloadConfig(TIM14, TIM_OCPreload_Enable);
-	TIM_Cmd(TIM14, ENABLE);
+	TIM14->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	NVIC_EnableIRQ(TIM14_IRQn); // Enable TIM14 IRQ
+	//TIM_Cmd(TIM14, ENABLE);
 
 
 #ifdef USE_DAC
