@@ -932,10 +932,6 @@ void TimingDelay_Decrement(void)
 			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
 		}
 	}
-
-	key_states[0] = (key_states[0] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10)); // +
-	key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
-	key_states[2] = (key_states[2] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_14)); // Start
 }
 
 
