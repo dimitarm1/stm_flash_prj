@@ -19,7 +19,7 @@ void init_periph(){
 	 */
 
 	/* GPIO Periph clock enable */
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF, ENABLE);
+	RCC_AHBPeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOF, ENABLE);
 	/* Zero cross timr (TIM2) */
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 	/* UART1 Clock enable; SPI1 Clock enable*/
@@ -32,28 +32,22 @@ void init_periph(){
 
 	/* Configure PA in output push-pull mode (for segments)*/
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_8 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	/* Configure PB in output push-pull mode (for segments  )*/
 	//	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_4  | GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_12 |  GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	/* Configure PC in output push-pull mode (for segments )*/
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | \
 						GPIO_Pin_10 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 #ifdef PCBVERSION_2
@@ -67,10 +61,8 @@ void init_periph(){
 #else
 	/* Configure PC in output for volume regulator*/
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3; //Input choice External or internal sound
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6;
@@ -81,25 +73,21 @@ void init_periph(){
 #endif
 	//	Keypad inputs
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_11 | GPIO_Pin_12;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 
 	//	Keypad inputs
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
 	/* Configure PF4 in output push-pull mode (for segments )*/
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4 | GPIO_Pin_5;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOF, &GPIO_InitStructure);
 
 	//Configure SPI pins:   -----------------------------------------------------------------------
@@ -134,19 +122,17 @@ void init_periph(){
 	//Configure Timer 2 pins:   ----------------------------
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_1;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;  // TODO: Check for Pull Up!!
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	//Configure Timer 2 pins:   ----------------------------
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_2); // TIM2_CH2
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_2); // TIM2_CH4
+	//GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_2); // TIM2_CH2
+	//GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_2); // TIM2_CH4
 
 	// Zero cross detection timer
 
@@ -200,13 +186,11 @@ void init_periph(){
 		//Configure USART1 pins:  Rx and Tx -------------------------------------------------------------
 		GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-		GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 		GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-		GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1); // USART1_TX
-		GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1); // USART1_RX
+//		GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1); // USART1_TX
+//		GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1); // USART1_RX
 
 		USART_InitStructure.USART_BaudRate = 1200;
 		USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -215,7 +199,7 @@ void init_periph(){
 		USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 		USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 		USART_Init(USART1, &USART_InitStructure);
-		USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
+		//USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
 		//	USART_InvPinCmd(USART1,USART_InvPin_Rx,ENABLE);
 		//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
 		USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
@@ -229,24 +213,21 @@ void init_periph(){
 		//Configure USART1 pins:  Rx and Tx - used to connect to external control
 		GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 ;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-		GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 		GPIO_Init(GPIOA, &GPIO_InitStructure);
 		GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_10;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 		GPIO_Init(GPIOA, &GPIO_InitStructure);
 	}
 
 	/* Enable USART1 IRQ */
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPriority = 5;
+//	NVIC_InitStructure.NVIC_IRQChannelPriority = 5;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
 	// Timer 6 used for DAC playback
-	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
+//	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
 	TIM6->PSC = 41; // Set prescaler to 41999
 	TIM6->PSC = 10; // Set prescaler to 41999
 	TIM6->ARR = 599; // Set auto-reload to 5999
@@ -255,24 +236,22 @@ void init_periph(){
 	TIM6->EGR |= TIM_EGR_UG; // Force update
 	TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
+	//NVIC_EnableIRQ (TIM6_DAC_IRQn); // Enable TIM6 IRQ
 	//TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
 	/* Configure PA.04 (TIM14_CH1) as AF4 */
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_4); // Tim14_CH1
+//	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_4); // Tim14_CH1
 
-	RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; // Enable TIM14 clock
+	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN; // Enable TIM14 clock
 
 	TIM_TimeBaseStructure.TIM_Prescaler = 10 ;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_Period = 255 ;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-	TIM_TimeBaseInit(TIM14, &TIM_TimeBaseStructure);
+	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
 
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
@@ -281,9 +260,9 @@ void init_periph(){
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
-	TIM_OC1Init(TIM14, &TIM_OCInitStructure);
-	TIM_OC1PreloadConfig(TIM14, TIM_OCPreload_Enable);
-	TIM_Cmd(TIM14, ENABLE);
+	TIM_OC1Init(TIM4, &TIM_OCInitStructure);
+	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+	TIM_Cmd(TIM4, ENABLE);
 
 
 #ifdef USE_DAC
@@ -312,108 +291,6 @@ void init_periph(){
 }
 
 
-void i2c_config_1(){
-	// These channels are used for analog input
-	selected_I2C_pair = 1;
-	I2C_DeInit(I2C1);
-	I2C_DeInit(I2C2);
-
-	/* Un-Configure PB */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_10 | GPIO_Pin_11 ;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	/* Configure PB */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 ;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	/* Configure PF */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 ;
-	GPIO_Init(GPIOF, &GPIO_InitStructure);
-
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource8, GPIO_AF_1); //I2C1 SDA
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_1); //I2C1 SCL
-
-//	Port F has only 1 AF!!
-//	GPIO_PinAFConfig(GPIOF, GPIO_PinSource6, GPIO_AF_1); //I2C2 SDA
-//	GPIO_PinAFConfig(GPIOF, GPIO_PinSource7, GPIO_AF_1); //I2C2 SCL
-
-	I2C_InitTypeDef i2c_init_str;
-	I2C_StructInit(&i2c_init_str);
-
-	I2C_Init(I2C1,&i2c_init_str);
-	I2C_Init(I2C2,&i2c_init_str);
-
-}
-
-void i2c_config_2(){
-	// These channels are used for DAC out
-	selected_I2C_pair = 2;
-	I2C_DeInit(I2C1);
-	I2C_DeInit(I2C2);
-
-	/* Un-Configure PB */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 ;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	/* Un-Configure PF */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 ;
-	GPIO_Init(GPIOF, &GPIO_InitStructure);
-
-	/* Configure PB */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_10 | GPIO_Pin_11 ;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_1); //I2C1 SDA
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_1); //I2C1 SCL
-
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_1); //I2C2 SDA
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_1); //I2C2 SCL
-
-	I2C_InitTypeDef i2c_init_str;
-	I2C_StructInit(&i2c_init_str);
-
-	I2C_Init(I2C1,&i2c_init_str);
-	I2C_Init(I2C2,&i2c_init_str);
-
-}
-
-
-
-// From forum https://my.st.com/public/STe2ecommunities/mcu/Lists/STM32Discovery/Flat.aspx?RootFolder=%2Fpublic%2FSTe2ecommunities%2Fmcu%2FLists%2FSTM32Discovery%2FI2C%20Wrong&FolderCTID=0x01200200770978C69A1141439FE559EB459D75800084C20D8867EAD444A5987D47BE638E0F&currentviews=563
-void I2C_PCF_init()
- {
-     RCC->AHBENR|=RCC_AHBENR_GPIOBEN;
-     GPIOB->MODER|= GPIO_MODER_MODER6_1|GPIO_MODER_MODER7_1;
-     GPIOB->OSPEEDR|=GPIO_OSPEEDER_OSPEEDR6|GPIO_OSPEEDER_OSPEEDR7;//predkosc 50MHZ
-     GPIOB->AFR[0]|=0x11000000;    //AF1
-
-     RCC->APB1ENR|=RCC_APB1ENR_I2C1EN ;        //enable clock for I2C1
-
-     I2C1->CR1|=I2C_CR1_PE;                    //set PE
-     I2C1->CR1&=~I2C_CR1_PE;                    //reset PE
-     while(I2C1->CR1&I2C_CR1_PE);            //while PE ==1
-
-   //  I2C1->TIMINGR|=(PRESC << 28)|(SCLL<<0)|(SCLH<<8)|(SCLDEL<<20)|(SDADEL<<16); //configure for 48Mhz clock
-
-     I2C1->CR1|=I2C_CR1_PE;                    //set PE
- }
 
 
 

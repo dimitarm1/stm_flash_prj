@@ -11,10 +11,10 @@
  also mixed in with some ST-library parts and stuff of my own "until it works".
  */
 
-#include "stm32f0xx_spi.h"
-#include "stm32f0xx_gpio.h"
-#include "stm32f0xx_rcc.h"
-#include "stm32f0xx.h"
+#include "stm32f10x_spi.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x.h"
 #include "ffconf.h"
 #include "ff.h"
 #include "xprintf.h"
@@ -33,25 +33,25 @@
 
 #define SPIx_SD_SCK_PIN                 GPIO_Pin_5
 #define SPIx_SD_SCK_GPIO_PORT           GPIOA
-#define SPIx_SD_SCK_GPIO_CLK            RCC_AHBPeriph_GPIOA
+#define SPIx_SD_SCK_GPIO_CLK            RCC_APB2Periph_GPIOA
 #define SPIx_SD_SCK_SOURCE              GPIO_PinSource5
 #define SPIx_SD_SCK_AF                  GPIO_AF_SPI1
 
 #define SPIx_SD_MISO_PIN                GPIO_Pin_6
 #define SPIx_SD_MISO_GPIO_PORT          GPIOA
-#define SPIx_SD_MISO_GPIO_CLK           RCC_AHBPeriph_GPIOA
+#define SPIx_SD_MISO_GPIO_CLK           RCC_APB2Periph_GPIOA
 #define SPIx_SD_MISO_SOURCE             GPIO_PinSource6
 #define SPIx_SD_MISO_AF                 GPIO_AF_SPI1
 
 #define SPIx_SD_MOSI_PIN                GPIO_Pin_7
 #define SPIx_SD_MOSI_GPIO_PORT          GPIOA
-#define SPIx_SD_MOSI_GPIO_CLK           RCC_AHBPeriph_GPIOA
+#define SPIx_SD_MOSI_GPIO_CLK           RCC_APB2Periph_GPIOA
 #define SPIx_SD_MOSI_SOURCE             GPIO_PinSource7
 #define SPIx_SD_MOSI_AF                 GPIO_AF_SPI1
 
 #define SPIx_SD_NSS_PIN                 GPIO_Pin_15
 #define SPIx_SD_NSS_GPIO_PORT           GPIOA
-#define SPIx_SD_NSS_GPIO_CLK            RCC_AHBPeriph_GPIOB
+#define SPIx_SD_NSS_GPIO_CLK            RCC_APB2Periph_GPIOA
 #define SPIx_SD_NSS_SOURCE              GPIO_PinSource15
 #define SPIx_SD_NSS_AF                  GPIO_AF_SPI1
 
@@ -225,42 +225,34 @@ static void power_on(void) {
 
   /* Configure I/O for Flash Chip select */
   GPIO_InitStructure.GPIO_Pin = SPIx_SD_NSS_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(SPIx_SD_NSS_GPIO_PORT, &GPIO_InitStructure);
 
   /* SPI SCK pin configuration */
   GPIO_InitStructure.GPIO_Pin = SPIx_SD_SCK_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(SPIx_SD_SCK_GPIO_PORT, &GPIO_InitStructure);
 
   /* SPI  MOSI pin configuration */
   GPIO_InitStructure.GPIO_Pin = SPIx_SD_MOSI_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(SPIx_SD_MOSI_GPIO_PORT, &GPIO_InitStructure);
 
   /* SPI  MISO pin configuration */
   GPIO_InitStructure.GPIO_Pin = SPIx_SD_MISO_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(SPIx_SD_MISO_GPIO_PORT, &GPIO_InitStructure);
 
   /* Connect SPI pins to AF0 */
-  GPIO_PinAFConfig(SPIx_SD_SCK_GPIO_PORT, SPIx_SD_SCK_SOURCE, SPIx_SD_SCK_AF);
-  GPIO_PinAFConfig(SPIx_SD_MOSI_GPIO_PORT, SPIx_SD_MOSI_SOURCE,
-      SPIx_SD_MOSI_AF);
-  GPIO_PinAFConfig(SPIx_SD_MISO_GPIO_PORT, SPIx_SD_MISO_SOURCE,
-      SPIx_SD_MOSI_AF);
+//  GPIO_PinAFConfig(SPIx_SD_SCK_GPIO_PORT, SPIx_SD_SCK_SOURCE, SPIx_SD_SCK_AF);
+//  GPIO_PinAFConfig(SPIx_SD_MOSI_GPIO_PORT, SPIx_SD_MOSI_SOURCE,
+ //     SPIx_SD_MOSI_AF);
+//  GPIO_PinAFConfig(SPIx_SD_MISO_GPIO_PORT, SPIx_SD_MISO_SOURCE,
+//      SPIx_SD_MOSI_AF);
 
   /* SPI configuration */
   SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
@@ -274,7 +266,7 @@ static void power_on(void) {
   SPI_InitStructure.SPI_CRCPolynomial = 7;
 
   SPI_Init(SPIx_SD, &SPI_InitStructure);
-  SPI_RxFIFOThresholdConfig(SPIx_SD, SPI_RxFIFOThreshold_QF);
+ // SPI_RxFIFOThresholdConfig(SPIx_SD, SPI_RxFIFOThreshold_QF);
 
   SPI_CalculateCRC(SPIx_SD, DISABLE);
   SPI_Cmd(SPIx_SD, ENABLE);
@@ -345,8 +337,7 @@ static void power_off(void) {
   /* All SPI-Pins to input with weak internal pull-downs */
   GPIO_InitStructure.GPIO_Pin = SPIx_SD_SCK_PIN | SPIx_SD_MISO_PIN
       | SPIx_SD_MOSI_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
   GPIO_Init(SPIx_SD_SCK_GPIO_PORT, &GPIO_InitStructure);
 
   Stat |= STA_NOINIT; /* Set STA_NOINIT */

@@ -8,19 +8,21 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-#include "stm32f0xx.h"
+#include "stm32f10x.h"
 
-#include "stm32f0xx_gpio.h"
-#include "stm32f0xx_rcc.h"
-#include "stm32f0xx_usart.h"
-#include "stm32f0xx_flash.h"
-#include "stm32f0xx_spi.h"
-#include "stm32f0xx_tim.h"
-#include "stm32f0xx_misc.h"
-#include "stm32f0xx_exti.h"
-#include "stm32f0xx_syscfg.h"
-#include "stm32f0xx_i2c.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x_usart.h"
+#include "stm32f10x_flash.h"
+#include "stm32f10x_spi.h"
+#include "stm32f10x_tim.h"
+#include "stm32f10x_dac.h"
+#include "misc.h"
+#include "stm32f10x_exti.h"
+#include "system_stm32f10x.h"
+#include "stm32f10x_i2c.h"
 #include "diskio.h"
+
 
 
 extern SPI_InitTypeDef 				SPI_InitStruct;
