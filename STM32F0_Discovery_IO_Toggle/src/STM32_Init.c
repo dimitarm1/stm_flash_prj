@@ -1997,7 +1997,7 @@
 #define __TIMER_SETUP             1                       //  0
 #define __TIMER_USED              0x0001                  //  1
 #define __TIMER_DETAILS           0x0000                  //  2
-#define __TIMER_INTERRUPTS        0x0001                  //  3
+#define __TIMER_INTERRUPTS        0x0000                  //  3
 #define __TIM1_PERIOD             0x3D090                 //  4
 #define __TIM1_PSC                0x0000                  //  5
 #define __TIM1_ARR                0x0004                  //  6

@@ -465,20 +465,67 @@ void RCC_AdjustHSI(uint8_t HSICalibrationValue)
 volatile int stop=1;
 int main(void)
 {
-	stm32_Init ();
+	//stm32_Init ();
 //	while (stop);
 	SetSysClockTo24();
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
 	/* Output clock on MCO pin ---------------------------------------------*/
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	// RCC_MCOConfig(RCC_MCO_HSE); // Put on MCO pin the: freq. of external crystal
-	RCC_MCOConfig(RCC_MCO_SYSCLK); // Put on MCO pin the: System clock selected
+	//RCC_MCOConfig(RCC_MCO_SYSCLK); // Put on MCO pin the: System clock selected
 	//RCC_AdjustHSICalibrationValue(0x00);
 //	RCC_AdjustHSI(0x1ff);
-	RCC_AdjustHSI(0x0);
+//	RCC_AdjustHSI(0x0);
+	RCC_AdjustHSI(0x09);
+
+
+	TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+
+	TIM_TimeBaseStructure.TIM_Prescaler = 1; // set 1us resolution
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_Period = 14;
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
+
+	TIM_OCStructInit(&TIM_OCInitStructure);
+
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OCInitStructure.TIM_Pulse = 13;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+
+	 TIM_OC1Init(TIM1, &TIM_OCInitStructure);
+	 TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);
+
+	 //TIM_ARRPreloadConfig(TIMx, ENABLE);
+	 TIM_CtrlPWMOutputs(TIM1, ENABLE);
+	 TIM_Cmd(TIM1, ENABLE);
+
+
+#if 0
+	TIM_TimeBaseStructure.TIM_Prescaler = 1 ;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_Period = 255 ;
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
+
+	/* TIM1 PWM2 Mode configuration: Channel1 */
+	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OCInitStructure.TIM_Pulse = 100;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+
+	TIM_OC1Init(TIM1, &TIM_OCInitStructure);
+	TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);
+	TIM_Cmd(TIM1, ENABLE);
+	TIM_SetCompare1(TIM1, 2);
+#endif
 
 	while(1);
 
