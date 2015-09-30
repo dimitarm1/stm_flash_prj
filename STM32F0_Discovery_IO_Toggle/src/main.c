@@ -849,7 +849,9 @@ void ProcessButtons(void)
 				break;
 			case BUTTON_PLUS:
 			{
-
+				if(curr_status == STATUS_WORKING){
+					set_colarium_lamps(1);
+				}
 				if(state == state_show_hours) {
 					state = state_set_time;
 					start_counter = 0;
@@ -885,6 +887,9 @@ void ProcessButtons(void)
 			}
 			break;
 			case BUTTON_MINUS:
+				if(curr_status == STATUS_WORKING){
+					set_colarium_lamps(0);
+				}
 				if(state == state_show_hours) {
 					state = state_set_time;
 					start_counter = 0;
@@ -1238,14 +1243,14 @@ void set_start_out_signal(int value){
 void set_lamps(int value){
 	int counter = 0;
  	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-	else GPIOC->BRR = GPIO_BRR_BR_8;
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+	else GPIOC->BRR = GPIO_BRR_BR_9;
 }
 void set_colarium_lamps(int value){
 	int counter = 0;
 	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-	else GPIOC->BRR = GPIO_BRR_BR_9;
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
+	else GPIOC->BRR = GPIO_BRR_BR_8;
 }
 void set_fan2(int value){
 	if (value)
