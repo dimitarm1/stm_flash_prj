@@ -3,6 +3,33 @@
  *
  *  Created on: 30.11.2013
  *      Author: didi
+ *
+ *
+ *      Hardware pins used:
+ *      Lampi  		- GPIOB.13
+ *      Licevi 		- GPIOB.14
+ *
+ *      Ventilator1 (Reg) - Using Timer2
+ *
+ *      	CH2 	- GPIOA.1 - Zero cross input
+ *      	CH4 	- GPIOA.3 - Output
+ *
+ *   	Ventilator2 - GPIOA.10
+ *   	Climatik 	- GPIOA.11
+ *
+ *   	Indication:
+ *
+ *   	Shift Enable: GPIOB.2
+ *
+ *   	SPI1:
+ *   		SPI_CLK - GPIOA.5
+ *   		MOSI 	- GPIOA.6
+ *   		MISO	- GPIOA.7
+ *
+ *   	USART1:
+ *   		TxD	-	GPIOB.6
+ *   		RxD	- 	GPIOB.7
+ *
  */
 #include "init.h"
 
