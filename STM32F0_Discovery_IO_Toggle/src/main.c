@@ -35,9 +35,9 @@
 	 uint8_t addresse  :8;
 	 uint8_t pre_time  :8;
 	 uint8_t cool_time :8;
+	 uint8_t ext_mode  :8;
 	 uint8_t volume_dac:8;
 	 uint8_t temperatue_max:8;
-	 uint8_t unused_2  :8;
 	 uint8_t unused_3  :8;
 	 uint8_t checksum  :8;
  }settings_str;
@@ -46,9 +46,11 @@
 	 settings_str settings;
  }flash_struct;
 
-typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode, state_volume_1, state_volume_2}states;
+typedef enum ext_modes {ext_mode_none, ext_mode_colarium}ext_modes;
+typedef enum lamps_modes {lamps_all, lamps_uv, lamps_colagen}lamps_modes;
+typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode, state_volume, state_max_temp}states;
  states state;
-typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume_1, mode_set_volume_2}modes;
+typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume, mode_set_max_temp}modes;
 modes service_mode;
 typedef enum voice_messages { message_power_up, message_start_working, message_stop_working };
 int useUart=0;
@@ -130,7 +132,10 @@ unsigned char  preset_pre_time = 7;
 unsigned char  preset_cool_time = 3;
 unsigned char  volume_message;
 unsigned char  temperature_threshold;
+unsigned char  ext_mode = 0;
+unsigned char  lamps_mode = 0;
 unsigned char  temperature_current;
+unsigned char  last_rx_address;
 int start_counter = 0;
 int last_button = 0;
 int prev_button = 0;
@@ -607,12 +612,16 @@ int main(void)
 			}
 			break;
 		case state_ext_mode:
-			flash_mode = 0;
-			display_data = 0xFF5;
+//			flash_mode = 0;
+			if((flash_counter/0x400)&1){
+				display_data =  ext_mode;
+			} else {
+				display_data = 0xFF5;
+			}
 			break;
 
-		case state_volume_1:
-			flash_mode = 0;
+		case state_volume:
+//			flash_mode = 0;
 			if((flash_counter/0x400)&1){
 				display_data =  volume_message;
 			} else {
@@ -620,8 +629,8 @@ int main(void)
 			}
 			break;
 
-		case state_volume_2:
-			flash_mode = 0;
+		case state_max_temp:
+//			flash_mode = 0;
 			if((flash_counter/0x400)&1){
 				display_data =  temperature_threshold;
 			} else {
@@ -940,7 +949,9 @@ void ProcessButtons(void)
 			case BUTTON_PLUS:
 			{
 				if(curr_status == STATUS_WORKING){
-					set_colarium_lamps(1);
+					if(lamps_mode == lamps_all){
+						set_colarium_lamps(1);
+					}
 				}
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -965,10 +976,13 @@ void ProcessButtons(void)
 					case mode_set_cool_time:
 						if(preset_cool_time<9) preset_cool_time++;
 						break;
-					case mode_set_volume_1:
+					case mode_set_ext_mode:
+						if(ext_mode < ext_mode_colarium) ext_mode++;
+						break;
+					case mode_set_volume:
 						if(volume_message < 9) volume_message++;
 						break;
-					case mode_set_volume_2:
+					case mode_set_max_temp:
 						if(temperature_threshold < 99) temperature_threshold++;
 						break;
 					default:
@@ -980,7 +994,9 @@ void ProcessButtons(void)
 			break;
 			case BUTTON_MINUS:
 				if(curr_status == STATUS_WORKING){
-					set_colarium_lamps(0);
+					if(lamps_mode == lamps_all){
+						set_colarium_lamps(0);
+					}
 				}
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -1002,10 +1018,13 @@ void ProcessButtons(void)
 					case mode_set_cool_time:
 						if(preset_cool_time) preset_cool_time--;
 						break;
-					case mode_set_volume_1:
+					case mode_set_ext_mode:
+						if(ext_mode > 0) ext_mode--;
+						break;
+					case mode_set_volume:
 						if(volume_message > 0) volume_message--;
 						break;
-					case mode_set_volume_2:
+					case mode_set_max_temp:
 						if(temperature_threshold > 10) temperature_threshold--;
 						break;
 					default:
@@ -1058,10 +1077,10 @@ void ProcessButtons(void)
 				service_mode = mode_set_ext_mode; //
 			}
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 5*SERVICE_NEXT_DELAY){
-				service_mode = mode_set_volume_1; //
+				service_mode = mode_set_volume; //
 			}
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY){
-				service_mode = mode_set_volume_2; //
+				service_mode = mode_set_max_temp; //
 			}
 		}
 		set_start_out_signal(1);
@@ -1113,12 +1132,19 @@ void ProcessButtons(void)
 //			volume_level = 6;
 			fan_level = 7;
 			percent_fan1 = fan_level;
-			set_lamps(ON);
-//			zero_crossed = 0;
-			startup_delay = 2000;
-//			set_colarium_lamps(100);
-//			set_fan1(percent_fan1);
-//			set_fan2(percent_fan2);
+			if(lamps_mode == lamps_all){
+				set_lamps(100);
+				set_colarium_lamps(100);
+			}
+			if(lamps_mode == lamps_uv){
+				set_lamps(100);
+			}
+			if(lamps_mode == lamps_colagen){
+				set_colarium_lamps(100);
+			}
+			zero_crossed = 0;
+			set_fan1(percent_fan1);
+			set_fan2(percent_fan2);
 //			set_aquafresh(percent_aquafresh);
 			play_message(message_start_working);
 			set_volume(volume_level);
@@ -1355,6 +1381,7 @@ void read_eeprom(void){
 		work_hours[2] = 0;
 		volume_message = 5;
 		temperature_threshold = 90;
+		ext_mode = 0;
 		return;
 	}
 	index-=sizeof(flash_struct)/sizeof(uint32_t);
@@ -1367,6 +1394,7 @@ void read_eeprom(void){
 	work_hours[2] = flash_mem->time.minutes;
 	volume_message = flash_mem->settings.volume_dac;
 	temperature_threshold = flash_mem->settings.temperatue_max;
+	ext_mode = flash_mem->settings.ext_mode;
 }
 
 void write_eeprom(void){
@@ -1391,13 +1419,13 @@ void write_eeprom(void){
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
 		flash_mem.settings.addresse = controller_address & 0x0f;
-		flash_mem.settings.unused_2 = 0x55;
 		flash_mem.time.hours_h = work_hours[0];
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
 		flash_mem.settings.volume_dac = volume_message;
 		flash_mem.settings.temperatue_max = temperature_threshold;
+		flash_mem.settings.ext_mode = ext_mode;
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
@@ -1566,29 +1594,38 @@ void usart_receive(void){
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
 	if ((data & 0x80)){
+		last_rx_address = (data >> 3U)&0x0f;
+		unsigned char addr_is_ok = 0;
+
+		if(ext_mode == ext_mode_colarium){
+			if((last_rx_address - controller_address)<3) addr_is_ok = 1;
+		}
+		else {
+			addr_is_ok = !!(last_rx_address - controller_address);
+		}
 		// Command
 		if((data & (0x0fU<<3U)) == ((controller_address & 0x0fU)<<3U)){
 			Gv_UART_Timeout = 1500;
 		}
-		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
+		if(data & 0x07 == 0x0fU){ // Status
 			data = (curr_status<<6)| ToBCD(curr_time);
 //			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+1) //Command 1 - Start
+		else if (data & 0x07 == 1) //Command 1 - Start
 		{
 			pre_time = 0;
 			update_status();
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
+		else if (data & 0x07 == 2)  //Command 2 == Pre_time_set
 		{
 			rx_state = rx_state_pre_time;
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+5) //Command 5 == Main_time_set
+		else if (data & 0x07 == 5) //Command 5 == Main_time_set
 		{
 			rx_state = rx_state_main_time;
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+3) //Command 3 == Cool_time_set
+		else if (data & 0x07 == 3) //Command 3 == Cool_time_set
 		{
 			rx_state = rx_state_cool_time;
 		}
@@ -1614,6 +1651,10 @@ void usart_receive(void){
 		if(rx_state == rx_state_main_time){
 			main_time_sent = FromBCD(data);
 			rx_state = 0;
+			if (last_rx_address == controller_address)	lamps_mode = lamps_all;
+			if (last_rx_address == controller_address+1)lamps_mode = lamps_uv;
+			if (last_rx_address == controller_address+2)lamps_mode = lamps_colagen;
+
 		}
 		if(rx_state == rx_state_cool_time){
 			cool_time_sent = data;
