@@ -1476,7 +1476,7 @@ void play_message(int index){
 	//DAC_Cmd(DAC_Channel_1, ENABLE);
 	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	TIM_Cmd(TIM6, ENABLE);
-	TIM_Cmd(TIM14, ENABLE);
+//	TIM_Cmd(TIM14, ENABLE);
 //	TIM6->CR1 |= TIM_CR1_CEN;
 
 }
