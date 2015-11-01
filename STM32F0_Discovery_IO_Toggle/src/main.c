@@ -586,6 +586,7 @@ int main(void)
 				set_fan1(0);
 				set_fan2(0);
 				set_aquafresh(0);
+				lamps_mode = lamps_all;
 
 //				state = state_set_time;
 			}
@@ -1034,7 +1035,7 @@ void ProcessButtons(void)
 				}
 				write_eeprom();
 			}
-
+			flash_mode = 0;
 			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
 			zero_crossed = 0;
 //			volume_level = 6;
@@ -1081,6 +1082,7 @@ void ProcessButtons(void)
 //			set_aquafresh(percent_aquafresh);
 			flash_mode = 3;
 
+
 		}
 		if (curr_status == STATUS_FREE){
 			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
@@ -1091,6 +1093,7 @@ void ProcessButtons(void)
 //			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
 			flash_mode = 0;
+			lamps_mode = lamps_all;
 		}
 		prev_status = curr_status;
 
@@ -1427,34 +1430,58 @@ void usart_receive(void){
 		unsigned char addr_is_ok = 0;
 
 		if(ext_mode == ext_mode_colarium){
-			if((last_rx_address - controller_address)<3) addr_is_ok = 1;
+			if(last_rx_address  == controller_address ){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_all) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+			if(last_rx_address  == controller_address + 1){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_uv) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+			if(last_rx_address  == controller_address + 2){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_colagen) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
 		}
 		else {
-			addr_is_ok = !!(last_rx_address - controller_address);
+			addr_is_ok = (last_rx_address == controller_address);
 		}
+		if (!addr_is_ok) return;
 		// Command
-		if((data & (0x0fU<<3U)) == ((controller_address & 0x0fU)<<3U)){
+		if(addr_is_ok){
 			Gv_UART_Timeout = 1500;
 		}
-		if(data & 0x07 == 0x0fU){ // Status
+		if((data & 0x07) == 0x00 ){ // Status
 			data = (curr_status<<6)| ToBCD(curr_time);
 //			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
-		else if (data & 0x07 == 1) //Command 1 - Start
+		else if ((data & 0x07) == 1) //Command 1 - Start
 		{
 			pre_time = 0;
 			update_status();
 		}
-		else if (data & 0x07 == 2)  //Command 2 == Pre_time_set
+		else if ((data & 0x07) == 2)  //Command 2 == Pre_time_set
 		{
 			rx_state = rx_state_pre_time;
 		}
-		else if (data & 0x07 == 5) //Command 5 == Main_time_set
+		else if ((data & 0x07) == 5) //Command 5 == Main_time_set
 		{
 			rx_state = rx_state_main_time;
 		}
-		else if (data & 0x07 == 3) //Command 3 == Cool_time_set
+		else if ((data & 0x07) == 3) //Command 3 == Cool_time_set
 		{
 			rx_state = rx_state_cool_time;
 		}
