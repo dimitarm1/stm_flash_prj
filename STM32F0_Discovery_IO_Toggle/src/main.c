@@ -113,7 +113,7 @@ DAC_InitTypeDef             DAC_InitStructure;
 uint8_t dac_buffer[2][512];
 const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
 const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
-const uint32_t message_sector_offset[] = {00,100,200,300,400,500,600};
+const uint32_t message_sector_offset[] = {00,1000,2000,3000,4000,5000,6000};
 const uint32_t message_sector_counts[] = {90,90,90,90,90,90,90};
 
 __IO uint32_t TimingDelay;
@@ -402,7 +402,7 @@ void SetSysClockTo24(void)
 	if (HSEStartUpStatus == SUCCESS)
 	{
 		/* Flash 0 wait state */
-		FLASH_SetLatency(FLASH_Latency_0);
+		FLASH_SetLatency(FLASH_Latency_2);
 		/* HCLK = SYSCLK */
 		RCC_HCLKConfig(RCC_SYSCLK_Div1);
 		/* PCLK2 = HCLK */
@@ -412,7 +412,8 @@ void SetSysClockTo24(void)
 		/* PLLCLK = (8MHz/2) * 6 = 24 MHz */
 	//	RCC_PREDIV1Config(RCC_PREDIV1_Source_HSE, RCC_PREDIV1_Div2);
 	//	RCC_PLLConfig(RCC_PLLSource_HSE_Div1, RCC_PLLMul_6);
-		RCC_PLLConfig(RCC_PLLSource_HSI_Div2, RCC_PLLMul_14);
+		RCC_PLLConfig(RCC_PLLSource_HSE_Div1, RCC_PLLMul_9);
+	//	RCC_PLLConfig(RCC_PLLSource_HSI_Div2, RCC_PLLMul_14);
 		/* Enable PLL */
 		RCC_PLLCmd(ENABLE);
 		/* Wait till PLL is ready */
@@ -483,11 +484,12 @@ int main(void)
 	RCC_AdjustHSI(0x09);
 
 
+
 	TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
 
 	TIM_TimeBaseStructure.TIM_Prescaler = 1; // set 1us resolution
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseStructure.TIM_Period = 14;
+	TIM_TimeBaseStructure.TIM_Period = 18;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
@@ -495,9 +497,9 @@ int main(void)
 	TIM_OCStructInit(&TIM_OCInitStructure);
 
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_Pulse = 13;
+	TIM_OCInitStructure.TIM_Pulse = 1;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
 	 TIM_OC1Init(TIM1, &TIM_OCInitStructure);
 	 TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);
@@ -917,7 +919,7 @@ void ProcessButtons(void)
 						time_to_set = 0;
 						Gv_miliseconds = 0;
 						update_status();
-						play_message(0);
+						play_message(1);
 					} else {
 						if (state > state_enter_service){
 							// Write EEPROM
@@ -948,6 +950,7 @@ void ProcessButtons(void)
 					update_status();
 					percent_fan1 = 10;
 					set_fan1(percent_fan1);
+					play_message(2);
 				}
 				if(state >= state_enter_service){
 					start_counter = 0;
@@ -1185,7 +1188,7 @@ void ProcessButtons(void)
 					}
 				}
 				write_eeprom();
-				play_message(1);
+				play_message(3);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
 			zero_crossed = 0;
