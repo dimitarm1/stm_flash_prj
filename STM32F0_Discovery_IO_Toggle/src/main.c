@@ -1273,13 +1273,13 @@ void set_start_out_signal(int value){
 }
 
 void set_lamps(int value){
-	int counter = 0;
+	short int counter = 0;
  	while(!zero_crossed && --counter);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
 	else GPIOC->BRR = GPIO_BRR_BR_9;
 }
 void set_colarium_lamps(int value){
-	int counter = 0;
+	short int counter = 0;
 	while(!zero_crossed && --counter);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
 	else GPIOC->BRR = GPIO_BRR_BR_8;
