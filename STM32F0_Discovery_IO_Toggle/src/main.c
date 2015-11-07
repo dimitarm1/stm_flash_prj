@@ -382,14 +382,14 @@ int main(void)
 }
 
 
-void TIM2_IRQHandler() {
-	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
+void TIM1_CC_IRQHandler() {
+	if((TIM1->SR & TIM_SR_UIF) != 0) // If update flag is set
 	{
-		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+		TIM1->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
 			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
 		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-		TIM_ICInit(TIM2, &TIM_ICInitStructure);
+		TIM_ICInit(TIM1, &TIM_ICInitStructure);
 	}
 	zero_crossed = 1;
 
@@ -845,15 +845,15 @@ void write_eeprom(void){
 }
 void set_lamps(int value){
 	while(!zero_crossed);
-	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_13;
-	else GPIOB->BRR = GPIO_BSRR_BS_13;
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+	else GPIOC->BRR = GPIO_BSRR_BS_9;
 }
 void set_licevi_lamps(int value){
 	while(!zero_crossed);
-	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_14;
-	else GPIOB->BRR = GPIO_BSRR_BS_14;
+	if (value)	GPIOF->BSRR = GPIO_BSRR_BS_0;
+	else GPIOF->BRR = GPIO_BSRR_BS_0;
 }
-void set_fan2(int value){
+void set_fan3(int value){
 	while(!zero_crossed);
 	if(value) led_bits |= LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4;
 	else led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4);
@@ -887,11 +887,45 @@ void set_fan1(int value){
 	TIM_Cmd(TIM2, ENABLE);
 
 }
+void set_fan2(int value){
+	uint32_t tim_base=5;
+	TIM_Cmd(TIM2, DISABLE);
+	led_bits &= ~(LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
+	if(value > 75 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN2_3 | LED_FAN2_4 );
+	if(value > 50 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 | LED_FAN1_3 );
+	if(value > 25 ) led_bits |= (LED_FAN2_1 | LED_FAN2_2 );
+	if(value > 0  ) led_bits |= (LED_FAN2_1  );
+
+	if (value == 100) tim_base = 5;
+	if (value == 75) tim_base = 40;
+	if (value == 50) tim_base = 49;
+	if (value == 25) tim_base = 58;
+	TIM_TimeBaseStructure.TIM_Period = tim_base;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+
+	/* TIM2 PWM2 Mode configuration: Channel4 */
+	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
+	else  TIM_OCInitStructure.TIM_Pulse = 9;
+
+	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+	TIM_Cmd(TIM2, ENABLE);
+
+}
 void set_clima(int value){
 	led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
 	if(value ) led_bits |= (LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_11;
-	else GPIOA->BRR = GPIO_BSRR_BS_11;
+	if (value)	GPIOF->BSRR = GPIO_BSRR_BS_6;
+	else GPIOF->BRR = GPIO_BSRR_BS_6;
+}
+
+void set_aroma(int value){
+	led_bits &= ~(LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
+	if(value ) led_bits |= (LED_CLIMA_1 | LED_CLIMA_2 | LED_CLIMA_3 | LED_CLIMA_4 );
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS_3;
+	else GPIOA->BRR = GPIO_BSRR_BS_3;
 }
 
 void usart_receive(void){

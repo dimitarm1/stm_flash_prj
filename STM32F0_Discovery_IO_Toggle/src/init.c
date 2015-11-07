@@ -14,12 +14,12 @@
  *      	CH2 	- GPIOA.1 - Zero cross input
  *      	CH4 	- GPIOA.3 - Output
  *
- *   	Ventilator2 - GPIOA.10
- *   	Climatik 	- GPIOA.11
+ *   	Ventilator2 - GPIOA.10 -->PF0
+ *   	Climatik 	- GPIOA.11 -->PC15
  *
  *   	Indication:
  *
- *   	Shift Enable: GPIOB.2
+ *   	Shift Enable: GPIOB.2-> xxxx
  *
  *   	SPI1:
  *   		SPI_CLK - GPIOA.5
@@ -28,7 +28,7 @@
  *
  *   	USART1:
  *   		TxD	-	GPIOB.6
- *   		RxD	- 	GPIOB.7
+ *   		RxD	- 	GPIOA.10
  *
  */
 #include "init.h"
@@ -49,7 +49,7 @@ void init(){
 
 
 	/* Configure PA in output push-pull mode (for segments)*/
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_8 |GPIO_Pin_10 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3 | GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -58,7 +58,7 @@ void init(){
 
 	/* Configure PB in output push-pull mode (for segments  )*/
 	//	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2  | GPIO_Pin_4  | GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_9 |  GPIO_Pin_11 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+	GPIO_InitStructure.GPIO_Pin = 0;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -70,7 +70,7 @@ void init(){
 
 
 	/* Configure PC in output push-pull mode (for segments )*/
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5 | GPIO_Pin_6|GPIO_Pin_7 | GPIO_Pin_10 | GPIO_Pin_13 | GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -78,7 +78,7 @@ void init(){
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 	/* Configure PF4 in output push-pull mode (for segments )*/
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_4|GPIO_Pin_5;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -94,52 +94,40 @@ void init(){
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	//Configure SPI pins:   ----------------------------
-	//	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 ;
-	//	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	//	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	//	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	//	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	//	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+	//	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_0); // SPI1_NSS
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_0); // MISO
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_0); // MOSI
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_0); // SPI_CLK
 
-	//Configure Timer 2 pins:   ----------------------------
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_1;
+	//Configure Timer 1 pins:   ----------------------------
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	//Configure Timer 2 pins:   ----------------------------
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_13 | GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_2); // TIM2_CH2
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_2); // TIM2_CH4
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource8, GPIO_AF_2); // TIM1_CH1
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_2); // TIM1_CH1N
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource14, GPIO_AF_2); // TIM1_CH2N
 
-
-
-	//	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_0); // SPI1_NSS
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_0); // MISO
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_0); // MOSI
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_0); // SPI_CLK
-
-	//	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource4, GPIO_AF_0); // MISO
-	//	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_0); // MOSI
-	//	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_0); // SPI_CLK
-
-	//Configure USART2 pins:  Rx and Tx ----------------------------
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
+	//Configure USART1 pins:  Rx and Tx ----------------------------
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9 | GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0); // USART1_TX
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0); // USART1_RX
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1); // USART1_TX
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1); // USART1_RX
 
 	USART_InitStructure.USART_BaudRate = 1200;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -176,52 +164,55 @@ void init(){
 
 	// Zero cross detection timer
 
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
 
 	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_Period = 70 ;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+	TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
 
-	/* TIM2 PWM2 Mode configuration: Channel4 */
+	/* TIM1 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
 	TIM_OCInitStructure.TIM_Pulse = 65;
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_High;
+	TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
 
-	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+	TIM_OC1Init(TIM1, &TIM_OCInitStructure);
+	TIM_OC2Init(TIM1, &TIM_OCInitStructure);
 
-	/* TIM2 configuration in Input Capture Mode */
+	/* TIM1 configuration in Input Capture Mode */
 
 	TIM_ICStructInit(&TIM_ICInitStructure);
-	TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
+	TIM_ICInitStructure.TIM_Channel = TIM_Channel_1;
 	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
 	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
 	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
 	TIM_ICInitStructure.TIM_ICFilter = 0;
 
 
-	TIM_ICInit(TIM2, &TIM_ICInitStructure);
+	TIM_ICInit(TIM1, &TIM_ICInitStructure);
 
 	/* One Pulse Mode selection */
-	TIM_SelectOnePulseMode(TIM2, TIM_OPMode_Single);
+	TIM_SelectOnePulseMode(TIM1, TIM_OPMode_Single);
 
 	/* Input Trigger selection */
-	TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
+	TIM_SelectInputTrigger(TIM1, TIM_TS_TI1FP1);
 
 	/* Slave Mode selection: Trigger Mode */
-	TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Trigger);
+	TIM_SelectSlaveMode(TIM1, TIM_SlaveMode_Trigger);
 
-	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
+	TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);
+	TIM_OC2PreloadConfig(TIM1, TIM_OCPreload_Enable);
 
 	/* OPM Bit -> Only one pulse */
-	TIM_SelectOnePulseMode (TIM2, TIM_OPMode_Single);
-	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
+	TIM_SelectOnePulseMode (TIM1, TIM_OPMode_Single);
+	TIM1->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	NVIC_EnableIRQ(TIM1_CC_IRQn); // Enable TIM1 IRQ
 	/* TIM2 enable counter */
-	TIM_Cmd(TIM2, ENABLE);
+	TIM_Cmd(TIM1, ENABLE);
 	SysTick_Config(SystemCoreClock / (1000));
 	NVIC_SetPriority (SysTick_IRQn, 3);
 }
