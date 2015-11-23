@@ -81,7 +81,7 @@ TSL_tMeas_T measurment;
 static int display_data=0;
 USART_InitTypeDef USART_InitStructure;
 USART_ClockInitTypeDef USART_ClockInitStruct;
-
+int rx_state= 0;
 typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,
 	state_pre_time,state_cool_time,state_ext_mode}states;
 static states state = 0;
@@ -92,6 +92,10 @@ static int curr_status;
 static int prev_status;
 static int curr_time;
 static int flash_mode = 0;
+int minute_counter =0;
+int pre_time, main_time, cool_time;
+int Gv_UART_Timeout = 1000; // Timeout in mSec
+int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 static unsigned char  time_to_set = 0;
 static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
 static unsigned char  preset_pre_time = 7;
@@ -99,6 +103,9 @@ static unsigned char  preset_cool_time = 3;
 static int start_counter = 0;
 static int counter_hours = 0;
 static int flash_counter_prev = 0;
+unsigned int Gv_miliseconds = 0;
+uint16_t data = 0;
+int useUart=0;
 
 // for Display:
 static unsigned int led_counter = 0;
@@ -134,7 +141,10 @@ void send_time(void);
 void send_start(void);
 void write_eeprom(void);
 void read_eeprom(void);
-
+void update_status(void);
+void KeyPressed_0(void);
+void KeyPressed_1(void);
+void KeyPressed_2(void);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -776,7 +786,7 @@ void ProcessSensors(void)
 			push_note(A3,6);
 			push_note(A2,4);
 			push_note(A3,6);
-			send_time();
+			//send_time();
 //			start_counter = 0;
 		}
 		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
@@ -790,7 +800,7 @@ void ProcessSensors(void)
 			time_to_set = 0;
 			preset_pre_time = 0;
 			preset_cool_time = 0;
-			send_time();
+			//send_time();
 			read_eeprom();
 //			start_counter = 0;
 
@@ -930,6 +940,26 @@ void TimingDelay_Decrement(void)
 		}
 		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
 			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+		}
+	}
+	if(Gv_miliseconds++>60000L){
+		Gv_miliseconds = 0;
+		if (pre_time)pre_time--;
+		else if (main_time) {
+			main_time--;
+			minute_counter ++;
+			if(main_time == 0){
+				//play_message(2);
+			}
+		}
+		else if (cool_time) cool_time--;
+		update_status();
+	}
+	if  (Gv_UART_Timeout){
+		Gv_UART_Timeout--;
+		if(! Gv_UART_Timeout) {
+			rx_state = 0;
+			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		}
 	}
 }
@@ -1191,6 +1221,25 @@ void send_time(void){
 	}
 }
 
+void update_status(void){
+	if(pre_time) {
+		curr_time = pre_time;
+		curr_status = STATUS_WAITING;
+	}
+	else if(main_time) {
+		curr_time = main_time;
+		curr_status = STATUS_WORKING;
+	}
+	else if(cool_time) {
+		curr_time = cool_time;
+		curr_status = STATUS_COOLING;
+	}
+	else {
+		curr_time = 0;
+		curr_status = STATUS_FREE;
+	}
+}
+
 void send_start(void){
 	// Ping solarium for status
 	if(controller_address >15){
@@ -1283,6 +1332,82 @@ void write_eeprom(void){
 	}
 	FLASH_Lock();
 }
+
+//-----------------------------------------------------------------------------------------------------
+void usart_receive(void){
+	useUart = 1;
+	enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
+	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
+	data =  USART_ReceiveData(USART1);
+
+	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+
+	if ((data & 0x80)){
+		// Command
+		if((data & (0x0fU<<3U)) == ((controller_address & 0x0fU)<<3U)){
+			Gv_UART_Timeout = 1500;
+		}
+		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
+			data = (curr_status<<6)| ToBCD(curr_time);
+//			data = (STATUS_WORKING<<6)|4;
+			USART_SendData(USART1,data);
+		}
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+1) //Command 1 - Start
+		{
+			pre_time = 0;
+			update_status();
+		}
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
+		{
+			rx_state = rx_state_pre_time;
+		}
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+5) //Command 5 == Main_time_set
+		{
+			rx_state = rx_state_main_time;
+		}
+		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+3) //Command 3 == Cool_time_set
+		{
+			rx_state = rx_state_cool_time;
+		}
+
+	} else if (rx_state){
+		// payload
+		int time_in_hex = ToBCD(main_time_sent);
+		if(rx_state == rx_state_get_checksum){
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			if(	data == checksum){
+				pre_time = pre_time_sent;
+				main_time = main_time_sent;
+				cool_time = cool_time_sent;
+				update_status();
+				Gv_miliseconds = 0;
+			}
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_pre_time){
+			pre_time_sent = data;
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_main_time){
+			main_time_sent = FromBCD(data);
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_cool_time){
+			cool_time_sent = data;
+			rx_state = rx_state_get_checksum;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			data = checksum;
+			USART_SendData(USART1,data);
+		}
+
+
+	}
+	//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+	//	USART_SendData(USART1,0x80);
+}
+
+
+
 
 
 /**
