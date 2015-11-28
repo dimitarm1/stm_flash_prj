@@ -92,8 +92,9 @@ static int curr_status;
 static int prev_status;
 static int curr_time;
 static int flash_mode = 0;
+long start_delay = 0;
 int minute_counter =0;
-int pre_time, main_time, cool_time;
+int pre_time = 0, main_time = 0, cool_time = 0;
 int Gv_UART_Timeout = 1000; // Timeout in mSec
 int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 //static unsigned char  main_time = 0;
@@ -145,6 +146,8 @@ void update_status(void);
 void KeyPressed_0(void);
 void KeyPressed_1(void);
 void KeyPressed_2(void);
+void set_relay1(char state);
+void set_relay2(char state);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -354,7 +357,7 @@ int main(void)
  * PF4, PA3 - e
  * PB11,PB10 - f
  * PB0,PC5 - g
- * PA6,PA5 - DP
+ * PC1,PC0 - DP
  *
  *
  *    A
@@ -369,7 +372,7 @@ int main(void)
 	   * */
 
 	  /* Configure PA in output push-pull mode (for segments)*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5| GPIO_Pin_6|GPIO_Pin_7;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -392,6 +395,14 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+	  /* Configure PA in input mode with PullDn for Relay 1 and 2*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7 ;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+	  GPIOA->BSRR = GPIO_BSRR_BR_5 | GPIO_BSRR_BR_7;
 
 	  /* Configure PB in output push-pull mode (for segments  )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11;
@@ -520,12 +531,12 @@ int main(void)
 	  if (SysTick_Config(SystemCoreClock / (1000))){
 		  		while(1); // Capture error
 	  }
-	  if(controller_address == 15){
-		  display_data = 0xEAF;
-		  // Try to get controller address continuously
-		  get_address();
-		  if(controller_address != 15)write_eeprom();
-	  }
+//	  if(controller_address == 15){
+//		  display_data = 0xEAF;
+//		  // Try to get controller address continuously
+//		  get_address();
+//		  if(controller_address != 15)write_eeprom();
+//	  }
 
 	  NVIC_SetPriority (SysTick_IRQn, 3);
 
@@ -750,10 +761,10 @@ void ProcessSensors(void)
 
 	if (!key_states[0])
 	{
-		// LED1_ON;
-		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
-		if(start_counter>= START_COUNTER_TIME + ENTER_SERVICE_DELAY){
-			if((curr_status == STATUS_FREE))
+		if((curr_status == STATUS_FREE))
+		{
+			if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
+			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY)
 			{
 				clear_notes();
 				push_note(C2,4);
@@ -765,10 +776,8 @@ void ProcessSensors(void)
 				state = state_enter_service;
 				service_mode = mode_clear_hours; // Clear Hours
 			}
-		}
-		if(state == state_enter_service){
-			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
-					service_mode = mode_set_address; //
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_address; //
 			}
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 2*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_pre_time; //
@@ -777,33 +786,6 @@ void ProcessSensors(void)
 				service_mode = mode_set_cool_time; //
 			}
 		}
-		if(main_time && state == state_set_time && start_counter == START_DELAY){
-			// Do start
-			state = state_show_time;
-			clear_notes();
-
-			push_note(A3,6);
-			push_note(A2,4);
-			push_note(A3,6);
-			//send_time();
-//			start_counter = 0;
-		}
-//		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
-//			// Cancel start
-//			state = state_show_time;
-//			clear_notes();
-//
-//			push_note(C3,6);
-//			push_note(A3,4);
-//			push_note(A2,6);
-//			main_time = 0;
-//			preset_pre_time = 0;
-//			preset_cool_time = 0;
-//			//send_time();
-//			read_eeprom();
-////			start_counter = 0;
-//
-//		}
 	}
 	else
 	{
@@ -818,7 +800,8 @@ void ProcessSensors(void)
 				if(state == state_enter_service){
 					state = service_mode + state_enter_service;
 				}
-				start_counter--;
+				//start_counter--;
+				start_counter = 0;
 			}
 			else {
 				start_counter--;
@@ -944,9 +927,17 @@ void TimingDelay_Decrement(void)
 			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
 		}
 	}
+	if(start_delay)start_delay--;
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
-		if (pre_time)pre_time--;
+		if (pre_time)
+		{
+			pre_time--;
+			if (pre_time == 0 && main_time != 0)
+			{
+				start_delay = 2000L;
+			}
+		}
 		else if (main_time) {
 			main_time--;
 			minute_counter ++;
@@ -980,6 +971,7 @@ void KeyPressed_0(void){//START Key(Left)
 		push_note(E3,4);
 		Gv_miliseconds = 0;
 		pre_time = 0;
+		start_delay = 2000L;
 		//send_start();
 	}
 	if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) ) {
@@ -1241,23 +1233,23 @@ void KeyPressed_1(void){ // -
 void update_status(void){
 	if(pre_time) {
 		curr_status = STATUS_WAITING;
-		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
-		//GPIOB->BSRR = GPIO_BSRR_BR_8; // Set B8 low
+		set_relay1(0);
+		set_relay2(0);
 	}
 	else if(main_time) {
 		curr_status = STATUS_WORKING;
-		//GPIOB->BSRR = GPIO_BSRR_BS_9; // Set B9 high
-		//GPIOB->BSRR = GPIO_BSRR_BS_8; // Set B8 high
+		set_relay1(1);
+		set_relay2(1);
 	}
 	else if(cool_time) {
 		curr_status = STATUS_COOLING;
-		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
-		//GPIOB->BSRR = GPIO_BSRR_BS_8; // Set B8 high
+		set_relay1(0);
+		set_relay2(1);
 	}
 	else {
 		curr_status = STATUS_FREE;
-		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
-		//GPIOB->BSRR = GPIO_BSRR_BR_8; // Set B8 low
+		set_relay1(0);
+		set_relay2(0);
 	}
 }
 
@@ -1440,3 +1432,28 @@ void usart_receive(void){
   */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+void set_relay1(char state)
+{
+	if (state)
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BS_5 ;
+	}
+	else
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BR_5 ;
+	}
+}
+void set_relay2(char state)
+{
+	if (state && start_delay == 0)
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BS_7;
+	}
+	else
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BR_7;
+	}
+}
+
+

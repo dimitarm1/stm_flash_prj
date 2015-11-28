@@ -149,9 +149,9 @@
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_rcc.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_rcc.h" type="1"/>
     <File name="Libraries/STMTouch_Driver/tsl_time.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STMTouch_Driver/inc/tsl_time.h" type="1"/>
     <File name="Libraries/CMSys/core_cm4_simd.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm4_simd.h" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dma.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dma.h" type="1"/>
     <File name="Libraries/STMTouch_Driver/tsl_conf_stm32f0xx.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STMTouch_Driver/inc/tsl_conf_stm32f0xx.h" type="1"/>
     <File name="system_stm32f0xx.c" path="STM32F0_Discovery_IO_Toggle/src/system_stm32f0xx.c" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dma.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dma.h" type="1"/>
     <File name="Libraries/CMSys/core_cm0.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm0.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
