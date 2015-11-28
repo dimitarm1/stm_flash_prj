@@ -135,7 +135,7 @@ static int last_key_states[3] = {-1,-1,-1};
 void push_note(int pitch, int duration);
 void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
-void ping_status(void);
+//void ping_status(void);
 int ToBCD(int value);
 void send_time(void);
 void send_start(void);
@@ -546,7 +546,7 @@ int main(void)
 			  ProcessSensors(); // Execute sensors related tasks
 			  // Scan buttons
 
-			  ping_status(); // Get current status
+			  //ping_status(); // Get current status
 //			  display_data = state + ((curr_status&0x0f)<<4);
 //			  display_data =ping_counter;
 //			  state = 30;
@@ -975,6 +975,7 @@ void KeyPressed_0(void){//START Key(Left)
 
 		push_note(C3,6);
 		push_note(E3,4);
+		pre_time = 0;
 		//send_start();
 	}
 	if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) ) {
@@ -1069,191 +1070,199 @@ void KeyPressed_1(void){ // -
 
 }
 
-void ping_status(void){
-
-	static int ping_index = 0;
-	volatile static int status_codes[4];
-	// Ping solarium for status
-	if(!(flash_counter&0x0f)){
-		int sts;
-		ping_counter ++;
-		ping_index = (ping_index + 1) & 0x03;
-		status_codes[ping_index] = get_controller_status(controller_address);
-		if(status_codes[ping_index]==status_codes[0] && status_codes[ping_index]==status_codes[1] &&
-				status_codes[ping_index]==status_codes[2] && status_codes[ping_index]==status_codes[3] ){
-			sts = status_codes[ping_index];
-		}
-		else {
-			return;
-		}
-
-		if(sts != -1){
-			curr_status = (sts & 0xC0)>>6;
-			curr_time = sts & 0x3F;
-		} else {
-			curr_status = -1;
-			curr_time = 0;
-		}
-
-		curr_time = FromBCD(curr_time);
-	}
-}
-
-void send_time(void){
-	// Ping solarium for status
-	if(controller_address >15){
-		curr_status = -1;
-		curr_time = 0;
-	} else {
-		int retry = 0;
-		int retry2 =0;
-		char data;
-		int time_in_hex = ToBCD(time_to_set);
-		preset_pre_time = preset_pre_time & 0x7F;
-		// checksum: CoolTime + Pre-Time - 5 - MainTime
-
-		while(retry < 20){
-			// clear in FIFO
-			volatile unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
-			volatile unsigned char  remote_check_sum = 220;
-			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 2U); //Command 2 == Pre_time_set
-			SystickDelay(2);
-			USART_SendData(USART1,preset_pre_time);
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-
-			SystickDelay(2);
-			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 5U); //Command 5 == Main time set
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-			SystickDelay(2);
-			USART_SendData(USART1,time_in_hex);
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
+//void ping_status(void){
+//
+//	static int ping_index = 0;
+//	volatile static int status_codes[4];
+//	// Ping solarium for status
+//	if(!(flash_counter&0x0f)){
+//		int sts;
+//		ping_counter ++;
+//		ping_index = (ping_index + 1) & 0x03;
+//		status_codes[ping_index] = get_controller_status(controller_address);
+//		if(status_codes[ping_index]==status_codes[0] && status_codes[ping_index]==status_codes[1] &&
+//				status_codes[ping_index]==status_codes[2] && status_codes[ping_index]==status_codes[3] ){
+//			sts = status_codes[ping_index];
+//		}
+//		else {
+//			return;
+//		}
+//
+//		if(sts != -1){
+//			curr_status = (sts & 0xC0)>>6;
+//			curr_time = sts & 0x3F;
+//		} else {
+//			curr_status = -1;
+//			curr_time = 0;
+//		}
+//
+//		curr_time = FromBCD(curr_time);
+//	}
+//}
+//
+//void send_time(void){
+//	// Ping solarium for status
+//	if(controller_address >15){
+//		curr_status = -1;
+//		curr_time = 0;
+//	} else {
+//		int retry = 0;
+//		int retry2 =0;
+//		char data;
+//		int time_in_hex = ToBCD(time_to_set);
+//		preset_pre_time = preset_pre_time & 0x7F;
+//		// checksum: CoolTime + Pre-Time - 5 - MainTime
+//
+//		while(retry < 20){
+//			// clear in FIFO
+//			volatile unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
+//			volatile unsigned char  remote_check_sum = 220;
+//			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 2U); //Command 2 == Pre_time_set
 //			SystickDelay(2);
-			retry2 =0;
-			while(!USART_GetFlagStatus(USART1,USART_FLAG_RXNE) && retry2++<10){
-				SystickDelay(2);
-			}
-			USART_ReceiveData(USART1); //"Read" old time
-
-			SystickDelay(2);
-			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 3U); //Command 3 == Cool Time set
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-			SystickDelay(2);
-			USART_SendData(USART1,preset_cool_time);
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-
-			SystickDelay(4);
-			retry2 =0;
-			while(!USART_GetFlagStatus(USART1,USART_FLAG_RXNE) && retry2++<10){
-				SystickDelay(2);
-			}
-			if(USART_GetFlagStatus(USART1,USART_FLAG_RXNE)){
-				remote_check_sum = USART_ReceiveData(USART1); //"Read" checksum
-			}
-			SystickDelay(20);
-//			checksum = remote_check_sum;
-			if(remote_check_sum == checksum){
-				SystickDelay(2);
-				USART_SendData(USART1,checksum);
-				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-			}
-			SystickDelay(100);
-			USART_SendData(USART1,0x80U | ((controller_address & 0x0f)<<3U) | 0); //Command 0 - Get status
-			SystickDelay(20);
-			data = USART_ReceiveData(USART1); //"Read" status
-			if ((data >> 6 ) != 0 ) retry = 22;
-			retry ++;
-		}
-
-		/**************** OLD Pascal code as example
-		CheckSum:=PreTime+CoolTime-DataSent-5;
-		    CheckSum:=CheckSum mod 128 ;
-		    PurgeComm(hDevice,(PURGE_TXCLEAR or PURGE_RXCLEAR	));
-		    while retry<20 do
-		     begin
-		      for i:=1 to 10 do IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-		      Data1:=128+Chanel*8+2;
-		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-		      sleep(2);             // Set PRE-Time
-		      IOResult:=WriteFile(hDevice,PreTime,1,IOCount,NIL);
-		      Data1:=128+Chanel*8+5;
-		      sleep(2);              // Set main time
-		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-		      sleep(2);
-		      IOResult:=WriteFile(hDevice,DataSent,1,IOCount,NIL);
-		      sleep(2);
-		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);   // get old main time
-		      Data1:=128+Chanel*8+3; //  Set cool time
-		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-		      sleep(2);
-		      IOResult:=WriteFile(hDevice,CoolTime,1,IOCount,NIL);
-		      sleep(4);
-		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL); // Get checksum?
-		      if IOResult and (IOByte=CheckSum) then
-		      IOResult:=WriteFile(hDevice,CheckSum,1,IOCount,NIL);
-		      sleep(100);
-		      Data1:=128+Chanel*8; // Get status command for selected chanel
-		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-		      sleep(5);
-		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-		      IOByte:= IOByte div 64;
-		      if IOResult and (IOByte <>0) and
-		        ((DataSent=0) or (PreTime > 0) or ((IOByte = 1) and (DataSent >0)))    then
-		        begin
-		          retry:=22;
-		        end
-		      else retry:= retry+1;
-		      sleep(1);
-		      MainForm.Gauge2.Progress:=retry;
-		     end;
-		     IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-		     IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-
-		*/
-	}
-}
+//			USART_SendData(USART1,preset_pre_time);
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//
+//			SystickDelay(2);
+//			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 5U); //Command 5 == Main time set
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//			SystickDelay(2);
+//			USART_SendData(USART1,time_in_hex);
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+////			SystickDelay(2);
+//			retry2 =0;
+//			while(!USART_GetFlagStatus(USART1,USART_FLAG_RXNE) && retry2++<10){
+//				SystickDelay(2);
+//			}
+//			USART_ReceiveData(USART1); //"Read" old time
+//
+//			SystickDelay(2);
+//			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 3U); //Command 3 == Cool Time set
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//			SystickDelay(2);
+//			USART_SendData(USART1,preset_cool_time);
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//
+//			SystickDelay(4);
+//			retry2 =0;
+//			while(!USART_GetFlagStatus(USART1,USART_FLAG_RXNE) && retry2++<10){
+//				SystickDelay(2);
+//			}
+//			if(USART_GetFlagStatus(USART1,USART_FLAG_RXNE)){
+//				remote_check_sum = USART_ReceiveData(USART1); //"Read" checksum
+//			}
+//			SystickDelay(20);
+////			checksum = remote_check_sum;
+//			if(remote_check_sum == checksum){
+//				SystickDelay(2);
+//				USART_SendData(USART1,checksum);
+//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//			}
+//			SystickDelay(100);
+//			USART_SendData(USART1,0x80U | ((controller_address & 0x0f)<<3U) | 0); //Command 0 - Get status
+//			SystickDelay(20);
+//			data = USART_ReceiveData(USART1); //"Read" status
+//			if ((data >> 6 ) != 0 ) retry = 22;
+//			retry ++;
+//		}
+//
+//		/**************** OLD Pascal code as example
+//		CheckSum:=PreTime+CoolTime-DataSent-5;
+//		    CheckSum:=CheckSum mod 128 ;
+//		    PurgeComm(hDevice,(PURGE_TXCLEAR or PURGE_RXCLEAR	));
+//		    while retry<20 do
+//		     begin
+//		      for i:=1 to 10 do IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
+//		      Data1:=128+Chanel*8+2;
+//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
+//		      sleep(2);             // Set PRE-Time
+//		      IOResult:=WriteFile(hDevice,PreTime,1,IOCount,NIL);
+//		      Data1:=128+Chanel*8+5;
+//		      sleep(2);              // Set main time
+//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
+//		      sleep(2);
+//		      IOResult:=WriteFile(hDevice,DataSent,1,IOCount,NIL);
+//		      sleep(2);
+//		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);   // get old main time
+//		      Data1:=128+Chanel*8+3; //  Set cool time
+//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
+//		      sleep(2);
+//		      IOResult:=WriteFile(hDevice,CoolTime,1,IOCount,NIL);
+//		      sleep(4);
+//		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL); // Get checksum?
+//		      if IOResult and (IOByte=CheckSum) then
+//		      IOResult:=WriteFile(hDevice,CheckSum,1,IOCount,NIL);
+//		      sleep(100);
+//		      Data1:=128+Chanel*8; // Get status command for selected chanel
+//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
+//		      sleep(5);
+//		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
+//		      IOByte:= IOByte div 64;
+//		      if IOResult and (IOByte <>0) and
+//		        ((DataSent=0) or (PreTime > 0) or ((IOByte = 1) and (DataSent >0)))    then
+//		        begin
+//		          retry:=22;
+//		        end
+//		      else retry:= retry+1;
+//		      sleep(1);
+//		      MainForm.Gauge2.Progress:=retry;
+//		     end;
+//		     IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
+//		     IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
+//
+//		*/
+//	}
+//}
 
 void update_status(void){
 	if(pre_time) {
 		curr_time = pre_time;
 		curr_status = STATUS_WAITING;
+		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
+		//GPIOB->BSRR = GPIO_BSRR_BR_8; // Set B8 low
 	}
 	else if(main_time) {
 		curr_time = main_time;
 		curr_status = STATUS_WORKING;
+		//GPIOB->BSRR = GPIO_BSRR_BS_9; // Set B9 high
+		//GPIOB->BSRR = GPIO_BSRR_BS_8; // Set B8 high
 	}
 	else if(cool_time) {
 		curr_time = cool_time;
 		curr_status = STATUS_COOLING;
+		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
+		//GPIOB->BSRR = GPIO_BSRR_BS_8; // Set B8 high
 	}
 	else {
 		curr_time = 0;
 		curr_status = STATUS_FREE;
+		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
+		//GPIOB->BSRR = GPIO_BSRR_BR_8; // Set B8 low
 	}
 }
 
-void send_start(void){
-	// Ping solarium for status
-	if(controller_address >15){
-		curr_status = -1;
-		curr_time = 0;
-	} else {
-			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-
-			USART_SendData(USART1,0x80 | ((controller_address & 0x0f)<<3) | 1); //Command 1 == start
-			SystickDelay(2);
-			USART_SendData(USART1,0x55);
-	}
-}
+//void send_start(void){
+//	// Ping solarium for status
+//	if(controller_address >15){
+//		curr_status = -1;
+//		curr_time = 0;
+//	} else {
+//			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
+//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+//
+//			USART_SendData(USART1,0x80 | ((controller_address & 0x0f)<<3) | 1); //Command 1 == start
+//			SystickDelay(2);
+//			USART_SendData(USART1,0x55);
+//	}
+//}
 
 void read_eeprom(void){
 	int index = 0;
