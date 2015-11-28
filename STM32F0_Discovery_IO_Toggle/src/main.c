@@ -96,7 +96,7 @@ int minute_counter =0;
 int pre_time, main_time, cool_time;
 int Gv_UART_Timeout = 1000; // Timeout in mSec
 int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-static unsigned char  time_to_set = 0;
+//static unsigned char  main_time = 0;
 static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
 static unsigned char  preset_pre_time = 7;
 static unsigned char  preset_cool_time = 3;
@@ -420,7 +420,7 @@ int main(void)
 	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
 	  /* Configure PC in output push-pull mode (for segments and Digit 1 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -556,12 +556,12 @@ int main(void)
 				  if(curr_status == STATUS_FREE ){
 					  flash_mode = 0;
 					  state = state_set_time;
-					  display_data = ToBCD(time_to_set);
+					  display_data = ToBCD(main_time);
 				  } else {
 
 					  state = state_show_time;
 					  //				  time_to_set = 0;
-					  display_data = ToBCD(curr_time);
+					  display_data = ToBCD(main_time);
 					  if(curr_status == STATUS_WAITING ){
 						  flash_mode = 1; // DP flashing
 					  } else  if(curr_status == STATUS_WORKING ){
@@ -753,7 +753,7 @@ void ProcessSensors(void)
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
 		if(start_counter>= START_COUNTER_TIME + ENTER_SERVICE_DELAY){
-			if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) &&(state < state_enter_service))
+			if((curr_status == STATUS_FREE))
 			{
 				clear_notes();
 				push_note(C2,4);
@@ -764,7 +764,6 @@ void ProcessSensors(void)
 				push_note(C3,8);
 				state = state_enter_service;
 				service_mode = mode_clear_hours; // Clear Hours
-				time_to_set = 0;
 			}
 		}
 		if(state == state_enter_service){
@@ -778,7 +777,7 @@ void ProcessSensors(void)
 				service_mode = mode_set_cool_time; //
 			}
 		}
-		if(time_to_set && state == state_set_time && start_counter == START_DELAY){
+		if(main_time && state == state_set_time && start_counter == START_DELAY){
 			// Do start
 			state = state_show_time;
 			clear_notes();
@@ -789,22 +788,22 @@ void ProcessSensors(void)
 			//send_time();
 //			start_counter = 0;
 		}
-		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
-			// Cancel start
-			state = state_show_time;
-			clear_notes();
-
-			push_note(C3,6);
-			push_note(A3,4);
-			push_note(A2,6);
-			time_to_set = 0;
-			preset_pre_time = 0;
-			preset_cool_time = 0;
-			//send_time();
-			read_eeprom();
-//			start_counter = 0;
-
-		}
+//		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
+//			// Cancel start
+//			state = state_show_time;
+//			clear_notes();
+//
+//			push_note(C3,6);
+//			push_note(A3,4);
+//			push_note(A2,6);
+//			main_time = 0;
+//			preset_pre_time = 0;
+//			preset_cool_time = 0;
+//			//send_time();
+//			read_eeprom();
+////			start_counter = 0;
+//
+//		}
 	}
 	else
 	{
@@ -828,7 +827,7 @@ void ProcessSensors(void)
 		}
 		if(prev_status != curr_status){
 			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
-				work_hours[2]+=time_to_set;
+				work_hours[2]+=main_time;
 				if(work_hours[2]>59){
 					work_hours[2]=work_hours[2]-60;
 					work_hours[1]++;
@@ -838,7 +837,6 @@ void ProcessSensors(void)
 					}
 				}
 				write_eeprom();
-				time_to_set = 0;
 			}
 			prev_status = curr_status;
 
@@ -939,7 +937,11 @@ void TimingDelay_Decrement(void)
 			}
 		}
 		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+			GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
+		}
+		else
+		{
+			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
 		}
 	}
 	if(Gv_miliseconds++>60000L){
@@ -953,7 +955,7 @@ void TimingDelay_Decrement(void)
 			}
 		}
 		else if (cool_time) cool_time--;
-		update_status();
+		//update_status();
 	}
 	if  (Gv_UART_Timeout){
 		Gv_UART_Timeout--;
@@ -962,6 +964,7 @@ void TimingDelay_Decrement(void)
 			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		}
 	}
+	update_status();
 }
 
 
@@ -975,6 +978,7 @@ void KeyPressed_0(void){//START Key(Left)
 
 		push_note(C3,6);
 		push_note(E3,4);
+		Gv_miliseconds = 0;
 		pre_time = 0;
 		//send_start();
 	}
@@ -982,9 +986,7 @@ void KeyPressed_0(void){//START Key(Left)
 		clear_notes();
 
 		push_note(C3,6);
-		if(time_to_set){
-// Send of time moved elsewhere
-		} else {
+		{
 			if (state > state_enter_service){
 				// Write EEPROM
 				if(state == state_clear_hours){
@@ -1001,7 +1003,6 @@ void KeyPressed_0(void){//START Key(Left)
 				start_counter = START_COUNTER_TIME;
 				state = state_show_hours;
 			}
-
 		}
 	}
 }
@@ -1011,10 +1012,19 @@ void KeyPressed_2(void){ // +
 		state = state_set_time;
 		start_counter = 0;
 	}
-	if(state == state_set_time){
-		if(time_to_set < 25){
-			time_to_set ++;
+	if(state == state_set_time ){
+		if(main_time < 25){
+			pre_time = preset_pre_time;
+			cool_time = preset_cool_time;
+			main_time ++;
 //			if((time_to_set & 0x0F)>9) time_to_set +=6;
+		}
+	}
+	else if(state == state_show_time && curr_status == STATUS_WAITING)
+	{
+		if(main_time < 25)
+		{
+			main_time ++;
 		}
 	}
 	else if(state > state_enter_service){
@@ -1038,13 +1048,19 @@ void KeyPressed_2(void){ // +
 	push_note(A3,8);
 }
 void KeyPressed_1(void){ // -
-	if(state == state_show_hours) {
-		state = state_set_time;
-		start_counter = 0;
-	}
-	if(state == state_set_time){
-		if(time_to_set) {
-			time_to_set--;
+//	if(state == state_show_hours) {
+//		state = state_set_time;
+//		start_counter = 0;
+//	}
+	if(state == state_show_time && curr_status == STATUS_WAITING )
+	{
+		if(main_time) {
+			main_time--;
+		}
+		if (main_time == 0)
+		{
+			pre_time = 0;
+			cool_time = 0;
 		}
 	}else if(state > state_enter_service){
 		start_counter = EXIT_SERVICE_TIME;
@@ -1224,25 +1240,21 @@ void KeyPressed_1(void){ // -
 
 void update_status(void){
 	if(pre_time) {
-		curr_time = pre_time;
 		curr_status = STATUS_WAITING;
 		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
 		//GPIOB->BSRR = GPIO_BSRR_BR_8; // Set B8 low
 	}
 	else if(main_time) {
-		curr_time = main_time;
 		curr_status = STATUS_WORKING;
 		//GPIOB->BSRR = GPIO_BSRR_BS_9; // Set B9 high
 		//GPIOB->BSRR = GPIO_BSRR_BS_8; // Set B8 high
 	}
 	else if(cool_time) {
-		curr_time = cool_time;
 		curr_status = STATUS_COOLING;
 		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
 		//GPIOB->BSRR = GPIO_BSRR_BS_8; // Set B8 high
 	}
 	else {
-		curr_time = 0;
 		curr_status = STATUS_FREE;
 		//GPIOB->BSRR = GPIO_BSRR_BR_9; // Set B9 low
 		//GPIOB->BSRR = GPIO_BSRR_BR_8; // Set B8 low
