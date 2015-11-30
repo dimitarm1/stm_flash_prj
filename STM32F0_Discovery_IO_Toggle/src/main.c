@@ -129,7 +129,7 @@ typedef struct flash_struct{
 	settings_str settings;
 }flash_struct;
 
-static int key_states[3] = {-1,-1,-1};
+static int key_states[4] = {-1,-1,-1, -1};
 static int last_key_states[3] = {-1,-1,-1};
 
 /* Private function prototypes -----------------------------------------------*/
@@ -333,18 +333,6 @@ int main(void)
 	  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
 
 
-
-	  ///////////////////////////////////////// UART TEST
-	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-	    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
-
-
-
-
-
-
-
 /*
  * Outputs:
  * PA2 - Digit 0
@@ -404,6 +392,17 @@ int main(void)
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 	  GPIOA->BSRR = GPIO_BSRR_BR_5 | GPIO_BSRR_BR_7;
 
+	  /* Configure PA9 -  PA10 for UART*/
+ 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
+ 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+ 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+ 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+ 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+ 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
+ 	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1);
+ 	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1);
+
+
 	  /* Configure PB in output push-pull mode (for segments  )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -413,22 +412,13 @@ int main(void)
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	  /* Configure PB in inpu mode with PullUp for buttons P3,P4*/
-	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_13 | GPIO_Pin_14;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_13 | GPIO_Pin_14;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	  GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	  /* Configure PB6 -  PB7 for UART*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	  GPIO_Init(GPIOB, &GPIO_InitStructure);
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
 	  /* Configure PC in output push-pull mode (for segments and Digit 1 )*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
@@ -454,16 +444,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOF, &GPIO_InitStructure);
 
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
-	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
-
-	  //Configure USART2 pins:  Rx and Tx ----------------------------
-	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6 | GPIO_Pin_7;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+	  //Configure USART1 pins:  Rx and Tx ----------------------------
 
 	  USART_InitStructure.USART_BaudRate = 1200;
 	  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -473,7 +454,7 @@ int main(void)
 	  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	  USART_Init(USART1, &USART_InitStructure);
 	  USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
-
+	  USART_ITConfig(USART1,USART_IT_RXNE, ENABLE);
 	  USART_Cmd(USART1,ENABLE);
 
 /*
@@ -495,6 +476,7 @@ int main(void)
 	  TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
 	  TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
 	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
+	  NVIC_EnableIRQ(USART1_IRQn); // Enable TIM6 IRQ
 	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
 	  push_note(F3,3);
@@ -554,6 +536,7 @@ int main(void)
 			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_13)); // Start
 			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
 			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // +
+			  key_states[3] = (key_states[3] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_7)); // External start
 			  ProcessSensors(); // Execute sensors related tasks
 			  // Scan buttons
 
@@ -743,9 +726,9 @@ void assert_failed(uint8_t* file, uint32_t line)
   */
 void ProcessSensors(void)
 {
-	if(!last_key_states[0] != !key_states[0])
+	if(!last_key_states[0] != (!key_states[0]| !key_states[3]))
 	{
-		last_key_states[0] = !!key_states[0];
+		last_key_states[0] = !(!key_states[0]| !key_states[3]);
 		if(!last_key_states[0]) KeyPressed_0();
 	}
 	if(!last_key_states[1] != !key_states[1])
@@ -759,7 +742,7 @@ void ProcessSensors(void)
 		if(!last_key_states[2]) KeyPressed_2();
 	}
 
-	if (!key_states[0])
+	if ((!key_states[0]| !key_states[3]))
 	{
 		if((curr_status == STATUS_FREE))
 		{
@@ -1235,21 +1218,25 @@ void update_status(void){
 		curr_status = STATUS_WAITING;
 		set_relay1(0);
 		set_relay2(0);
+		curr_time = pre_time;
 	}
 	else if(main_time) {
 		curr_status = STATUS_WORKING;
 		set_relay1(1);
 		set_relay2(1);
+		curr_time = main_time;
 	}
 	else if(cool_time) {
 		curr_status = STATUS_COOLING;
 		set_relay1(0);
 		set_relay2(1);
+		curr_time = cool_time;
 	}
 	else {
 		curr_status = STATUS_FREE;
 		set_relay1(0);
 		set_relay2(0);
+		curr_time = 0;
 	}
 }
 
@@ -1368,6 +1355,7 @@ void usart_receive(void){
 		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+1) //Command 1 - Start
 		{
 			pre_time = 0;
+			start_delay = 2000L;
 			update_status();
 		}
 		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
@@ -1392,6 +1380,7 @@ void usart_receive(void){
 				pre_time = pre_time_sent;
 				main_time = main_time_sent;
 				cool_time = cool_time_sent;
+				if(pre_time == 0 && main_time != 0)start_delay = 2000L;
 				update_status();
 				Gv_miliseconds = 0;
 			}
