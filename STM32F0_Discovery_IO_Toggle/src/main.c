@@ -129,8 +129,8 @@ typedef struct flash_struct{
 	settings_str settings;
 }flash_struct;
 
-static int key_states[4] = {-1,-1,-1, -1};
-static int last_key_states[3] = {-1,-1,-1};
+static int key_states[5] = {-1,-1,-1, -1, -1};
+static int last_key_states[5] = {-1,-1,-1, -1, -1};
 
 /* Private function prototypes -----------------------------------------------*/
 void push_note(int pitch, int duration);
@@ -375,8 +375,8 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PA in input mode with PullUp for P2 buttons*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 ;
+	  /* Configure PA in input mode with PullUp for Coint input and P2 button*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_11 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -384,13 +384,13 @@ int main(void)
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	  /* Configure PA in input mode with PullDn for Relay 1 and 2*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7 ;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_15 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-	  GPIOA->BSRR = GPIO_BSRR_BR_5 | GPIO_BSRR_BR_7;
+	  GPIOA->BSRR = GPIO_BSRR_BR_6 | GPIO_BSRR_BR_15;
 
 	  /* Configure PA9 -  PA10 for UART*/
  	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
@@ -537,6 +537,7 @@ int main(void)
 			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
 			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // +
 			  key_states[3] = (key_states[3] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_7)); // External start
+			  key_states[4] = (key_states[4] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_1)); // Coin switch
 			  ProcessSensors(); // Execute sensors related tasks
 			  // Scan buttons
 
@@ -741,6 +742,11 @@ void ProcessSensors(void)
 		last_key_states[2] = !!key_states[2];
 		if(!last_key_states[2]) KeyPressed_2();
 	}
+	if(!last_key_states[4] != !key_states[4])
+		{
+			last_key_states[4] = !!key_states[4];
+			if(!last_key_states[4]) KeyPressed_3();
+		}
 
 	if ((!key_states[0]| !key_states[3]))
 	{
@@ -1058,6 +1064,21 @@ void KeyPressed_1(void){ // -
 	clear_notes();
 
 	push_note(A3,8);
+
+}
+
+void KeyPressed_3()
+{
+	if(main_time == 0 && controller_address)
+	{
+		pre_time = preset_pre_time;
+		cool_time = preset_cool_time;
+	}
+	main_time += controller_address;
+	if(main_time > 25)
+	{
+		main_time = 25;
+	}
 
 }
 
@@ -1422,26 +1443,26 @@ void usart_receive(void){
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
-void set_relay1(char state)
+void set_relay2(char state)
 {
 	if (state)
 	{
-		 GPIOA->BSRR = GPIO_BSRR_BS_5 ;
+		 GPIOA->BSRR = GPIO_BSRR_BS_6 ;
 	}
 	else
 	{
-		 GPIOA->BSRR = GPIO_BSRR_BR_5 ;
+		 GPIOA->BSRR = GPIO_BSRR_BR_6 ;
 	}
 }
-void set_relay2(char state)
+void set_relay1(char state)
 {
 	if (state && start_delay == 0)
 	{
-		 GPIOA->BSRR = GPIO_BSRR_BS_7;
+		 GPIOA->BSRR = GPIO_BSRR_BS_15;
 	}
 	else
 	{
-		 GPIOA->BSRR = GPIO_BSRR_BR_7;
+		 GPIOA->BSRR = GPIO_BSRR_BR_15;
 	}
 }
 
