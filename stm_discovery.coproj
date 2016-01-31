@@ -79,8 +79,8 @@
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_cec.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_cec.h" type="1"/>
     <File name="Libraries" path="" type="2"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_rcc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_rcc.c" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_tim.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_iwdg.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_iwdg.c" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_tim.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_crc.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_crc.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_spi.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_spi.c" type="1"/>
     <File name="Libraries/CMSys/core_cmInstr.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cmInstr.h" type="1"/>
@@ -97,16 +97,16 @@
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_misc.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_syscfg.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_syscfg.h" type="1"/>
     <File name="stm32f0xx_it.h" path="STM32F0_Discovery_IO_Toggle/src/stm32f0xx_it.h" type="1"/>
-    <File name="Libraries/CMSys/core_cmFunc.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cmFunc.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_comp.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_comp.h" type="1"/>
+    <File name="Libraries/CMSys/core_cmFunc.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cmFunc.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dbgmcu.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dbgmcu.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dbgmcu.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_dbgmcu.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_tim.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_tim.c" type="1"/>
     <File name="Libraries/CMSys/system_stm32f0xx.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Device/ST/STM32F0xx/Include/system_stm32f0xx.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_wwdg.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_wwdg.c" type="1"/>
     <File name="Libraries/CMSys/stm32f0xx.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Device/ST/STM32F0xx/Include/stm32f0xx.h" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_pwr.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_pwr.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_crc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_crc.c" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_pwr.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_pwr.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_adc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_adc.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_gpio.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_gpio.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_comp.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_comp.c" type="1"/>
@@ -125,10 +125,10 @@
     <File name="Libraries/CMSys/core_cm4.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm4.h" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_rcc.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_rcc.h" type="1"/>
     <File name="Libraries/CMSys/core_cm4_simd.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm4_simd.h" type="1"/>
-    <File name="system_stm32f0xx.c" path="STM32F0_Discovery_IO_Toggle/src/system_stm32f0xx.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_dma.h" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/inc/stm32f0xx_dma.h" type="1"/>
-    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
+    <File name="system_stm32f0xx.c" path="STM32F0_Discovery_IO_Toggle/src/system_stm32f0xx.c" type="1"/>
     <File name="Libraries/CMSys/core_cm0.h" path="STM32F0_Discovery_IO_Toggle/Libraries/CMSIS/Include/core_cm0.h" type="1"/>
+    <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_flash.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_flash.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_misc.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_usart.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_usart.c" type="1"/>
     <File name="Libraries/STM32F0xx_StdPeriph_Driver/stm32f0xx_i2c.c" path="STM32F0_Discovery_IO_Toggle/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_i2c.c" type="1"/>

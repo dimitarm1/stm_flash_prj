@@ -159,10 +159,10 @@ void show_digit(int digit){
 		led_bits_tmp &= ~selected_led_bits;
 	}
 
-	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
-	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS / Parallel load
+	GPIOC->BSRR = GPIO_BSRR_BS_6; // enable shift FOR BUTTONS
+	GPIOC->BRR = GPIO_BSRR_BS_6; // disable shift FOR BUTTONS / Parallel load
 	for (i = 0; i< 2000; i++); // some delay
-	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
+	GPIOC->BSRR = GPIO_BSRR_BS_6; // enable shift FOR BUTTONS
 //	while(1){ //DEBUG
 	SPI_I2S_ReceiveData16(SPI1); // Flush FIFO
 	SPI_I2S_ReceiveData16(SPI1); // FLUSH FIFO
