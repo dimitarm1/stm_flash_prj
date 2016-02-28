@@ -73,7 +73,7 @@ int useUart=0;
 
 /* Private define ------------------------------------------------------------*/
 #define BSRR_VAL        0x0300
-
+//#define LICEVI_LAMPI_VMESTO_AQAFRESH // specialna porachka ot 28.02.2016 za star balgarski solarium
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -836,8 +836,15 @@ void ProcessButtons(void)
 				}
 				break;
 			case BUTTON_AQUA:
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+				if(minute_counter)
+				{
+					aqua_fresh_level = 0;
+				}
+#else
 				aqua_fresh_level++;
 				if (aqua_fresh_level >2)aqua_fresh_level =0;
+#endif
 				if(minute_counter){
 				}
 				break;
@@ -1124,18 +1131,30 @@ void update_status(void){
 	if(pre_time) {
 		curr_time = pre_time;
 		curr_status = STATUS_WAITING;
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+		aqua_fresh_level = 0;
+#endif
 	}
 	else if(main_time) {
 		curr_time = main_time;
 		curr_status = STATUS_WORKING;
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+		if(!minute_counter)aqua_fresh_level = 2;
+#endif
 	}
 	else if(cool_time) {
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+		aqua_fresh_level = 0;
+#endif
 		curr_time = cool_time;
 		curr_status = STATUS_COOLING;
 	}
 	else {
 		curr_time = 0;
 		curr_status = STATUS_FREE;
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+		aqua_fresh_level = 0;
+#endif
 	}
 }
 void TimingDelay_Decrement(void)
@@ -1148,6 +1167,7 @@ void TimingDelay_Decrement(void)
 		refresh_counter = 0;
 		flash_counter++;
 	}
+#ifndef LICEVI_LAMPI_VMESTO_AQAFRESH
 	if(aqua_fresh_level == 1){
 		if(Gv_miliseconds>59000L ){
 			set_aquafresh(1);
@@ -1167,6 +1187,14 @@ void TimingDelay_Decrement(void)
 	else {
 		set_aquafresh(0);
 	}
+#else
+	if(aqua_fresh_level > 0){
+		set_aquafresh(1);
+	}
+	else {
+		set_aquafresh(0);
+	}
+#endif
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
 		if (pre_time)pre_time--;
