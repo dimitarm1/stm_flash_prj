@@ -1237,7 +1237,8 @@ void KeyPressed_3()
 void update_status(void){
 	if(pre_time) {
 		curr_status = STATUS_WAITING;
-		set_relay1(0);
+		//set_relay1(0);
+		set_relay1(1);
 		set_relay2(0);
 		curr_time = pre_time;
 	}
@@ -1456,7 +1457,7 @@ void set_relay2(char state)
 }
 void set_relay1(char state)
 {
-	if (state && start_delay == 0)
+	if (state)
 	{
 		 GPIOA->BSRR = GPIO_BSRR_BS_15;
 	}
