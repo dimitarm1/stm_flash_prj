@@ -134,8 +134,10 @@ void send_time(void);
 void send_start(void);
 void write_eeprom(void);
 void read_eeprom(void);
-
-
+void KeyPressed_0(void);
+void KeyPressed_1(void);
+void KeyPressed_2(void);
+void KeyPressed_3(void);
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
@@ -410,7 +412,7 @@ int main(void)
 	  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
 
 	  /* Configure PC in output push-pull mode (for segments and Digit 1 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -929,8 +931,13 @@ void TimingDelay_Decrement(void)
 			}
 		}
 		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-			GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+			GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
 		}
+		else
+		{
+			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+		}
+
 	}
 }
 
