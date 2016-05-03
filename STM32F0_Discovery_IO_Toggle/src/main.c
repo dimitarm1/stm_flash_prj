@@ -1,165 +1,180 @@
 /**
-  ******************************************************************************
-  * @file    IO_Toggle/main.c 
-  * @author  MCD Application Team
-  * @version V1.0.0
-  * @date    23-March-2012
-  * @brief   Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
-  *
-  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
-  *
-  *        http://www.st.com/software_license_agreement_liberty_v2
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    IO_Toggle/main.c
+ * @author  MCD Application Team
+ * @version V1.0.0
+ * @date    23-March-2012
+ * @brief   Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
+ *
+ * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************
+ */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f0xx.h"
-#include "pitches.h"
-#include "tsl_types.h"
-#include "tsl_touchkey.h"
-#include "tsl_user.h"
-#include "tsl_conf_stm32f0xx.h"
-#include "stm32f0xx_gpio.h"
-#include "stm32f0xx_rcc.h"
-#include "stm32f0xx_usart.h"
-#include "stm32f0xx_flash.h"
+#include "defines.h"
+#include "init.h"
+#include "stdint.h"
+#include "stm32f0xx_iwdg.h"
 
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup IO_Toggle
-  * @{
-  */
+ * @{
+ */
 
 /* Private typedef -----------------------------------------------------------*/
+ typedef struct time_str{
+	 uint8_t used_flag :8;
+	 uint8_t hours_h   :8;
+	 uint8_t hours_l   :8;
+	 uint8_t minutes   :8;
+ }time_str;
+ typedef struct settings_str{
+	 uint8_t addresse  :8;
+	 uint8_t pre_time  :8;
+	 uint8_t cool_time :8;
+	 uint8_t ext_mode  :8;
+	 uint8_t volume_dac:8;
+	 uint8_t temperatue_max:8;
+	 uint8_t unused_3  :8;
+	 uint8_t checksum  :8;
+ }settings_str;
+ typedef struct flash_struct{
+	 time_str time;
+	 settings_str settings;
+ }flash_struct;
+
+typedef enum ext_modes {ext_mode_none, ext_mode_colarium}ext_modes;
+typedef enum lamps_modes {lamps_all, lamps_uv, lamps_colagen}lamps_modes;
+typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode, state_volume, state_max_temp}states;
+ states state;
+typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume, mode_set_max_temp}modes;
+modes service_mode;
+int useUart=0;
+
+
 /* Private define ------------------------------------------------------------*/
 #define BSRR_VAL        0x0300
-
+//#define LICEVI_LAMPI_VMESTO_AQAFRESH // specialna porachka ot 28.02.2016 za star balgarski solarium
 
 /* Private macros ------------------------------------------------------------*/
 
-#define TEST_TKEY(NB) (MyTKeys[(NB)].p_Data->StateId == TSL_STATEID_DETECT)
-void SystickDelay(__IO uint32_t nTime);
-#define STATUS_ERROR   (-1)
-#define STATUS_FREE    (0)
-#define STATUS_WAITING (3)
-#define STATUS_WORKING (1)
-#define STATUS_COOLING (2)
-#define START_COUNTER_TIME  3000
-#define ENTER_SERVICE_DELAY 7500
-#define SERVICE_NEXT_DELAY  1200
-#define EXIT_SERVICE_TIME   1800
-#define START_DELAY         600
-
-
 /* Private variables ---------------------------------------------------------*/
-GPIO_InitTypeDef        GPIO_InitStructure;
-static long buzz_counter = 0;
-static long pitches[255];
-static long durations[255];
-static int start_note = 0; // Or current note
-static int end_note = 0;
-static char digits[3];
-static int ping_counter=0;
-static __IO uint32_t TimingDelay;
-TSL_tMeas_T measurment;
-static int display_data=0;
-USART_InitTypeDef USART_InitStructure;
-USART_ClockInitTypeDef USART_ClockInitStruct;
-int rx_state= 0;
-typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,
-	state_pre_time,state_cool_time,state_ext_mode}states;
-static states state = 0;
-typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
-static modes service_mode;
-static unsigned char controller_address = 0x10;
-static int curr_status;
-static int prev_status;
-static int curr_time;
-static int flash_mode = 0;
-long start_delay = 0;
-int minute_counter =0;
-int pre_time = 0, main_time = 0, cool_time = 0;
-int Gv_UART_Timeout = 1000; // Timeout in mSec
-int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-//static unsigned char  main_time = 0;
-static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
-static unsigned char  preset_pre_time = 7;
-static unsigned char  preset_cool_time = 3;
-static int start_counter = 0;
-static int counter_hours = 0;
-static int flash_counter_prev = 0;
-unsigned int Gv_miliseconds = 0;
-uint16_t data = 0;
-int useUart=0;
-
-// for Display:
-static unsigned int led_counter = 0;
-static unsigned int flash_counter = 0;
-static int digit_num = 0;
-typedef struct time_str{
-	uint8_t used_flag :8;
-	uint8_t hours_h   :8;
-	uint8_t hours_l   :8;
-	uint8_t minutes   :8;
-}time_str;
-typedef struct settings_str{
-	uint8_t addresse  :8;
-	uint8_t pre_time  :8;
-	uint8_t cool_time :8;
-	uint8_t unused    :8;
-}settings_str;
-typedef struct flash_struct{
-	time_str time;
-	settings_str settings;
-}flash_struct;
-
-static int key_states[5] = {-1,-1,-1, -1, -1};
-static int last_key_states[5] = {-1,-1,-1, -1, -1};
 
 /* Private function prototypes -----------------------------------------------*/
-void push_note(int pitch, int duration);
-void ProcessSensors(void);
 void SystickDelay(__IO uint32_t nTime);
-//void ping_status(void);
 int ToBCD(int value);
-void send_time(void);
-void send_start(void);
 void write_eeprom(void);
 void read_eeprom(void);
+void TimingDelay_Decrement(void);
+void ProcessButtons(void);
 void update_status(void);
-void KeyPressed_0(void);
-void KeyPressed_1(void);
-void KeyPressed_2(void);
-void set_relay1(char state);
-void set_relay2(char state);
+void set_start_out_signal(int value);
+void set_lamps(int value);
+void set_colarium_lamps(int value);
+void set_fan1(int value);
+void set_fan2(int value);
+void set_aquafresh(int value);
+void set_volume(int value);
+void play_message(int index);
 
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
-static const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
+
+SPI_InitTypeDef 			SPI_InitStruct;
+TIM_TimeBaseInitTypeDef  	TIM_TimeBaseStructure;
+TIM_OCInitTypeDef  			TIM_OCInitStructure;
+TIM_ICInitTypeDef  			TIM_ICInitStructure;
+GPIO_InitTypeDef        	GPIO_InitStructure;
+EXTI_InitTypeDef   			EXTI_InitStructure;
+USART_InitTypeDef 			USART_InitStructure;
+USART_ClockInitTypeDef 		USART_ClockInitStruct;
+NVIC_InitTypeDef 			NVIC_InitStructure;
+DAC_InitTypeDef             DAC_InitStructure;
+
+
+uint8_t dac_buffer[2][512];
+const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
+const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
+const uint32_t message_sector_offset[] = {00,100,200,300,400,500,600};
+const uint32_t message_sector_counts[] = {90,90,90,90,90,90,90};
+
+__IO uint32_t TimingDelay;
+
+unsigned char controller_address = 0x0e;
+int curr_status;
+int prev_status;
+int curr_time;
+int flash_mode = 0;
+int dac_out_counter;
+int dac_ping_pong_state;
+int dac_prev_ping_pong_state;
+int dac_current_block;
+int dac_current_message;
+int dac_fade_out_counter;
+int dac_fade_in_counter;
+
+uint16_t data = 0;
+unsigned char  time_to_set = 0;
+unsigned int   work_hours[3] = {0,0,0}; //HH HL MM - Hours[2], Minutes[1]
+unsigned char  preset_pre_time = 7;
+unsigned char  preset_cool_time = 3;
+unsigned char  volume_message;
+unsigned char  temperature_threshold;
+unsigned char  ext_mode = 0;
+unsigned char  lamps_mode = 0;
+unsigned char  temperature_current;
+unsigned char  last_rx_address;
+int start_counter = 0;
+int last_button = 0;
+int prev_button = 0;
+int display_data;
+int pre_time, main_time, cool_time;
+unsigned int Gv_miliseconds = 0;
+int Gv_UART_Timeout = 1000; // Timeout in mSec
+int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+int rx_state= 0;
+int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+int minute_counter =0;
+int zero_crossed = 0;
+int aqua_fresh_level = 0;
+volatile int volume_level = 5;
+volatile int fan_level = 7;
+unsigned int external_read = 0;
+
+char digits[3];
+// for Display:
+int refresh_counter = 0;
+int flash_counter = 0;
+// for Display:
+int led_counter = 0;
+int digit_num = 0;
 
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
 {
-  TimingDelay = nTime;
+	TimingDelay = nTime;
 
-  while(TimingDelay != 0);
+	while(TimingDelay != 0);
 }
 
 void show_digit(int digit){
@@ -172,8 +187,9 @@ void show_digit(int digit){
 	case 0:
 		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
 		GPIOB->BSRR = GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
-		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
+
 		break;
 	case 1:
 		GPIOA->BSRR = GPIO_BSRR_BS_7;
@@ -184,7 +200,7 @@ void show_digit(int digit){
 	case 2:
 		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4;
 		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 ;
-		GPIOC->BSRR = GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
+		GPIOC->BSRR = GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 3:
@@ -262,76 +278,13 @@ void show_digit(int digit){
 	case 0x0F:
 	default:
 		//empty
-//		GPIOA->BSRR = GPIO_BSRR_BS_3 ;
-//		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
-//		GPIOC->BSRR = GPIO_BSRR_BS_5;
-//		GPIOF->BSRR = GPIO_BSRR_BS_4;
+		//                GPIOA->BSRR = GPIO_BSRR_BS_3 ;
+		//                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+		//                GPIOC->BSRR = GPIO_BSRR_BS_5;
+		//                GPIOF->BSRR = GPIO_BSRR_BS_4;
 		break;
 	}
 }
-
-int get_controller_status(int n){
-
-	static int sts, data;
-	// clear in fifo
-	// send conmmand
-	while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	data =  USART_ReceiveData(USART1); // Flush input
-    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-	USART_SendData(USART1,0x80 | ((n & 0x0f)<<3) | 0);
-//    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//    delta = (delta + 1)& 0xff;
-//	USART_SendData(USART1,delta);
-
-//	USART_SendData(USART1,0x0f);
-    SystickDelay(70);
-
-    //read Rx buffer
-    sts = USART_GetFlagStatus(USART1,USART_FLAG_RXNE);
-    if(sts) {
-    	data =  USART_ReceiveData(USART1);
-    	//			while(1);
-    	return (data);
-	}
-	return -1;
-}
-// Function to get controller's address
-void get_address(void){
-	int i, result;
-	for (i = 0; i<16; i++){
-		result = get_controller_status(i);
-		if (result!=-1) break;
-		SystickDelay(60);
-	}
-	controller_address = i;
-}
-
-
-/**
-  * @brief  Main program.
-  * @param  None
-  * @retval None
-  */
-int main(void)
-{
-	 TSL_Status_enum_T sts = 0;
-  /*!< At this stage the microcontroller clock setting is already configured, 
-       this is done through SystemInit() function which is called from startup
-       file (startup_stm32f0xx.s) before to branch to application main.
-       To reconfigure the default setting of SystemInit() function, refer to
-       system_stm32f0xx.c file
-     */
-
-	 /* GPIOA Periph clock enable */
-	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-  /* GPIOC Periph clock enable */
-	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-  /* GPIOA Periph clock enable */
-	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
-  /* GPIOA Periph clock enable */
-	  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
- /* UART1 Clock enable */
-	  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
-
 
 /*
  * Outputs:
@@ -345,79 +298,28 @@ int main(void)
  * PF4, PA3 - e
  * PB11,PB10 - f
  * PB0,PC5 - g
- * PC1,PC0 - DP
+ * PA6,PA5 - DP
  *
  *
- *    A
- *  F   B
- *    G
- *  E   C
- *    D
- *        DP
+ * A
+ * F B
+ * G
+ * E C
+ * D
+ * DP
  */
-	  /*
-	   *
-	   * */
 
-	  /* Configure PA in output push-pull mode (for segments)*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	  /* Configure PA0 -  PA2 in output push-pull mode (for Digits 0,2 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 ;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	  /* Configure PA in input mode with PullUp for Coint input and P2 button*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_11 ;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	  /* Configure PA in input mode with PullDn for Relay 1 and 2*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_15 ;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-	  GPIOA->BSRR = GPIO_BSRR_BR_6 | GPIO_BSRR_BR_15;
-
-	  /* Configure PA9 -  PA10 for UART*/
- 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
- 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
- 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
- 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
- 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
- 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
- 	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1);
- 	  GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1);
-
-
-	  /* Configure PB in output push-pull mode (for segments  )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2|GPIO_Pin_10 | GPIO_Pin_11;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	  /* Configure PB in inpu mode with PullUp for buttons P3,P4*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_13 | GPIO_Pin_14;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	  GPIO_Init(GPIOB, &GPIO_InitStructure);
+/**
+ * @brief  Main program.
+ * @param  None
+ * @retval None
+ */
+volatile int stop=1;
+int main(void)
+{
+//	while (stop);
+	read_eeprom();
+	init_periph();
 
 
 	  /* Configure PC in output push-pull mode (for segments and Digit 1 )*/
@@ -457,225 +359,288 @@ int main(void)
 	  USART_ITConfig(USART1,USART_IT_RXNE, ENABLE);
 	  USART_Cmd(USART1,ENABLE);
 
-/*
- * commads:
- * 0 - status 0-free, 1-Working, 2-COOLING, 3-WAITING
- * 1 - start
- * 2 - set pre-time
- * 3 - set cool-time
- * 4 - stop - may be not implemented in some controllers
- * 5 - set main time
- */
-
-	  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
-	  TIM6->PSC = 41; // Set prescaler to 41999
-	  TIM6->ARR = 599; // Set auto-reload to 5999
-//	  TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
-	  TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
-	  TIM6->EGR |= TIM_EGR_UG; // Force update
-	  TIM6->SR &= ~TIM_SR_UIF; // Clear the update flag
-	  TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	  NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
-	  NVIC_EnableIRQ(USART1_IRQn); // Enable TIM6 IRQ
-	  TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
-
-	  push_note(F3,3);
-	  push_note(E3,3);
-	  push_note(C3,3);
-	  //============================================================================
-	  // Init STMTouch driver
-	  //============================================================================
-//	  if (SysTick_Config(SystemCoreClock / 1000)) //This is in tsl_user_init();
-//	  {
-//		  /* Capture error */
-//		  while (1);
-//	  }
-	//  TSL_user_Init();
 
 
-	  digits[0] = 0;
-	  digits[1] = 1;
-	  digits[2] = 2;
-	  prev_status = 0;
+	if (SysTick_Config(SystemCoreClock / (1000))){
+		while(1); // Capture error
+	}
+	NVIC_SetPriority (SysTick_IRQn, 3);
 
-//	  while (1){
-//		  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) != RESET)
-//			  USART_SendData(USART1,0x80 );
-//	  }
+	/*
+	 * commads:
+	 * 0 - status 0-free, 1-Working, 2-COOLING, 3-WAITING
+	 * 1 - start
+	 * 2 - set pre-time
+	 * 3 - set cool-time
+	 * 4 - stop - may be not implemented in some controllers
+	 * 5 - set main time
+	 */
 
-	  read_eeprom();
-	  if(!preset_pre_time || ! preset_cool_time){
-		  preset_pre_time = 7;
-		  preset_cool_time = 3;
-		  controller_address = 14;
-		  write_eeprom();
-	  }
-	  if (SysTick_Config(SystemCoreClock / (1000))){
-		  		while(1); // Capture error
-	  }
-//	  if(controller_address == 15){
-//		  display_data = 0xEAF;
-//		  // Try to get controller address continuously
-//		  get_address();
-//		  if(controller_address != 15)write_eeprom();
-//	  }
+	digits[0] = 0;
+	digits[1] = 1;
+	digits[2] = 2;
+	prev_status = 0;
+	state = state_show_time;
+	pre_time = 0;
+	main_time = 0;
+	cool_time = 0;
+	dac_current_message = -1;
+//	read_eeprom();
+	if(!preset_pre_time || ! preset_cool_time){
+		preset_pre_time = 7;
+		preset_cool_time = 3;
+		write_eeprom();// Paranoia check
+	}
+//	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
+//	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
 
-	  NVIC_SetPriority (SysTick_IRQn, 3);
+	update_status();
+	set_volume(0);
 
-	  while (1)
-	  {
-//		  controller_address = 14;
+	play_message(0);
 
-/*		  if(controller_address >15){
-			  display_data = 0xEAF;
-			  // Try to get controller address continuously
-			  get_address();
-		  }
-		  else*/
-		  {
-			  key_states[0] = (key_states[0] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_13)); // Start
-			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
-			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // +
-			  key_states[3] = (key_states[3] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_7)); // External start
-			  key_states[4] = (key_states[4] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_1)); // Coin switch
-			  ProcessSensors(); // Execute sensors related tasks
-			  // Scan buttons
+	while (1)
+	{
+		//		if(USART_GetFlagStatus(USART1, USART_FLAG_BUSY)){
+		//			while(1);
+		//			preset_pre_time = 7;
 
-			  //ping_status(); // Get current status
-//			  display_data = state + ((curr_status&0x0f)<<4);
-//			  display_data =ping_counter;
-//			  state = 30;
-			  switch (state){
-			  case state_show_time:
-			  case state_set_time:
-				  if(curr_status == STATUS_FREE ){
-					  flash_mode = 0;
-					  state = state_set_time;
-					  display_data = ToBCD(main_time);
-				  } else {
+		//		}
+		//		static int data =  0;
+		//		static int lastdata = 0;
+		//		data = USART_ReceiveData(USART1);
+		//		if(data != lastdata){
+		//			lastdata = data;
+		//		}
+		//		int delay_counter = 0;
+		//		IWDG_ReloadCounter();
+		//		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
-					  state = state_show_time;
-					  //				  time_to_set = 0;
-					  display_data = ToBCD(main_time);
-					  if(curr_status == STATUS_WAITING ){
-						  flash_mode = 1; // DP flashing
-					  } else  if(curr_status == STATUS_WORKING ){
-						  flash_mode = 2; // DP cycling
-					  } else  if(curr_status == STATUS_COOLING ){
-						  flash_mode = 3; // All flashing
-					  } else {
-//						  controller_address = 16;
-						  if((flash_counter/0x80)&1){
-							  display_data = 0xEEE;
-						  }
+		// read external input
+		if ((state < state_enter_service) && ((flash_counter>>4)&1)){
+			if (controller_address == 15){
+				external_read = (external_read << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10));
+				if(!main_time && (!external_read)){
+					if(curr_status != STATUS_COOLING){
+						main_time = -1;
+						cool_time = preset_cool_time;
+						Gv_miliseconds = 0;
+						flash_mode = 0;
+						state = state_set_time;
+						update_status();
+					}
+				}
+				if(main_time && !~external_read){
+					main_time = 0;
+					Gv_miliseconds = 0;
+					update_status();
+				}
+			}
+		}
+		ProcessButtons();
+		switch (state){
+		case state_show_time:
+		case state_set_time:
+			if(!pre_time && ! main_time && !cool_time ){
+				flash_mode = 0;
+				state = state_set_time;
+				display_data = ToBCD(time_to_set);
+				//				display_data = ToBCD(last_button); //Debug
+			} else {
+				state = state_show_time;
+				//				  time_to_set = 0;
+				display_data = ToBCD(abs(main_time));
+				//				display_data = ToBCD(last_button); //Debug
+			}
+			break;
+		case state_show_hours:
 
-//						  display_data = ping_counter;
-						 // flash_mode = 3; // All flashing
-					  }
+			if( flash_mode != 3){
+				flash_mode = 3; // All flashing
+			}
+			{
+				int index = ((flash_counter/0x200)+3) %4;
+				if(index<3 ){
+					display_data =  ToBCD(work_hours[index]);
+				}
+				else {
+					display_data = 0xFFF;
+				}
+			}
+			break;
+		case state_enter_service:
+			display_data = service_mode|0xF0;
+			flash_mode = 0;
+			break;
 
-				  }
+		case state_clear_hours:
+//			flash_mode = 3;
+			if((flash_counter/0x400)&1){
+				display_data = 0xFFC;
+			} else {
+				display_data = 0xFFF;
+			}
+			break;
+		case state_address:
+			flash_mode = 0;
+			if((flash_counter/0x400)&1){
+				if(controller_address !=15){ // Address 15 reserved for external control
+					display_data = controller_address;
+				}
+				else {
+					display_data = 0xEAF;
+				}
+			} else {
+				display_data = 0xFFA;
+			}
+			break;
+		case state_pre_time:
+//			flash_mode = 3;
+			if((flash_counter/0x400)&1){
+				display_data =  preset_pre_time;
+			} else {
+				display_data = 0xFF3;
+			}
+			break;
+		case state_cool_time:
+//			flash_mode = 3;
+			if((flash_counter/0x400)&1){
+				display_data =  preset_cool_time;
+			} else {
+				display_data = 0xFF4;
+			}
+			break;
+		case state_ext_mode:
+//			flash_mode = 0;
+			if((flash_counter/0x400)&1){
+				display_data =  ext_mode;
+			} else {
+				display_data = 0xFF5;
+			}
+			break;	
+		}
+		//		show_digit(display_data);
+		if (state == state_show_time){
+			if(!(pre_time || main_time || cool_time)){
+				// Some Paranoia...
+				// turn off all
+				set_lamps(0);
+				set_colarium_lamps(0);
+				percent_fan1 = 0;
+				set_fan1(0);
+				set_fan2(0);
+				set_aquafresh(0);
+				lamps_mode = lamps_all;
 
-				  break;
-			  case state_show_hours:
+//				state = state_set_time;
+			}
+		}
+		//
+		//		while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET); // wAIT UNTIL RX BUFFER IS EMPTY
+		//		int data =  USART_ReceiveData(USART1);
+		//		USART_SendData(USART1,0x80);
+		//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
+		if(++led_counter>130L){
+			static int current_button_read = 0;
+			static int button_buffer[16];
+			static int read_counter = 0;
+//			if(flash_counter%80 == 0){
+//						data = (STATUS_COOLING<<6)|4;
+//						USART_SendData(USART1,data);
+//			}
+			led_counter = 0;
+			digit_num++;
 
-				  if( flash_mode != 3){
-					  flash_mode = 3; // All flashing
-					  flash_counter_prev = flash_counter = 0;
-				  }
-				  {
-					  int index = (counter_hours)%4;
-					  if(index<3){
-						  display_data = 0xF00 | ToBCD(work_hours[index]);
-					  }
-					  else {
-						  display_data = 0xFFF;
-					  }
-//					  if (TEST_TKEY(0)||TEST_TKEY(1)){
-//						  display_data = 0xFF1;
-//					  } else{
-//						  display_data = 0xFF0;
-//					  }
+			//		aqua_fresh_level = 0;
+			if(digit_num>4L) {
+				digit_num = 0;
+				int i;
+				button_buffer[read_counter] = current_button_read;
+				if(read_counter++ == 15){
+					read_counter = 0;
+					last_button = button_buffer[0];
+					for (i = 1; i<8; i++){
+						last_button = last_button & button_buffer[i];
+					}
+				}
+				current_button_read = 0;
+			}
+			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2 ; // Turn off the lights while changing them
+			GPIOB->BSRR = 0;
+			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_13 ;
+			GPIOF->BSRR = GPIO_BSRR_BR_1 ;
+			if(digit_num<3){
+				show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+//				show_digit(last_button>>(digit_num*4));
+			} else {
+				//show_digit(0x8);// DEBUG
 
-					  if(flash_counter_prev != (flash_counter & 0x40)){
-						  if(flash_counter_prev) counter_hours++;
-						  flash_counter_prev = (flash_counter & 0x40);
-					  }
-				  }
-				  break;
-			  case state_enter_service:
-				  display_data = service_mode|0xAF0;
-				  flash_mode = 0;
-				  break;
+			}
+			{
+				switch (digit_num){
+				case 0:
+					
+					GPIOA->BSRR = GPIO_BSRR_BS_2 ;
+					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+																		((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
+					break;
+				case 1:
+					
+					GPIOC->BSRR = GPIO_BSRR_BS_0 ;
+					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
+					break;
+				case 2:
+					
+					GPIOA->BSRR = GPIO_BSRR_BS_0 ;
+					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
+																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
+					break;
+				case 3:
 
-			  case state_clear_hours:
-				  flash_mode = 3;
-				  display_data = 0xFFC;
-				  break;
-			  case state_address:
-				  flash_mode = 0;
-				  if((flash_counter/0x80)&1){
-					  if(controller_address !=15){ // Address 15 reserved for external control
-						  display_data = controller_address;
-					  }
-					  else {
-						  display_data = 0xAAA;
-					  }
-				  } else {
-					  display_data = 0xFFA;
-				  }
-				  break;
-			  case state_pre_time:
-				  flash_mode = 2;
-				  display_data = 0x3F0 | preset_pre_time;;
-				  break;
-			  case state_cool_time:
-				  flash_mode = 2;
-				  display_data = 0x4F0 | preset_cool_time;
-				  break;
-			  case state_ext_mode:
-				  flash_mode = 0;
-				  display_data = 0x5F0;
-				  break;
-			  }
-		  }
-		  SystickDelay(1);
-	  }
-}
+					if (pre_time){
+						// Indicate pre_time by moving bars
+						show_level((flash_counter>>6) & 0x07);
+					} else {
+						show_level(volume_level);
+					}
+					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
+					break;
+				case 4:
 
-void push_note(int pitch, int duration){
-	end_note = (end_note + 1)&0x3F;
-	pitches[end_note] = pitch;
-	durations[end_note] = duration;
-	TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-}
+					GPIOF->BSRR = GPIO_BSRR_BS_1 ;
+					if (pre_time){
+						show_level(((flash_counter>>6) & 0x07) +3);
+					} else {
+						show_level(fan_level);
+					}
+					break;
+				default:
+					break;
+				}
+			}
+			if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+				GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+			}
+			flash_counter++;
+		}
+		
 
-void get_next_note(){
-
-	if(start_note == end_note){
-		TIM6->DIER &= ~TIM_DIER_UIE; // Disable interrupt on update event
-	} else {
-		start_note = (start_note + 1)&0x3F;
-		TIM6->ARR = pitches[start_note];
-		buzz_counter = durations[start_note]*20000/ pitches[start_note];
+		IWDG_ReloadCounter(); //DEBUG
 	}
 }
 
-void clear_notes(){
-	start_note = end_note = 0;
-	buzz_counter = 0;
-}
+void TIM2_IRQHandler() {
+	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
+	{
+		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
+			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
+		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+		TIM_ICInit(TIM2, &TIM_ICInitStructure);
+	}
+	zero_crossed = 1;
 
-void TIM6_DAC_IRQHandler() {
-	if((TIM6->SR & TIM_SR_UIF) != 0) // If update flag is set
-		if(buzz_counter){
-			buzz_counter--;
-			if(buzz_counter & 1)
-				GPIOB->BSRR = GPIO_BSRR_BS_9; // Set B9 high
-			else
-				GPIOB->BRR = GPIO_BSRR_BS_9; // Set B9 low
-		}
-	TIM6->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
-	if(!buzz_counter )	get_next_note();
 }
 
 int ToBCD(int value){
@@ -698,74 +663,241 @@ int FromBCD(int value){
 	return result;
 }
 
-#ifdef  USE_FULL_ASSERT
 
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t* file, uint32_t line)
+ * @brief  Manage the activity on buttons
+ * @param  None
+ * @retval None
+ */
+void ProcessButtons(void)
 {
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
-  /* Infinite loop */
-  while (1)
-  {
-  }
-}
+	if (last_button ){
+		if(last_button != prev_button){
+			switch(last_button){
+			case BUTTON_START:
+				if( pre_time ){
+					//send_start();
+					Gv_miliseconds = 0;
+					pre_time = 0;
+					state = state_show_time;
+					update_status();
+					fan_level= 7;
+					percent_fan1 = fan_level;
+					set_fan1(percent_fan1);
+				}
+				if(!pre_time && ! main_time && !cool_time) {
+					if(time_to_set){
+						// Send of time moved elsewhere
+						pre_time = preset_pre_time;
+						main_time = time_to_set;
+						cool_time = preset_cool_time;
+						state = state_show_time;
+						time_to_set = 0;
+						Gv_miliseconds = 0;
+						update_status();						
+					} else {
+						if (state > state_enter_service){
+							// Write EEPROM
+							if(state == state_clear_hours){
+								work_hours[0] = 0;
+								work_hours[1] = 0;
+								work_hours[2] = 0;
+							}
+							write_eeprom();
+							read_eeprom();
+							start_counter = 0;
+							service_mode = mode_null;
+							if (state == state_address){
+								init_periph();
+							}
+						} else {
+							start_counter = START_COUNTER_TIME;
+						}
+						state = state_show_hours;
+						flash_counter = 0;
+					}
+				}
+				break;
+			case BUTTON_STOP:
+				if(curr_status == STATUS_WORKING){
+					main_time = 0;
+					pre_time = 0;
+					update_status();
+					percent_fan1 = 10;
+					set_fan1(percent_fan1);
+				}
+				if(state >= state_enter_service){
+					start_counter = 0;
+					state = state_show_time;
+					write_eeprom();
+					read_eeprom();
+				}
+				break;
+			case BUTTON_FAN_PLUS:
+				if(curr_status == STATUS_WORKING){
+					if(fan_level<10L){
+						fan_level++;
+						percent_fan1 = fan_level;
+						set_fan1(percent_fan1);
+					}
+				}
+				break;
+			case BUTTON_FAN_MINUS:
+				if(curr_status == STATUS_WORKING){
+					if(fan_level>1){
+						fan_level--;
+						percent_fan1 = fan_level;
+						set_fan1(percent_fan1);
+					}
+				}
+				break;
+			case BUTTON_AQUA:
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+				if(minute_counter)
+				{
+					aqua_fresh_level = 0;
+				}
+#else
+				aqua_fresh_level++;
+				if (aqua_fresh_level >2)aqua_fresh_level =0;
 #endif
-
-
-/**
-  * @brief  Manage the activity on sensors when touched/released (example)
-  * @param  None
-  * @retval None
-  */
-void ProcessSensors(void)
-{
-	if(!last_key_states[0] != (!key_states[0]| !key_states[3]))
-	{
-		last_key_states[0] = !(!key_states[0]| !key_states[3]);
-		if(!last_key_states[0]) KeyPressed_0();
-	}
-	if(!last_key_states[1] != !key_states[1])
-	{
-		last_key_states[1] = !!key_states[1];
-		if(!last_key_states[1]) KeyPressed_1();
-	}
-	if(!last_key_states[2] != !key_states[2])
-	{
-		last_key_states[2] = !!key_states[2];
-		if(!last_key_states[2]) KeyPressed_2();
-	}
-	if(!last_key_states[4] != !key_states[4])
-		{
-			last_key_states[4] = !!key_states[4];
-			if(!last_key_states[4]) KeyPressed_3();
-		}
-
-	if ((!key_states[0]| !key_states[3]))
-	{
-		if((curr_status == STATUS_FREE))
-		{
-			if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
-			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY)
+				if(minute_counter){
+				}
+				break;
+			case BUTTON_VOL_PLUS:
+				if(curr_status != STATUS_WAITING){
+					if(volume_level<10L){
+						volume_level++;
+						set_volume(volume_level);
+					}
+				}
+				break;
+			case BUTTON_VOL_MINUS:
+				if(curr_status != STATUS_WAITING){
+					if(volume_level>0){
+						volume_level--;
+						set_volume(volume_level);
+					}
+				}
+				break;
+			case BUTTON_PLUS:
 			{
-				clear_notes();
-				push_note(C2,4);
-				push_note(E2,4);
-				push_note(G2,4);
-				push_note(C3,4);
-				push_note(G2,4);
-				push_note(C3,8);
+				if(curr_status == STATUS_WORKING){
+					if(lamps_mode == lamps_all){
+						set_colarium_lamps(1);
+					}
+				}
+				if(state == state_show_hours) {
+					state = state_set_time;
+					start_counter = 0;
+				}
+				if(state == state_set_time){
+					if(time_to_set < 25L){
+						if((!useUart && (volume_level == 1)) && (controller_address !=15)) time_to_set++;
+					}
+				}
+				else if(state > state_enter_service){
+					start_counter = EXIT_SERVICE_TIME;
+					switch (service_mode){
+					case mode_set_address:
+						if(controller_address<15) controller_address++;
+						break;
+					case mode_set_pre_time:
+						if(preset_pre_time<9) preset_pre_time++;
+						break;
+					case mode_set_cool_time:
+						if(preset_cool_time<9) preset_cool_time++;
+						break;
+					case mode_set_ext_mode:
+						if(ext_mode < ext_mode_colarium) ext_mode++;
+						break;
+					case mode_set_volume:
+						if(volume_message < 9) volume_message++;
+						break;
+					case mode_set_max_temp:
+						if(temperature_threshold < 99) temperature_threshold++;
+						break;
+					default:
+						break;
+					}
+				}
+
+			}
+			break;
+			case BUTTON_MINUS:
+				if(curr_status == STATUS_WORKING){
+					if(lamps_mode == lamps_all){
+						set_colarium_lamps(0);
+					}
+				}
+				if(state == state_show_hours) {
+					state = state_set_time;
+					start_counter = 0;
+				}
+				if(state == state_set_time){
+					if(time_to_set) {
+						if((!useUart) && (controller_address !=15))  time_to_set--;
+					}
+				}else if(state > state_enter_service){
+					start_counter = EXIT_SERVICE_TIME;
+					switch (service_mode){
+					case mode_set_address:
+						if(controller_address) controller_address--;
+						break;
+					case mode_set_pre_time:
+						if(preset_pre_time) preset_pre_time--;
+						break;
+					case mode_set_cool_time:
+						if(preset_cool_time) preset_cool_time--;
+						break;
+					case mode_set_ext_mode:
+						if(ext_mode > 0) ext_mode--;
+						break;
+					case mode_set_volume:
+						if(volume_message > 0) volume_message--;
+						break;
+					case mode_set_max_temp:
+						if(temperature_threshold > 10) temperature_threshold--;
+						break;
+					default:
+						break;
+					}
+				}
+				//				if(selected_led_bits & LED_FAN2_L){
+				//					if(percent_fan2) percent_fan2 = 0;
+				//					set_fan2(percent_fan2);
+				//				} else if(selected_led_bits & LED_FAN1_L){
+				//					if(percent_fan1) percent_fan1-=25;
+				//					set_fan1(percent_fan1);
+				//				}
+				//				else if(selected_led_bits & LED_LICEVI_L){
+				//					if(percent_licevi) percent_licevi=0;
+				//					set_licevi_lamps(percent_licevi);
+				//					update_status();
+				//				}
+
+				break;
+			default:
+				while(0);
+			}
+		}
+	}
+	prev_button = last_button;
+
+	if (last_button == BUTTON_START)
+	{
+		// LED1_ON;
+		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
+		if(start_counter== START_COUNTER_TIME + ENTER_SERVICE_DELAY){
+			if(curr_status == STATUS_FREE &&(state < state_enter_service))
+			{
 				state = state_enter_service;
 				service_mode = mode_clear_hours; // Clear Hours
 			}
-			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
+		}
+		if(state == state_enter_service){
+			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_address; //
 			}
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 2*SERVICE_NEXT_DELAY){
@@ -774,10 +906,21 @@ void ProcessSensors(void)
 			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
 				service_mode = mode_set_cool_time; //
 			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 4*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_ext_mode; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 5*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_volume; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_max_temp; //
+			}
 		}
+		set_start_out_signal(1);
 	}
 	else
 	{
+		set_start_out_signal(0);
 		if(start_counter){
 			if(state == state_show_hours){
 				start_counter--;
@@ -789,137 +932,151 @@ void ProcessSensors(void)
 				if(state == state_enter_service){
 					state = service_mode + state_enter_service;
 				}
-				//start_counter--;
-				start_counter = 0;
+				start_counter--;
+				if(!start_counter){
+					state = state_show_time;
+					write_eeprom();
+					read_eeprom();
+				}
 			}
 			else {
-				start_counter--;
+				start_counter = 0;
 
 			}
 		}
-		if(prev_status != curr_status){
-			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
+	}
+	if(prev_status != curr_status){
+		if (curr_status == STATUS_WORKING){
+			if(controller_address != 15){
 				work_hours[2]+=main_time;
-				if(work_hours[2]>59){
+				if(work_hours[2]>59L){
 					work_hours[2]=work_hours[2]-60;
 					work_hours[1]++;
-					if(work_hours[1]>99){
+					if(work_hours[1]>99L){
 						work_hours[1] = 0;
 						work_hours[0]++;
 					}
 				}
 				write_eeprom();
 			}
-			prev_status = curr_status;
+			flash_mode = 0;
+			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
+			zero_crossed = 0;
+//			volume_level = 6;
+			fan_level = 7;
+			percent_fan1 = fan_level;
+			if(lamps_mode == lamps_all){
+				set_lamps(100);
+				set_colarium_lamps(100);
+			}
+			if(lamps_mode == lamps_uv){
+				set_lamps(100);
+			}
+			if(lamps_mode == lamps_colagen){
+				set_colarium_lamps(100);
+			}		
+			set_fan2(percent_fan2);
+//			set_aquafresh(percent_aquafresh);
+			set_volume(volume_level);
+		}
+		if (curr_status == STATUS_COOLING){
+			if(controller_address == 15){
+				work_hours[2]+=abs(main_time);
+				if(work_hours[2]>59L){
+					work_hours[2]=work_hours[2]-60;
+					work_hours[1]++;
+					if(work_hours[1]>99L){
+						work_hours[1] = 0;
+						work_hours[0]++;
+					}
+				}
+				write_eeprom();			
+			}
+			percent_fan2 = 100L;
+			set_lamps(0);
+			set_fan2(percent_fan2);
+//			set_aquafresh(percent_aquafresh);
+			flash_mode = 3;
 
 		}
-		//    LED1_OFF;
-	}
+		if (curr_status == STATUS_FREE){
+			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+			//				set_lamps(0);
+			//set_colarium_lamps(0);
+//			set_fan1(0);
+			set_fan2(0);
+//			set_aquafresh(percent_aquafresh);
+			minute_counter = 0;
+			flash_mode = 0;
+			lamps_mode = lamps_all;
+		}
+		prev_status = curr_status;
 
-	// TKEY 1
-	if (!key_states[2])
-	{
-//		LED2_ON;
 	}
-	else
-	{
-//		LED2_OFF;
-	}
-
+	//    LED1_OFF;
 
 }
 
 
-#ifdef USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t* file, uint32_t line)
-{
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
-  /* Infinite loop */
-//  LED1_OFF;
-//  LED2_ON;
-  for (;;)
-  {
-//    LED1_TOGGLE;
-//    LED2_TOGGLE;
-    SystickDelay(100);
-  }
-}
-#endif
-
 
 /**
-  * @brief  Add a delay using the Systick
-  * @param  nTime Delay in milliseconds.
-  * @retval None
-  */
+ * @brief  Add a delay using the Systick
+ * @param  nTime Delay in milliseconds.
+ * @retval None
+ */
 void SystickDelay(__IO uint32_t nTime)
 {
 
-  Gv_SystickCounter = nTime;
-  while (Gv_SystickCounter != 0)
-  {
-    // The Gv_SystickCounter variable is decremented every ms by the Systick interrupt routine
-  }
+	Gv_SystickCounter = nTime;
+	while (Gv_SystickCounter != 0)
+	{
+		// The Gv_SystickCounter variable is decremented every ms by the Systick interrupt routine
+	}
 
 }
 
+void update_status(void){
+	if(pre_time) {
+		curr_time = pre_time;
+		curr_status = STATUS_WAITING;
+	}
+	else if(main_time) {
+		curr_time = main_time;
+		curr_status = STATUS_WORKING;
+	}
+	else if(cool_time) {
+		curr_time = cool_time;
+		curr_status = STATUS_COOLING;
+	}
+	else {
+		curr_time = 0;
+		curr_status = STATUS_FREE;
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+		aqua_fresh_level = 0;
+#endif
+	}
+}
 void TimingDelay_Decrement(void)
 {
 	if (Gv_SystickCounter != 0x00)
 	{
 		Gv_SystickCounter--;
 	}
-	//TSL_tim_ProcessIT();
-
-	if(++led_counter>6){
-		led_counter = 0;
-		digit_num++;
+	if( ++ refresh_counter>200L){
+		refresh_counter = 0;
 		flash_counter++;
-		if(digit_num>2) digit_num = 0;
-		GPIOA->BSRR = GPIO_BSRR_BR_0  | GPIO_BSRR_BR_2; // Turn off the lights while changing them
-		GPIOC->BSRR = GPIO_BSRR_BR_3;
-		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
-		if(flash_mode < 3 ||(flash_counter & 0x40)){
-			switch (digit_num){
-			case 2:
-				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_0 ;
-				GPIOC->BSRR = GPIO_BSRR_BR_3;
-				break;
-
-			case 1:
-				GPIOC->BSRR = GPIO_BSRR_BS_3 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
-				break;
-			case 0:
-			default:
-				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-				GPIOA->BSRR = GPIO_BSRR_BR_2;
-				GPIOC->BSRR = GPIO_BSRR_BR_3;
-				break;
-			}
-		}
-		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-			GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
-		}
-		else
-		{
-			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
-		}
 	}
-	if(start_delay)start_delay--;
+    if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+		GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
+	}
+	else
+	{
+		GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+	}
+    if(start_delay)start_delay--;
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
-		if (pre_time)
+        if (pre_time)
 		{
 			pre_time--;
 			if (pre_time == 0 && main_time != 0)
@@ -930,12 +1087,9 @@ void TimingDelay_Decrement(void)
 		else if (main_time) {
 			main_time--;
 			minute_counter ++;
-			if(main_time == 0){
-				//play_message(2);
-			}
 		}
 		else if (cool_time) cool_time--;
-		//update_status();
+		update_status();
 	}
 	if  (Gv_UART_Timeout){
 		Gv_UART_Timeout--;
@@ -944,358 +1098,38 @@ void TimingDelay_Decrement(void)
 			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		}
 	}
-	update_status();
+//	if(zero_crossed) zero_crossed-=10;
+//	if(percent_fan1) set_fan1(zero_crossed && (!(zero_crossed > percent_fan1)));
 }
 
-
-void KeyPressed_0(void){//START Key(Left)
-
-//	push_note(E2,2);
-//	push_note(G2,2);
-//	push_note(C3,2);
-	if( curr_status == STATUS_WAITING ){
-		clear_notes();
-
-		push_note(C3,6);
-		push_note(E3,4);
-		Gv_miliseconds = 0;
-		pre_time = 0;
-		start_delay = 2000L;
-		//send_start();
-	}
-	if((curr_status == STATUS_FREE || curr_status == STATUS_ERROR) ) {
-		clear_notes();
-
-		push_note(C3,6);
-		{
-			if (state > state_enter_service){
-				// Write EEPROM
-				if(state == state_clear_hours){
-					work_hours[0] = 0;
-					work_hours[1] = 0;
-					work_hours[2] = 0;
-				}
-				write_eeprom();
-				read_eeprom();
-				start_counter = 0;
-				flash_mode = 0;
-				state = state_set_time;
-			} else {
-				start_counter = START_COUNTER_TIME;
-				state = state_show_hours;
-			}
-		}
-	}
-}
-
-void KeyPressed_2(void){ // +
-	if(state == state_show_hours) {
-		state = state_set_time;
-		start_counter = 0;
-	}
-	if(state == state_set_time ){
-		if(main_time < 25){
-			pre_time = preset_pre_time;
-			cool_time = preset_cool_time;
-			main_time ++;
-//			if((time_to_set & 0x0F)>9) time_to_set +=6;
-		}
-	}
-	else if(state == state_show_time && curr_status == STATUS_WAITING)
-	{
-		if(main_time < 25)
-		{
-			main_time ++;
-		}
-	}
-	else if(state > state_enter_service){
-		start_counter = EXIT_SERVICE_TIME;
-		switch (service_mode){
-		case mode_set_address:
-			if(controller_address<15) controller_address++;
-			break;
-		case mode_set_pre_time:
-			if(preset_pre_time<9) preset_pre_time++;
-			break;
-		case mode_set_cool_time:
-			if(preset_cool_time<9) preset_cool_time++;
-			break;
-		default:
-			break;
-		}
-	}
-	clear_notes();
-
-	push_note(A3,8);
-}
-void KeyPressed_1(void){ // -
-//	if(state == state_show_hours) {
-//		state = state_set_time;
-//		start_counter = 0;
-//	}
-	if(state == state_show_time && curr_status == STATUS_WAITING )
-	{
-		if(main_time) {
-			main_time--;
-		}
-		if (main_time == 0)
-		{
-			pre_time = 0;
-			cool_time = 0;
-		}
-	}else if(state > state_enter_service){
-		start_counter = EXIT_SERVICE_TIME;
-		switch (service_mode){
-		case mode_set_address:
-			if(controller_address) controller_address--;
-			break;
-		case mode_set_pre_time:
-			if(preset_pre_time) preset_pre_time--;
-			break;
-		case mode_set_cool_time:
-			if(preset_cool_time) preset_cool_time--;
-			break;
-		default:
-			break;
-		}
-	}
-
-//	if((time_to_set & 0x0F)>9) time_to_set -=6;
-	clear_notes();
-
-	push_note(A3,8);
-
-}
-
-void KeyPressed_3()
-{
-	if(main_time == 0 && controller_address)
-	{
-		pre_time = preset_pre_time;
-		cool_time = preset_cool_time;
-	}
-	main_time += controller_address;
-	if(main_time > 25)
-	{
-		main_time = 25;
-	}
-
-}
-
-//void ping_status(void){
-//
-//	static int ping_index = 0;
-//	volatile static int status_codes[4];
-//	// Ping solarium for status
-//	if(!(flash_counter&0x0f)){
-//		int sts;
-//		ping_counter ++;
-//		ping_index = (ping_index + 1) & 0x03;
-//		status_codes[ping_index] = get_controller_status(controller_address);
-//		if(status_codes[ping_index]==status_codes[0] && status_codes[ping_index]==status_codes[1] &&
-//				status_codes[ping_index]==status_codes[2] && status_codes[ping_index]==status_codes[3] ){
-//			sts = status_codes[ping_index];
-//		}
-//		else {
-//			return;
-//		}
-//
-//		if(sts != -1){
-//			curr_status = (sts & 0xC0)>>6;
-//			curr_time = sts & 0x3F;
-//		} else {
-//			curr_status = -1;
-//			curr_time = 0;
-//		}
-//
-//		curr_time = FromBCD(curr_time);
-//	}
-//}
-//
-//void send_time(void){
-//	// Ping solarium for status
-//	if(controller_address >15){
-//		curr_status = -1;
-//		curr_time = 0;
-//	} else {
-//		int retry = 0;
-//		int retry2 =0;
-//		char data;
-//		int time_in_hex = ToBCD(time_to_set);
-//		preset_pre_time = preset_pre_time & 0x7F;
-//		// checksum: CoolTime + Pre-Time - 5 - MainTime
-//
-//		while(retry < 20){
-//			// clear in FIFO
-//			volatile unsigned char checksum = (preset_pre_time + preset_cool_time  - time_in_hex - 5) & 0x7F;
-//			volatile unsigned char  remote_check_sum = 220;
-//			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 2U); //Command 2 == Pre_time_set
-//			SystickDelay(2);
-//			USART_SendData(USART1,preset_pre_time);
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//
-//			SystickDelay(2);
-//			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 5U); //Command 5 == Main time set
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//			SystickDelay(2);
-//			USART_SendData(USART1,time_in_hex);
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-////			SystickDelay(2);
-//			retry2 =0;
-//			while(!USART_GetFlagStatus(USART1,USART_FLAG_RXNE) && retry2++<10){
-//				SystickDelay(2);
-//			}
-//			USART_ReceiveData(USART1); //"Read" old time
-//
-//			SystickDelay(2);
-//			USART_SendData(USART1,0x80U | ((controller_address & 0x0fU)<<3U) | 3U); //Command 3 == Cool Time set
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//			SystickDelay(2);
-//			USART_SendData(USART1,preset_cool_time);
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//
-//			SystickDelay(4);
-//			retry2 =0;
-//			while(!USART_GetFlagStatus(USART1,USART_FLAG_RXNE) && retry2++<10){
-//				SystickDelay(2);
-//			}
-//			if(USART_GetFlagStatus(USART1,USART_FLAG_RXNE)){
-//				remote_check_sum = USART_ReceiveData(USART1); //"Read" checksum
-//			}
-//			SystickDelay(20);
-////			checksum = remote_check_sum;
-//			if(remote_check_sum == checksum){
-//				SystickDelay(2);
-//				USART_SendData(USART1,checksum);
-//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//			}
-//			SystickDelay(100);
-//			USART_SendData(USART1,0x80U | ((controller_address & 0x0f)<<3U) | 0); //Command 0 - Get status
-//			SystickDelay(20);
-//			data = USART_ReceiveData(USART1); //"Read" status
-//			if ((data >> 6 ) != 0 ) retry = 22;
-//			retry ++;
-//		}
-//
-//		/**************** OLD Pascal code as example
-//		CheckSum:=PreTime+CoolTime-DataSent-5;
-//		    CheckSum:=CheckSum mod 128 ;
-//		    PurgeComm(hDevice,(PURGE_TXCLEAR or PURGE_RXCLEAR	));
-//		    while retry<20 do
-//		     begin
-//		      for i:=1 to 10 do IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-//		      Data1:=128+Chanel*8+2;
-//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-//		      sleep(2);             // Set PRE-Time
-//		      IOResult:=WriteFile(hDevice,PreTime,1,IOCount,NIL);
-//		      Data1:=128+Chanel*8+5;
-//		      sleep(2);              // Set main time
-//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-//		      sleep(2);
-//		      IOResult:=WriteFile(hDevice,DataSent,1,IOCount,NIL);
-//		      sleep(2);
-//		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);   // get old main time
-//		      Data1:=128+Chanel*8+3; //  Set cool time
-//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-//		      sleep(2);
-//		      IOResult:=WriteFile(hDevice,CoolTime,1,IOCount,NIL);
-//		      sleep(4);
-//		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL); // Get checksum?
-//		      if IOResult and (IOByte=CheckSum) then
-//		      IOResult:=WriteFile(hDevice,CheckSum,1,IOCount,NIL);
-//		      sleep(100);
-//		      Data1:=128+Chanel*8; // Get status command for selected chanel
-//		      IOResult:=WriteFile(hDevice,Data1,1,IOCount,NIL);
-//		      sleep(5);
-//		      IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-//		      IOByte:= IOByte div 64;
-//		      if IOResult and (IOByte <>0) and
-//		        ((DataSent=0) or (PreTime > 0) or ((IOByte = 1) and (DataSent >0)))    then
-//		        begin
-//		          retry:=22;
-//		        end
-//		      else retry:= retry+1;
-//		      sleep(1);
-//		      MainForm.Gauge2.Progress:=retry;
-//		     end;
-//		     IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-//		     IOResult:=ReadFile(hDevice,IOByte,1,IOCount,NIL);
-//
-//		*/
-//	}
-//}
-
-void update_status(void){
-	if(pre_time) {
-		curr_status = STATUS_WAITING;
-		set_relay1(0);
-		set_relay2(0);
-		curr_time = pre_time;
-	}
-	else if(main_time) {
-		curr_status = STATUS_WORKING;
-		set_relay1(1);
-		set_relay2(1);
-		curr_time = main_time;
-	}
-	else if(cool_time) {
-		curr_status = STATUS_COOLING;
-		set_relay1(0);
-		set_relay2(1);
-		curr_time = cool_time;
-	}
-	else {
-		curr_status = STATUS_FREE;
-		set_relay1(0);
-		set_relay2(0);
-		curr_time = 0;
-	}
-}
-
-//void send_start(void){
-//	// Ping solarium for status
-//	if(controller_address >15){
-//		curr_status = -1;
-//		curr_time = 0;
-//	} else {
-//			while(USART_GetFlagStatus(USART1,USART_FLAG_RXNE))	USART_ReceiveData(USART1); // Flush input
-//			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
-//
-//			USART_SendData(USART1,0x80 | ((controller_address & 0x0f)<<3) | 1); //Command 1 == start
-//			SystickDelay(2);
-//			USART_SendData(USART1,0x55);
-//	}
-//}
 
 void read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
-	uint32_t *p = (uint32_t *)eeprom_array;
-	for(index = 0; index<512; index+=2){
-		if(*(p + index)==0xFFFFFFFF) break;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=(sizeof(flash_struct)/sizeof(uint32_t));
+//	for (i = 0; i< 512; i+=2){
+//		val = *pMem;
+//		if (val == 0xffffffff) break;
+//		pMem++;
+//	}
+//	index = i;
+	if(index > 511){
+			index = 0;
 	}
 	if(index == 0){
 		// Load defaults
 		flash_mem = 0;
 		preset_pre_time = 7;
 		preset_cool_time = 3;
-		controller_address = 16;
 		work_hours[0] = 0;
 		work_hours[1] = 0;
 		work_hours[2] = 0;
-		write_eeprom();
+		volume_message = 5;
+		temperature_threshold = 90;
+		ext_mode = 0;
 		return;
 	}
-	index-=2;
+	index-=sizeof(flash_struct)/sizeof(uint32_t);
 	flash_mem = (flash_struct*)&eeprom_array[index];
 	preset_pre_time = flash_mem->settings.pre_time ;
 	preset_cool_time = flash_mem->settings.cool_time;
@@ -1303,19 +1137,17 @@ void read_eeprom(void){
 	work_hours[0] = flash_mem->time.hours_h;
 	work_hours[1] = flash_mem->time.hours_l;
 	work_hours[2] = flash_mem->time.minutes;
+	volume_message = flash_mem->settings.volume_dac;
+	temperature_threshold = flash_mem->settings.temperatue_max;
+	ext_mode = flash_mem->settings.ext_mode;
 }
 
 void write_eeprom(void){
-	volatile int index = 0;
+	int index = 0;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
-	uint32_t *p = (uint32_t *)eeprom_array;
-//	uint32_t *p = (uint32_t *)&flash_mem;
-	for(index = 0; index<512; index+=2){
-		if(*(p + index)==0xFFFFFFFF) break;
-	}
-
-//	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
+	uint32_t *p = (uint32_t *)&flash_mem;
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=3;
 	if(index > 511){
 		// No more room. Erase the 4 pages
 		FLASH_ErasePage((uint32_t)&eeprom_array[0]);
@@ -1324,37 +1156,49 @@ void write_eeprom(void){
 		FLASH_ErasePage((uint32_t)&eeprom_array[384]);
 		index = 0;
 	}
-	for(index = 0; index<512; index+=2){
-		if(*(p + index)==0xFFFFFFFF) break;
-	}
+	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=2;
 	if(index >511){
 		display_data = 0xE01;
-		for (index = 0; index<20; index++){
-			clear_notes();
-
-			push_note(E2,3);
-			push_note(D4,3);
-		}
 	} else {
 		volatile static FLASH_Status sts;
-		p = (uint32_t *)&flash_mem;
 		flash_mem.settings.pre_time = preset_pre_time;
 		flash_mem.settings.cool_time = preset_cool_time;
 		flash_mem.settings.addresse = controller_address & 0x0f;
-		flash_mem.settings.unused = 0x55;
 		flash_mem.time.hours_h = work_hours[0];
 		flash_mem.time.hours_l = work_hours[1];
 		flash_mem.time.minutes = work_hours[2];
 		flash_mem.time.used_flag = 0;
+		flash_mem.settings.volume_dac = volume_message;
+		flash_mem.settings.temperatue_max = temperature_threshold;
+		flash_mem.settings.ext_mode = ext_mode;
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
 		index ++;
+		if (sts){
+			// Debug code here...
+		}
 	}
 	FLASH_Lock();
 }
 
-//-----------------------------------------------------------------------------------------------------
+void set_lamps(int value){
+	short int counter = 0;
+ 	while(!zero_crossed && --counter);
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+	else GPIOC->BRR = GPIO_BRR_BR_9;
+}
+
+void set_fan2(int value){
+	if (value)
+		GPIOC->BSRR = GPIO_BSRR_BS_14;
+	else
+		GPIOC->BSRR = GPIO_BSRR_BR_14;
+}
+
+
+
+
 void usart_receive(void){
 	useUart = 1;
 	enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
@@ -1364,30 +1208,33 @@ void usart_receive(void){
 	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
 	if ((data & 0x80)){
+		last_rx_address = (data >> 3U)&0x0f;
+		unsigned char addr_is_ok = 0;
+		addr_is_ok = (last_rx_address == controller_address);
+		if (!addr_is_ok) return;
 		// Command
-		if((data & (0x0fU<<3U)) == ((controller_address & 0x0fU)<<3U)){
+		if(addr_is_ok){
 			Gv_UART_Timeout = 1500;
 		}
-		if((data == (0x80U | ((controller_address & 0x0fU)<<3U)))){
+		if((data & 0x07) == 0x00 ){ // Status
 			data = (curr_status<<6)| ToBCD(curr_time);
 //			data = (STATUS_WORKING<<6)|4;
 			USART_SendData(USART1,data);
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+1) //Command 1 - Start
+		else if ((data & 0x07) == 1) //Command 1 - Start
 		{
 			pre_time = 0;
-			start_delay = 2000L;
 			update_status();
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U) ))+2)  //Command 2 == Pre_time_set
+		else if ((data & 0x07) == 2)  //Command 2 == Pre_time_set
 		{
 			rx_state = rx_state_pre_time;
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+5) //Command 5 == Main_time_set
+		else if ((data & 0x07) == 5) //Command 5 == Main_time_set
 		{
 			rx_state = rx_state_main_time;
 		}
-		else if (data == ((0x80U | ((controller_address & 0x0fU)<<3U)))+3) //Command 3 == Cool_time_set
+		else if ((data & 0x07) == 3) //Command 3 == Cool_time_set
 		{
 			rx_state = rx_state_cool_time;
 		}
@@ -1413,7 +1260,7 @@ void usart_receive(void){
 		}
 		if(rx_state == rx_state_main_time){
 			main_time_sent = FromBCD(data);
-			rx_state = 0;
+			rx_state = 0;			
 		}
 		if(rx_state == rx_state_cool_time){
 			cool_time_sent = data;
