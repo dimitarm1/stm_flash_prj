@@ -75,7 +75,6 @@ static long durations[255];
 static int start_note = 0; // Or current note
 static int end_note = 0;
 static char digits[3];
-static int ping_counter=0;
 static __IO uint32_t TimingDelay;
 TSL_tMeas_T measurment;
 static int display_data=0;
@@ -87,24 +86,24 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
 static states state = 0;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time}modes;
 static modes service_mode;
-static unsigned char controller_address = 0x10;
-static int curr_status;
-static int prev_status;
-static int curr_time;
-static int flash_mode = 0;
-long start_delay = 0;
-int minute_counter =0;
-int pre_time = 0, main_time = 0, cool_time = 0;
-int Gv_UART_Timeout = 1000; // Timeout in mSec
-int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+volatile unsigned char controller_address = 0x10;
+volatile int curr_status;
+volatile int prev_status;
+volatile int curr_time;
+volatile int flash_mode = 0;
+volatile long start_delay = 0;
+volatile int minute_counter =0;
+volatile int pre_time = 0, main_time = 0, cool_time = 0;
+volatile int Gv_UART_Timeout = 1000; // Timeout in mSec
+volatile int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 //static unsigned char  main_time = 0;
 static unsigned int   work_hours[3] = {9,10,30}; //HH HL MM - Hours[2], Minutes[1]
 static unsigned char  preset_pre_time = 7;
 static unsigned char  preset_cool_time = 3;
-static int start_counter = 0;
-static int counter_hours = 0;
-static int flash_counter_prev = 0;
-unsigned int Gv_miliseconds = 0;
+volatile int start_counter = 0;
+volatile int counter_hours = 0;
+volatile int flash_counter_prev = 0;
+volatile int Gv_miliseconds = 0;
 uint16_t data = 0;
 int useUart=0;
 
@@ -146,8 +145,10 @@ void update_status(void);
 void KeyPressed_0(void);
 void KeyPressed_1(void);
 void KeyPressed_2(void);
-void set_relay1(char state);
-void set_relay2(char state);
+void KeyPressed_3();
+void set_relay1(unsigned char state);
+void set_relay2(unsigned char state);
+void update_outputs(void);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -313,7 +314,6 @@ void get_address(void){
   */
 int main(void)
 {
-	 TSL_Status_enum_T sts = 0;
   /*!< At this stage the microcontroller clock setting is already configured, 
        this is done through SystemInit() function which is called from startup
        file (startup_stm32f0xx.s) before to branch to application main.
@@ -638,7 +638,8 @@ int main(void)
 				  break;
 			  }
 		  }
-		  SystickDelay(1);
+		  update_outputs();
+		  SystickDelay(5);
 	  }
 }
 
@@ -1237,29 +1238,40 @@ void KeyPressed_3()
 void update_status(void){
 	if(pre_time) {
 		curr_status = STATUS_WAITING;
-		set_relay1(0);
-		set_relay2(0);
 		curr_time = pre_time;
 	}
 	else if(main_time) {
 		curr_status = STATUS_WORKING;
-		set_relay1(1);
-		set_relay2(1);
 		curr_time = main_time;
 	}
 	else if(cool_time) {
 		curr_status = STATUS_COOLING;
-		set_relay1(0);
-		set_relay2(1);
 		curr_time = cool_time;
 	}
 	else {
 		curr_status = STATUS_FREE;
-		set_relay1(0);
-		set_relay2(0);
 		curr_time = 0;
 	}
 }
+void update_outputs(void){
+	if( curr_status == STATUS_WAITING){
+		set_relay1(0);
+		set_relay2(0);
+	}
+	else if(curr_status == STATUS_WORKING){
+		set_relay1(1);
+		set_relay2(1);
+	}
+	else if(curr_status == STATUS_COOLING){
+		set_relay1(0);
+		set_relay2(1);
+	}
+	else {
+		set_relay1(0);
+		set_relay2(0);
+	}
+}
+
 
 //void send_start(void){
 //	// Ping solarium for status
@@ -1350,6 +1362,7 @@ void write_eeprom(void){
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
 		index = sizeof(flash_mem);
 		index ++;
+		sts = sts;
 	}
 	FLASH_Lock();
 }
@@ -1443,7 +1456,7 @@ void usart_receive(void){
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
-void set_relay2(char state)
+void set_relay2(unsigned char state)
 {
 	if (state)
 	{
@@ -1454,7 +1467,7 @@ void set_relay2(char state)
 		 GPIOA->BSRR = GPIO_BSRR_BR_6 ;
 	}
 }
-void set_relay1(char state)
+void set_relay1(unsigned char state)
 {
 	if (state && start_delay == 0)
 	{
