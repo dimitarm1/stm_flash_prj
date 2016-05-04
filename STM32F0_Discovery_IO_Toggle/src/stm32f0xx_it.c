@@ -30,7 +30,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_it.h"
 void TimingDelay_Decrement(void); // Defined externally
-void Process_TS_Int(void);  // Defined externally
 void usart_receive(void); // Defined elsewhere
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
   * @{

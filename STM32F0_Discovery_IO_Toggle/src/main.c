@@ -26,10 +26,16 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f0xx.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx_rcc.h"
+#include "stm32f0xx_usart.h"
+#include "stm32f0xx_flash.h"
 #include "defines.h"
 #include "init.h"
 #include "stdint.h"
 #include "stm32f0xx_iwdg.h"
+#include "stdlib.h"
 
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
@@ -69,6 +75,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume, mode_set_max_temp}modes;
 modes service_mode;
 int useUart=0;
+int start_delay;
 
 
 /* Private define ------------------------------------------------------------*/
@@ -89,34 +96,22 @@ void ProcessButtons(void);
 void update_status(void);
 void set_start_out_signal(int value);
 void set_lamps(int value);
-void set_colarium_lamps(int value);
-void set_fan1(int value);
 void set_fan2(int value);
-void set_aquafresh(int value);
-void set_volume(int value);
-void play_message(int index);
 
 /* Global variables ----------------------------------------------------------*/
 
 __IO uint32_t Gv_SystickCounter;
 
 SPI_InitTypeDef 			SPI_InitStruct;
-TIM_TimeBaseInitTypeDef  	TIM_TimeBaseStructure;
-TIM_OCInitTypeDef  			TIM_OCInitStructure;
-TIM_ICInitTypeDef  			TIM_ICInitStructure;
 GPIO_InitTypeDef        	GPIO_InitStructure;
-EXTI_InitTypeDef   			EXTI_InitStructure;
 USART_InitTypeDef 			USART_InitStructure;
 USART_ClockInitTypeDef 		USART_ClockInitStruct;
 NVIC_InitTypeDef 			NVIC_InitStructure;
-DAC_InitTypeDef             DAC_InitStructure;
 
 
 uint8_t dac_buffer[2][512];
 const uint32_t eeprom_array[512] __attribute__ ((section (".eeprom1text")));
-const char tim_pulse_array[] = {68,63,58,52,46,40,33,26,20,1};
-const uint32_t message_sector_offset[] = {00,100,200,300,400,500,600};
-const uint32_t message_sector_counts[] = {90,90,90,90,90,90,90};
+
 
 __IO uint32_t TimingDelay;
 
@@ -187,9 +182,8 @@ void show_digit(int digit){
 	case 0:
 		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4 | GPIO_BSRR_BS_7;
 		GPIOB->BSRR = GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
-		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
+		GPIOC->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
-
 		break;
 	case 1:
 		GPIOA->BSRR = GPIO_BSRR_BS_7;
@@ -200,7 +194,7 @@ void show_digit(int digit){
 	case 2:
 		GPIOA->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BS_4;
 		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 ;
-		GPIOC->BSRR = GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7 ;
+		GPIOC->BSRR = GPIO_BSRR_BS_5 | GPIO_BSRR_BS_6 | GPIO_BSRR_BS_7;
 		GPIOF->BSRR = GPIO_BSRR_BS_4 | GPIO_BSRR_BS_5;
 		break;
 	case 3:
@@ -278,13 +272,14 @@ void show_digit(int digit){
 	case 0x0F:
 	default:
 		//empty
-		//                GPIOA->BSRR = GPIO_BSRR_BS_3 ;
-		//                GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
-		//                GPIOC->BSRR = GPIO_BSRR_BS_5;
-		//                GPIOF->BSRR = GPIO_BSRR_BS_4;
+//		GPIOA->BSRR = GPIO_BSRR_BS_3 ;
+//		GPIOB->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2 | GPIO_BSRR_BS_10 | GPIO_BSRR_BS_11;
+//		GPIOC->BSRR = GPIO_BSRR_BS_5;
+//		GPIOF->BSRR = GPIO_BSRR_BS_4;
 		break;
 	}
 }
+
 
 /*
  * Outputs:
@@ -321,46 +316,6 @@ int main(void)
 	read_eeprom();
 	init_periph();
 
-
-	  /* Configure PC in output push-pull mode (for segments and Digit 1 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-	  /* Configure PB9 in output push-pull mode (for buzzer )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 ;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	  /* Configure PF4 in output push-pull mode (for segments )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5;
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOF, &GPIO_InitStructure);
-
-	  //Configure USART1 pins:  Rx and Tx ----------------------------
-
-	  USART_InitStructure.USART_BaudRate = 1200;
-	  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-	  USART_InitStructure.USART_StopBits = USART_StopBits_1;
-	  USART_InitStructure.USART_Parity = USART_Parity_No;
-	  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-	  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	  USART_Init(USART1, &USART_InitStructure);
-	  USART_InvPinCmd(USART1,USART_InvPin_Tx,ENABLE);
-	  USART_ITConfig(USART1,USART_IT_RXNE, ENABLE);
-	  USART_Cmd(USART1,ENABLE);
-
-
-
 	if (SysTick_Config(SystemCoreClock / (1000))){
 		while(1); // Capture error
 	}
@@ -384,20 +339,14 @@ int main(void)
 	pre_time = 0;
 	main_time = 0;
 	cool_time = 0;
-	dac_current_message = -1;
 //	read_eeprom();
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
 		preset_cool_time = 3;
 		write_eeprom();// Paranoia check
 	}
-//	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
-//	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
 
 	update_status();
-	set_volume(0);
-
-	play_message(0);
 
 	while (1)
 	{
@@ -417,26 +366,6 @@ int main(void)
 		//		for (delay_counter = 0; delay_counter<500; delay_counter++);
 
 		// read external input
-		if ((state < state_enter_service) && ((flash_counter>>4)&1)){
-			if (controller_address == 15){
-				external_read = (external_read << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_10));
-				if(!main_time && (!external_read)){
-					if(curr_status != STATUS_COOLING){
-						main_time = -1;
-						cool_time = preset_cool_time;
-						Gv_miliseconds = 0;
-						flash_mode = 0;
-						state = state_set_time;
-						update_status();
-					}
-				}
-				if(main_time && !~external_read){
-					main_time = 0;
-					Gv_miliseconds = 0;
-					update_status();
-				}
-			}
-		}
 		ProcessButtons();
 		switch (state){
 		case state_show_time:
@@ -518,6 +447,8 @@ int main(void)
 				display_data = 0xFF5;
 			}
 			break;	
+		default:
+			break;
 		}
 		//		show_digit(display_data);
 		if (state == state_show_time){
@@ -525,13 +456,9 @@ int main(void)
 				// Some Paranoia...
 				// turn off all
 				set_lamps(0);
-				set_colarium_lamps(0);
 				percent_fan1 = 0;
-				set_fan1(0);
 				set_fan2(0);
-				set_aquafresh(0);
 				lamps_mode = lamps_all;
-
 //				state = state_set_time;
 			}
 		}
@@ -567,80 +494,45 @@ int main(void)
 			}
 			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2 ; // Turn off the lights while changing them
 			GPIOB->BSRR = 0;
-			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_13 ;
+			GPIOC->BSRR = GPIO_BSRR_BR_3;
 			GPIOF->BSRR = GPIO_BSRR_BR_1 ;
 			if(digit_num<3){
 				show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
 //				show_digit(last_button>>(digit_num*4));
 			} else {
 				//show_digit(0x8);// DEBUG
-
 			}
 			{
+				current_button_read |= ((!!(GPIOB->IDR & GPIO_IDR_13)) | ((!!(GPIOB->IDR & GPIO_IDR_14))<<1) | \
+																					((!!(GPIOA->IDR & GPIO_IDR_11))<<2) | \
+																					((!!(GPIOA->IDR & GPIO_IDR_1))))<<3;
 				switch (digit_num){
 				case 0:
-					
 					GPIOA->BSRR = GPIO_BSRR_BS_2 ;
-					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-																		((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<0;
 					break;
 				case 1:
 					
 					GPIOC->BSRR = GPIO_BSRR_BS_0 ;
-					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<4;
 					break;
 				case 2:
-					
 					GPIOA->BSRR = GPIO_BSRR_BS_0 ;
-					current_button_read |= ((!!(GPIOC->IDR & GPIO_IDR_11)) | ((!!(GPIOC->IDR & GPIO_IDR_12))<<1) | \
-																	((!!(GPIOD->IDR & GPIO_IDR_2))<<2))<<8;
-					break;
-				case 3:
-
-					if (pre_time){
-						// Indicate pre_time by moving bars
-						show_level((flash_counter>>6) & 0x07);
-					} else {
-						show_level(volume_level);
-					}
-					GPIOC->BSRR = GPIO_BSRR_BS_13 ;
-					break;
-				case 4:
-
-					GPIOF->BSRR = GPIO_BSRR_BS_1 ;
-					if (pre_time){
-						show_level(((flash_counter>>6) & 0x07) +3);
-					} else {
-						show_level(fan_level);
-					}
 					break;
 				default:
 					break;
 				}
 			}
-			if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-				GPIOA->BSRR = GPIO_BSRR_BS_6 | GPIO_BSRR_BS_5;
+			// Flash DP if appropriate
+		    if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+				GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
+			}
+			else
+			{
+				GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
 			}
 			flash_counter++;
 		}
-		
-
 		IWDG_ReloadCounter(); //DEBUG
 	}
-}
-
-void TIM2_IRQHandler() {
-	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
-	{
-		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
-		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
-			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
-		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-		TIM_ICInit(TIM2, &TIM_ICInitStructure);
-	}
-	zero_crossed = 1;
-
 }
 
 int ToBCD(int value){
@@ -684,7 +576,6 @@ void ProcessButtons(void)
 					update_status();
 					fan_level= 7;
 					percent_fan1 = fan_level;
-					set_fan1(percent_fan1);
 				}
 				if(!pre_time && ! main_time && !cool_time) {
 					if(time_to_set){
@@ -719,74 +610,10 @@ void ProcessButtons(void)
 					}
 				}
 				break;
-			case BUTTON_STOP:
-				if(curr_status == STATUS_WORKING){
-					main_time = 0;
-					pre_time = 0;
-					update_status();
-					percent_fan1 = 10;
-					set_fan1(percent_fan1);
-				}
-				if(state >= state_enter_service){
-					start_counter = 0;
-					state = state_show_time;
-					write_eeprom();
-					read_eeprom();
-				}
-				break;
-			case BUTTON_FAN_PLUS:
-				if(curr_status == STATUS_WORKING){
-					if(fan_level<10L){
-						fan_level++;
-						percent_fan1 = fan_level;
-						set_fan1(percent_fan1);
-					}
-				}
-				break;
-			case BUTTON_FAN_MINUS:
-				if(curr_status == STATUS_WORKING){
-					if(fan_level>1){
-						fan_level--;
-						percent_fan1 = fan_level;
-						set_fan1(percent_fan1);
-					}
-				}
-				break;
-			case BUTTON_AQUA:
-#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
-				if(minute_counter)
-				{
-					aqua_fresh_level = 0;
-				}
-#else
-				aqua_fresh_level++;
-				if (aqua_fresh_level >2)aqua_fresh_level =0;
-#endif
-				if(minute_counter){
-				}
-				break;
-			case BUTTON_VOL_PLUS:
-				if(curr_status != STATUS_WAITING){
-					if(volume_level<10L){
-						volume_level++;
-						set_volume(volume_level);
-					}
-				}
-				break;
-			case BUTTON_VOL_MINUS:
-				if(curr_status != STATUS_WAITING){
-					if(volume_level>0){
-						volume_level--;
-						set_volume(volume_level);
-					}
-				}
-				break;
+			case BUTTON_COIN:// TODO: Special case for this
 			case BUTTON_PLUS:
 			{
 				if(curr_status == STATUS_WORKING){
-					if(lamps_mode == lamps_all){
-						set_colarium_lamps(1);
-					}
 				}
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -827,9 +654,6 @@ void ProcessButtons(void)
 			break;
 			case BUTTON_MINUS:
 				if(curr_status == STATUS_WORKING){
-					if(lamps_mode == lamps_all){
-						set_colarium_lamps(0);
-					}
 				}
 				if(state == state_show_hours) {
 					state = state_set_time;
@@ -916,11 +740,9 @@ void ProcessButtons(void)
 				service_mode = mode_set_max_temp; //
 			}
 		}
-		set_start_out_signal(1);
 	}
 	else
 	{
-		set_start_out_signal(0);
 		if(start_counter){
 			if(state == state_show_hours){
 				start_counter--;
@@ -967,17 +789,11 @@ void ProcessButtons(void)
 			percent_fan1 = fan_level;
 			if(lamps_mode == lamps_all){
 				set_lamps(100);
-				set_colarium_lamps(100);
 			}
 			if(lamps_mode == lamps_uv){
 				set_lamps(100);
 			}
-			if(lamps_mode == lamps_colagen){
-				set_colarium_lamps(100);
-			}		
 			set_fan2(percent_fan2);
-//			set_aquafresh(percent_aquafresh);
-			set_volume(volume_level);
 		}
 		if (curr_status == STATUS_COOLING){
 			if(controller_address == 15){
@@ -1002,10 +818,7 @@ void ProcessButtons(void)
 		if (curr_status == STATUS_FREE){
 			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 			//				set_lamps(0);
-			//set_colarium_lamps(0);
-//			set_fan1(0);
 			set_fan2(0);
-//			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
 			flash_mode = 0;
 			lamps_mode = lamps_all;
@@ -1066,13 +879,7 @@ void TimingDelay_Decrement(void)
 		refresh_counter = 0;
 		flash_counter++;
 	}
-    if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-		GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
-	}
-	else
-	{
-		GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
-	}
+
     if(start_delay)start_delay--;
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
@@ -1183,17 +990,25 @@ void write_eeprom(void){
 }
 
 void set_lamps(int value){
-	short int counter = 0;
- 	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-	else GPIOC->BRR = GPIO_BRR_BR_9;
+	if (value )
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BS_15;
+	}
+	else
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BR_15;
+	}
 }
 
 void set_fan2(int value){
-	if (value)
-		GPIOC->BSRR = GPIO_BSRR_BS_14;
+	if (value && start_delay == 0)
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BS_6 ;
+	}
 	else
-		GPIOC->BSRR = GPIO_BSRR_BR_14;
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BR_6 ;
+	}
 }
 
 
@@ -1289,28 +1104,4 @@ void usart_receive(void){
   */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
-void set_relay2(char state)
-{
-	if (state)
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BS_6 ;
-	}
-	else
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BR_6 ;
-	}
-}
-void set_relay1(char state)
-{
-	if (state && start_delay == 0)
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BS_15;
-	}
-	else
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BR_15;
-	}
-}
-
 
