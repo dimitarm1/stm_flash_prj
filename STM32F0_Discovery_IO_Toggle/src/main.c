@@ -363,7 +363,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -371,7 +371,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -379,18 +379,26 @@ int main(void)
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_11 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PA in input mode with PullDn for Relay 1 and 2*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_15 ;
+	  /* Configure PA in output mode with PullDn for Relay 1 */
+	  GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_15 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
-	  GPIOA->BSRR = GPIO_BSRR_BR_6 | GPIO_BSRR_BR_15;
+	  /* Configure PC in output mode with PullDn for Relay 2 */
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 ;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	  GPIO_Init(GPIOC, &GPIO_InitStructure);
+	  GPIOA->BSRR = GPIO_BSRR_BR_15;
+	  GPIOC->BSRR = GPIO_BSRR_BR_11;
 
 	  /* Configure PA9 -  PA10 for UART*/
  	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
@@ -1235,6 +1243,30 @@ void KeyPressed_3()
 //	}
 //}
 
+void set_relay2(unsigned char state)
+{
+	if (state && start_delay == 0)
+	{
+		 GPIOC->BSRR = GPIO_BSRR_BS_11 ;
+	}
+	else
+	{
+		 GPIOC->BSRR = GPIO_BSRR_BR_11 ;
+	}
+}
+
+void set_relay1(unsigned char state)
+{
+	if (state )
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BS_15;
+	}
+	else
+	{
+		 GPIOA->BSRR = GPIO_BSRR_BR_15;
+	}
+}
+
 void update_status(void){
 	if(pre_time) {
 		curr_status = STATUS_WAITING;
@@ -1247,10 +1279,12 @@ void update_status(void){
 	else if(cool_time) {
 		curr_status = STATUS_COOLING;
 		curr_time = cool_time;
+		start_delay = 0;
 	}
 	else {
 		curr_status = STATUS_FREE;
 		curr_time = 0;
+		start_delay = 0;
 	}
 }
 void update_outputs(void){
@@ -1456,27 +1490,6 @@ void usart_receive(void){
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
-void set_relay2(unsigned char state)
-{
-	if (state)
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BS_6 ;
-	}
-	else
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BR_6 ;
-	}
-}
-void set_relay1(unsigned char state)
-{
-	if (state && start_delay == 0)
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BS_15;
-	}
-	else
-	{
-		 GPIOA->BSRR = GPIO_BSRR_BR_15;
-	}
-}
+
 
 
