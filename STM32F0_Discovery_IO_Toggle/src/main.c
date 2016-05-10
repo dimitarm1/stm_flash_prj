@@ -375,7 +375,7 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PA in input mode with PullUp for Coint input and P2 button*/
+	  /* Configure PA in input mode with PullUp for Coin input and P2 button*/
 	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_11 ;
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
@@ -545,7 +545,9 @@ int main(void)
 			  key_states[1] = (key_states[1] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_11)); // -
 			  key_states[2] = (key_states[2] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_14)); // +
 			  key_states[3] = (key_states[3] << 1) | 	(!!(GPIOB->IDR & GPIO_IDR_7)); // External start
-			  key_states[4] = (key_states[4] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_1)); // Coin switch
+			  if(controller_address == 15){
+				  key_states[4] = (key_states[4] << 1) | 	(!!(GPIOA->IDR & GPIO_IDR_1)); // Coin switch
+			  }
 			  ProcessSensors(); // Execute sensors related tasks
 			  // Scan buttons
 
