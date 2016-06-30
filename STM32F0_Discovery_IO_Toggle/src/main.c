@@ -1,35 +1,19 @@
 /**
  ******************************************************************************
  * @file    IO_Toggle/main.c
- * @author  MCD Application Team
+ * @author  D. Marinov
  * @version V1.0.0
- * @date    23-March-2012
+ * @date    30-06-2016
  * @brief   Main program body
  ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
- *
- * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- ******************************************************************************
- */
+*/
 
 /* Includes ------------------------------------------------------------------*/
 #include "defines.h"
 #include "init.h"
 #include "stdint.h"
 #include "stm32f0xx_iwdg.h"
+#include "eeprom.h"
 
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
@@ -76,6 +60,10 @@ int useUart=0;
 /* Private macros ------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
+/* Virtual address defined by the user: 0xFFFF value is prohibited */
+uint16_t VirtAddVarTab[NB_OF_VAR] = {0x5555, 0x6666, 0x7777};
+uint16_t VarDataTab[NB_OF_VAR] = {0, 0, 0};
+uint16_t VarValue = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystickDelay(__IO uint32_t nTime);
@@ -401,6 +389,46 @@ int main(void)
 	}
 	NVIC_SetPriority (SysTick_IRQn, 3);
 
+	/* Unlock the Flash Program Erase controller */
+	FLASH_Unlock();
+	/* EEPROM Init */
+	EE_Init();
+	
+	
+	/* --- Store successively many values of the three variables in the EEPROM ---*/
+    /* Store 0x1000 values of Variable1 in EEPROM */
+    for (VarValue = 1; VarValue <= 0x64; VarValue++)
+    {
+      EE_WriteVariable(VirtAddVarTab[0], VarValue);
+    }
+  
+    /* read the last stored variables data*/
+    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
+  
+  
+    /* Store 0x2000 values of Variable2 in EEPROM */
+    for (VarValue = 1; VarValue <= 0xC8; VarValue++)
+    {
+      EE_WriteVariable(VirtAddVarTab[1], VarValue);
+    }
+  
+    /* read the last stored variables data*/
+    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
+    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
+  
+  
+    /* Store 0x3000 values of Variable3 in EEPROM */
+    for (VarValue = 1; VarValue <= 0x1C2; VarValue++)
+    {
+      EE_WriteVariable(VirtAddVarTab[2], VarValue);
+    }
+  
+    /* read the last stored variables data*/
+    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
+    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
+    EE_ReadVariable(VirtAddVarTab[2], &VarDataTab[2]);
+	
+	
 	/*
 	 * commads:
 	 * 0 - status 0-free, 1-Working, 2-COOLING, 3-WAITING
