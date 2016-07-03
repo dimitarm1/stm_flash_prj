@@ -820,9 +820,9 @@ void ProcessSensors(void)
 		}
 		if(prev_status != curr_status){
 			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
-				work_hours[2]+=time_to_set;
-				if(work_hours[2]>59){
-					work_hours[2]=work_hours[2]-60;
+				work_hours[2]+=1;
+				if(work_hours[2]>99){
+					work_hours[2]= 0;
 					work_hours[1]++;
 					if(work_hours[1]>99){
 						work_hours[1] = 0;
