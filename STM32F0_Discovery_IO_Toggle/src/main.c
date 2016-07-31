@@ -50,6 +50,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
  states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume_1, mode_set_volume_2}modes;
 modes service_mode;
+typedef enum voice_messages { message_power_up, message_start_working, message_stop_working };
 int useUart=0;
 
 
@@ -116,8 +117,9 @@ int dac_ping_pong_state;
 int dac_prev_ping_pong_state;
 int dac_current_block;
 int dac_current_message;
-int dac_fade_out_counter;
-int dac_fade_in_counter;
+int fade_out_counter;
+int fade_in_counter;
+int silence_counter;
 
 uint16_t data = 0;
 unsigned char  time_to_set = 0;
@@ -143,6 +145,12 @@ int aqua_fresh_level = 0;
 volatile int volume_level = 5;
 volatile int fan_level = 7;
 unsigned int external_read = 0;
+static unsigned char systick_prescaler = 0;
+static int pwm_cnt = 0;
+static int fan1_level = 0;
+uint32_t tim_base = 0;
+static int startup_delay = 0;
+static int stop_delay = 0;
 
 char digits[3];
 // for Display:
@@ -151,6 +159,7 @@ int flash_counter = 0;
 // for Display:
 int led_counter = 0;
 int digit_num = 0;
+
 
 /* Private functions ---------------------------------------------------------*/
 void Delay(__IO uint32_t nTime)
@@ -384,11 +393,6 @@ int main(void)
 	init_periph();
 	DRESULT result = 0;
 
-	if (SysTick_Config(SystemCoreClock / (1000))){
-		while(1); // Capture error
-	}
-	NVIC_SetPriority (SysTick_IRQn, 3);
-
 //	/* Unlock the Flash Program Erase controller */
 //	FLASH_Unlock();
 //	/* EEPROM Init */
@@ -455,12 +459,12 @@ int main(void)
 		write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
-	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
+	//GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
 	GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
 	update_status();
 	set_volume(0);
 
-	play_message(0);
+	play_message(message_power_up);
 
 	while (1)
 	{
@@ -641,7 +645,7 @@ int main(void)
 				}
 				current_button_read = 0;
 			}
-			display_data = ToBCD(dac_current_block*10 + result);
+			//display_data = ToBCD(dac_current_block*10 + result);
 			GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2 ; // Turn off the lights while changing them
 			GPIOB->BSRR = 0;
 			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_13 ;
@@ -732,23 +736,41 @@ int main(void)
 			}
 		}
 
+		if(!startup_delay && curr_status == STATUS_WORKING)
+		{
+			set_colarium_lamps(100);
+			set_fan1(percent_fan1);
+			set_fan2(percent_fan2);
+		}
+		if(!stop_delay && curr_status != STATUS_WORKING)
+		{
+			set_colarium_lamps(0);
+		}
 
 		IWDG_ReloadCounter(); //DEBUG
 	}
 }
 
-void TIM2_IRQHandler() {
-	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
+void EXTI0_1_IRQHandler() {
+	EXTI_ClearITPendingBit(EXTI_Line1);
 	{
-		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
-		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
-			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
-		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-		TIM_ICInit(TIM2, &TIM_ICInitStructure);
+		int i;
+		zero_crossed = 1;
+		if(EXTI_InitStructure.EXTI_Trigger == EXTI_Trigger_Rising)
+		{
+			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+			EXTI_Init(&EXTI_InitStructure);
+			pwm_cnt = 1;
+		}
+		else
+		{
+			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+			EXTI_Init(&EXTI_InitStructure);
+			pwm_cnt = PWM_START_DELAY;
+		}
 	}
-	zero_crossed = 1;
-
 }
+
 
 int ToBCD(int value){
 	int digits[3];
@@ -803,7 +825,7 @@ void ProcessButtons(void)
 						time_to_set = 0;
 						Gv_miliseconds = 0;
 						update_status();
-						play_message(0);
+//						play_message(0);
 					} else {
 						if (state > state_enter_service){
 							// Write EEPROM
@@ -1053,10 +1075,12 @@ void ProcessButtons(void)
 			percent_fan1 = fan_level;
 			set_lamps(100);
 			zero_crossed = 0;
-			set_colarium_lamps(100);
-			set_fan1(percent_fan1);
-			set_fan2(percent_fan2);
+			startup_delay = 2000;
+//			set_colarium_lamps(100);
+//			set_fan1(percent_fan1);
+//			set_fan2(percent_fan2);
 //			set_aquafresh(percent_aquafresh);
+			play_message(message_start_working);
 			set_volume(volume_level);
 		}
 		if (curr_status == STATUS_COOLING){
@@ -1071,13 +1095,14 @@ void ProcessButtons(void)
 					}
 				}
 				write_eeprom();
-				play_message(1);
+				play_message(message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
 			zero_crossed = 0;
 			set_lamps(0);
 			zero_crossed = 0;
-			set_colarium_lamps(0);
+			stop_delay = 1000;
+//			set_colarium_lamps(0);
 			fan_level = 10;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
@@ -1094,6 +1119,7 @@ void ProcessButtons(void)
 //			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
 			flash_mode = 0;
+			GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
 		}
 		prev_status = curr_status;
 
@@ -1140,52 +1166,84 @@ void update_status(void){
 }
 void TimingDelay_Decrement(void)
 {
-	if (Gv_SystickCounter != 0x00)
+	if (systick_prescaler )
 	{
-		Gv_SystickCounter--;
+		systick_prescaler--;
 	}
-	if( ++ refresh_counter>200L){
-		refresh_counter = 0;
-		flash_counter++;
-	}
-	if(aqua_fresh_level == 1){
-		if(Gv_miliseconds>59000L ){
-			set_aquafresh(1);
+	else
+	{
+		systick_prescaler = 10;
+		if (Gv_SystickCounter != 0x00)
+		{
+			Gv_SystickCounter--;
+		}
+		if( ++ refresh_counter>200L){
+			refresh_counter = 0;
+			flash_counter++;
+		}
+		if(aqua_fresh_level == 1){
+			if(Gv_miliseconds>59000L ){
+				set_aquafresh(1);
+			}
+			else {
+				set_aquafresh(0);
+			}
+		}
+		else if(aqua_fresh_level == 2){
+			if(Gv_miliseconds %15000 >14000L ){
+				set_aquafresh(1);
+			}
+			else {
+				set_aquafresh(0);
+			}
 		}
 		else {
 			set_aquafresh(0);
 		}
-	}
-	else if(aqua_fresh_level == 2){
-		if(Gv_miliseconds %15000 >14000L ){
-			set_aquafresh(1);
+		if(Gv_miliseconds++>60000L){
+			Gv_miliseconds = 0;
+			if (pre_time)pre_time--;
+			else if (main_time) {
+				main_time--;
+				minute_counter ++;
+			}
+			else if (cool_time) cool_time--;
+			update_status();
 		}
-		else {
-			set_aquafresh(0);
+		if  (Gv_UART_Timeout){
+			Gv_UART_Timeout--;
+			if(! Gv_UART_Timeout) {
+				rx_state = 0;
+				pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+			}
+		}
+		if(startup_delay)
+		{
+			startup_delay--;
+		}
+		if(stop_delay)
+		{
+			stop_delay--;
+		}
+	//	if(zero_crossed) zero_crossed-=10;
+	//	if(percent_fan1) set_fan1(zero_crossed && (!(zero_crossed > percent_fan1)));
+	}
+	if(pwm_cnt<PWM_START_DELAY + PWM_END_DELAY + PWM_LENGTH)
+	{
+
+		if(tim_base  == pwm_cnt && fan1_level)
+		{
+			GPIOA->BSRR = GPIO_BSRR_BS_3;
+		}
+		pwm_cnt++;
+	}
+	else
+	{
+		if(fan1_level < 100)
+		{
+			GPIOA->BSRR = GPIO_BSRR_BR_3;
 		}
 	}
-	else {
-		set_aquafresh(0);
-	}
-	if(Gv_miliseconds++>60000L){
-		Gv_miliseconds = 0;
-		if (pre_time)pre_time--;
-		else if (main_time) {
-			main_time--;
-			minute_counter ++;
-		}
-		else if (cool_time) cool_time--;
-		update_status();
-	}
-	if  (Gv_UART_Timeout){
-		Gv_UART_Timeout--;
-		if(! Gv_UART_Timeout) {
-			rx_state = 0;
-			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-		}
-	}
-//	if(zero_crossed) zero_crossed-=10;
-//	if(percent_fan1) set_fan1(zero_crossed && (!(zero_crossed > percent_fan1)));
 }
 
 
@@ -1271,16 +1329,16 @@ void set_start_out_signal(int value){
 }
 
 void set_lamps(int value){
-	int counter = 0;
+	int counter = 10000;
  	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-	else GPIOC->BRR = GPIO_BRR_BR_8;
-}
-void set_colarium_lamps(int value){
-	int counter = 0;
-	while(!zero_crossed && --counter);
 	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
 	else GPIOC->BRR = GPIO_BRR_BR_9;
+}
+void set_colarium_lamps(int value){
+	int counter = 10000;
+	while(!zero_crossed && --counter);
+	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
+	else GPIOC->BRR = GPIO_BRR_BR_8;
 }
 void set_fan2(int value){
 	if (value)
@@ -1292,60 +1350,44 @@ void set_fan2(int value){
 void set_fan1(int value){
 	//
 //	uint32 counter = 0xFFFFFFF;
-	uint32_t tim_base=7;
-	TIM_Cmd(TIM2, DISABLE);
 
-	zero_crossed = 0;
+
+	fan1_level = value;
+//	zero_crossed = 0;
 //	while (!zero_crossed && (counter--));
 	switch(value){
 	case 10:
-		tim_base = 60; //Reverse polarity
+		tim_base = PWM_START_DELAY + (2*PWM_LENGTH)/20;
 		break;
 	case 9:
-		tim_base = 32;
+		tim_base = PWM_START_DELAY + (14*PWM_LENGTH)/40;
 		break;
 	case 8:
-		tim_base = 36;
+		tim_base = PWM_START_DELAY + (16*PWM_LENGTH)/40;
 		break;
 	case 7:
-		tim_base = 40;
+		tim_base = PWM_START_DELAY + (17*PWM_LENGTH)/40;
 		break;
 	case 6:
-		tim_base = 45;
+		tim_base = PWM_START_DELAY + (18*PWM_LENGTH)/40;
 		break;
 	case 5:
-		tim_base = 50;
+		tim_base = PWM_START_DELAY + (19*PWM_LENGTH)/40;
 		break;
 	case 4:
-		tim_base = 55;
+		tim_base = PWM_START_DELAY + (20*PWM_LENGTH)/40;
 		break;
 	case 3:
-		tim_base = 60;
+		tim_base = PWM_START_DELAY + (21*PWM_LENGTH)/40;
 		break;
 	case 2:
-		tim_base = 65;
+		tim_base = PWM_START_DELAY + (22*PWM_LENGTH)/40;
 		break;
 	case 1:
 	default:
-		tim_base = 70;
+		tim_base = PWM_START_DELAY + (23*PWM_LENGTH)/40;
 		break;
 	}
-	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-	else  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-	TIM_TimeBaseStructure.TIM_Period = tim_base;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-
-	/* TIM2 PWM2 Mode configuration: Channel4 */
-	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
-	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
-	else  TIM_OCInitStructure.TIM_Pulse = 9;
-
-	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
-//	if (value) TIM_Cmd(TIM2, ENABLE);
-//	else TIM_Cmd(TIM2, DISABLE);
-	TIM_Cmd(TIM2, ENABLE);
 }
 
 void set_aquafresh(int value){
@@ -1490,7 +1532,15 @@ void usart_receive(void){
 void play_message(int index){
 
 	disk_initialize(0);
-	if(disk_status(0) == STA_NOINIT) return;
+	if(disk_status(0) == STA_NOINIT)
+	{
+		if(index == message_start_working)
+		{
+			fade_in_counter =  10000;
+			TIM_Cmd(TIM14, ENABLE);
+		}
+		return;
+	}
 	dac_ping_pong_state = 0;
 	dac_current_message = index;
 	DRESULT result;
@@ -1501,7 +1551,7 @@ void play_message(int index){
 
 	dac_ping_pong_state = 0;
 	dac_prev_ping_pong_state = dac_ping_pong_state;
-	dac_fade_in_counter =  100;
+	fade_in_counter =  10000;
 	if (result) dac_out_counter = dac_out_counter;
 	//DAC_Cmd(DAC_Channel_1, ENABLE);
 	//TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
@@ -1527,41 +1577,6 @@ void play_message(int index){
 
 }
 
-void I2C_MCP_send_byte(I2C_TypeDef* I2Cx, char data)
-{
-	int address = 0x2F; // MCP4018's fixed address
-	int length = 1;
-	uint32_t val = (address<<0)|(length<<16)| I2C_CR2_AUTOEND ;    //address SLAVE 7bits
-	while ((I2Cx->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
-	I2Cx->CR2&= ~val;
-	I2Cx->CR2|= val;
-	I2Cx->CR2 &=~ I2C_CR2_RD_WRN;                        //write
-	I2Cx->CR2 |= I2C_CR2_START;
-	while ((I2Cx->ISR & I2C_ISR_TXE)==0);    //while TXE ==0, buffer is full
-	I2Cx->TXDR=data;//example data
-}
-
-void set_pot_level(int channel, char level){
-	switch(channel){
-	case 1:
-		i2c_config_1();
-		I2C_MCP_send_byte(I2C1, level);
-	case 2:
-		i2c_config_1();
-		I2C_MCP_send_byte(I2C2, level);
-		break;
-	case 3:
-		i2c_config_2();
-		I2C_MCP_send_byte(I2C1, level);
-	case 4:
-		i2c_config_2();
-		I2C_MCP_send_byte(I2C2, level);
-		break;
-	default:
-		break;
-
-	}
-}
 
 void TIM14_IRQHandler() {
 	if(!(TIM14->SR & TIM_SR_UIF) != 0) return;
@@ -1571,41 +1586,56 @@ void TIM14_IRQHandler() {
 		if (dummy++<10) goto finish_TIM14_isr;
 		dummy = 0;//
 
-		if(dac_fade_in_counter){
-			dac_fade_in_counter--;
-			if(!(dac_fade_in_counter%100)){
-				set_volume(dac_fade_in_counter/10);
+		if(fade_in_counter){
+			fade_in_counter--;
+			if(!(fade_in_counter%1000)){
+				set_volume(fade_in_counter/1000);
 			}
-			if(!dac_fade_in_counter){
+			if(!fade_in_counter){
 				GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+				silence_counter = 100000;
 			}
 			goto finish_TIM14_isr;
 		}
 
-		if(dac_fade_out_counter){
-			GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
-
-			dac_fade_out_counter--;
-			if(!(dac_fade_out_counter%100)){
-				set_volume(10 - dac_fade_out_counter/10);
+		if(fade_out_counter){
+			fade_out_counter--;
+			if(!(fade_out_counter%1000)){
+				set_volume(10 - fade_out_counter/1000);
 			}
-			if(dac_fade_out_counter<=0){
+			if(fade_out_counter<=0){
 				TIM_Cmd(TIM14, DISABLE);
 			}
+			GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
 			goto finish_TIM14_isr;
 		}
 		unsigned char vol = 10; //10-volume_message%10;
-		TIM_SetCompare1(TIM14, dac_buffer[dac_ping_pong_state][dac_out_counter]/vol);
-
-		if(dac_out_counter<1024){
-			dac_out_counter++;
-		} else {
-			if (dac_current_block >= message_sector_counts[dac_current_message]){
-					dac_fade_out_counter = 100;
-					dac_current_message = -1;
+		if(disk_status(0) == STA_NOINIT)
+		{
+			if(silence_counter)
+			{
+				silence_counter--;
+				if(!silence_counter)
+				{
+					fade_out_counter = 10000;
+				}
 			}
-			dac_out_counter = 0;
-			dac_ping_pong_state = !dac_ping_pong_state;
+
+		}
+		else
+		{
+			TIM_SetCompare1(TIM14, dac_buffer[dac_ping_pong_state][dac_out_counter]/vol);
+
+			if(dac_out_counter<1024){
+				dac_out_counter++;
+			} else {
+				if (dac_current_block >= message_sector_counts[dac_current_message]){
+						fade_out_counter = 100;
+						dac_current_message = -1;
+				}
+				dac_out_counter = 0;
+				dac_ping_pong_state = !dac_ping_pong_state;
+			}
 		}
 
 	finish_TIM14_isr:
