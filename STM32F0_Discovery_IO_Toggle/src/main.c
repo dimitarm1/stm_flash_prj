@@ -389,46 +389,46 @@ int main(void)
 	}
 	NVIC_SetPriority (SysTick_IRQn, 3);
 
-	/* Unlock the Flash Program Erase controller */
-	FLASH_Unlock();
-	/* EEPROM Init */
-	EE_Init();
-	
-	
-	/* --- Store successively many values of the three variables in the EEPROM ---*/
-    /* Store 0x1000 values of Variable1 in EEPROM */
-    for (VarValue = 1; VarValue <= 0x64; VarValue++)
-    {
-      EE_WriteVariable(VirtAddVarTab[0], VarValue);
-    }
-  
-    /* read the last stored variables data*/
-    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
-  
-  
-    /* Store 0x2000 values of Variable2 in EEPROM */
-    for (VarValue = 1; VarValue <= 0xC8; VarValue++)
-    {
-      EE_WriteVariable(VirtAddVarTab[1], VarValue);
-    }
-  
-    /* read the last stored variables data*/
-    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
-    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
-  
-  
-    /* Store 0x3000 values of Variable3 in EEPROM */
-    for (VarValue = 1; VarValue <= 0x1C2; VarValue++)
-    {
-      EE_WriteVariable(VirtAddVarTab[2], VarValue);
-    }
-  
-    /* read the last stored variables data*/
-    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
-    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
-    EE_ReadVariable(VirtAddVarTab[2], &VarDataTab[2]);
-	
-	
+//	/* Unlock the Flash Program Erase controller */
+//	FLASH_Unlock();
+//	/* EEPROM Init */
+//	EE_Init();
+//
+//
+//	/* --- Store successively many values of the three variables in the EEPROM ---*/
+//    /* Store 0x1000 values of Variable1 in EEPROM */
+//    for (VarValue = 1; VarValue <= 0x64; VarValue++)
+//    {
+//      EE_WriteVariable(VirtAddVarTab[0], VarValue);
+//    }
+//
+//    /* read the last stored variables data*/
+//    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
+//
+//
+//    /* Store 0x2000 values of Variable2 in EEPROM */
+//    for (VarValue = 1; VarValue <= 0xC8; VarValue++)
+//    {
+//      EE_WriteVariable(VirtAddVarTab[1], VarValue);
+//    }
+//
+//    /* read the last stored variables data*/
+//    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
+//    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
+//
+//
+//    /* Store 0x3000 values of Variable3 in EEPROM */
+//    for (VarValue = 1; VarValue <= 0x1C2; VarValue++)
+//    {
+//      EE_WriteVariable(VirtAddVarTab[2], VarValue);
+//    }
+//
+//    /* read the last stored variables data*/
+//    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
+//    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
+//    EE_ReadVariable(VirtAddVarTab[2], &VarDataTab[2]);
+//
+//
 	/*
 	 * commads:
 	 * 0 - status 0-free, 1-Working, 2-COOLING, 3-WAITING
