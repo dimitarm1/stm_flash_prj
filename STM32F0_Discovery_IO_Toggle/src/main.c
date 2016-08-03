@@ -159,6 +159,7 @@ int flash_counter = 0;
 // for Display:
 int led_counter = 0;
 int digit_num = 0;
+__IO uint32_t LsiFreq = 40000;
 
 
 /* Private functions ---------------------------------------------------------*/
@@ -392,6 +393,29 @@ int main(void)
 	read_eeprom();
 	init_periph();
 	DRESULT result = 0;
+	/* IWDG timeout equal to 250 ms (the timeout may varies due to LSI frequency
+		 dispersion) */
+	/* Enable write access to IWDG_PR and IWDG_RLR registers */
+	IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+
+	/* IWDG counter clock: LSI/32 */
+	IWDG_SetPrescaler(IWDG_Prescaler_32);
+
+	/* Set counter reload value to obtain 250ms IWDG TimeOut.
+		Counter Reload Value = 250ms/IWDG counter clock period
+							  = 250ms / (LSI/32)
+							  = 0.25s / (LsiFreq/32)
+							  = LsiFreq/(32 * 4)
+							  = LsiFreq/128
+	   */
+	IWDG_SetReload(LsiFreq/128);
+
+	/* Reload IWDG counter */
+	IWDG_ReloadCounter();
+
+	/* Enable IWDG (the LSI oscillator will be enabled by hardware) */
+	IWDG_Enable();
+
 
 //	/* Unlock the Flash Program Erase controller */
 //	FLASH_Unlock();
@@ -746,8 +770,8 @@ int main(void)
 		{
 			set_colarium_lamps(0);
 		}
-
-		IWDG_ReloadCounter(); //DEBUG
+		 /* Reload IWDG counter */
+		IWDG_ReloadCounter();
 	}
 }
 
@@ -915,6 +939,8 @@ void ProcessButtons(void)
 					if(time_to_set < 25L){
 						if((!useUart && (volume_level == 1)) && (controller_address !=15)) time_to_set++;
 					}
+					else
+					{while(1);}
 				}
 				else if(state > state_enter_service){
 					start_counter = EXIT_SERVICE_TIME;
@@ -1074,7 +1100,7 @@ void ProcessButtons(void)
 			fan_level = 7;
 			percent_fan1 = fan_level;
 			set_lamps(100);
-			zero_crossed = 0;
+//			zero_crossed = 0;
 			startup_delay = 2000;
 //			set_colarium_lamps(100);
 //			set_fan1(percent_fan1);
@@ -1098,20 +1124,23 @@ void ProcessButtons(void)
 				play_message(message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
+			percent_aquafresh = 0;
+			aqua_fresh_level = 0;
 			zero_crossed = 0;
 			set_lamps(0);
-			zero_crossed = 0;
+//			zero_crossed = 0;
 			stop_delay = 1000;
 //			set_colarium_lamps(0);
 			fan_level = 10;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
-//			set_aquafresh(percent_aquafresh);
+			set_aquafresh(0);
 			flash_mode = 3;
 
 		}
 		if (curr_status == STATUS_FREE){
 			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+			aqua_fresh_level = 0;
 			//				set_lamps(0);
 			//set_colarium_lamps(0);
 			set_fan1(0);
@@ -1329,16 +1358,30 @@ void set_start_out_signal(int value){
 }
 
 void set_lamps(int value){
-	int counter = 10000;
- 	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-	else GPIOC->BRR = GPIO_BRR_BR_9;
+	if(!(GPIOC->ODR & GPIO_BSRR_BS_9) == !value) return;
+	else
+	{
+		int counter = 100000;
+		while(!zero_crossed && counter)
+		{
+			counter--;
+		}
+		if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+		else GPIOC->BRR = GPIO_BRR_BR_9;
+	}
 }
 void set_colarium_lamps(int value){
-	int counter = 10000;
-	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-	else GPIOC->BRR = GPIO_BRR_BR_8;
+	if(!(GPIOC->ODR & GPIO_BSRR_BS_8) == !value) return;
+	else
+	{
+		int counter = 100000;
+		while(!zero_crossed && counter)
+		{
+			counter--;
+		}
+		if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
+		else GPIOC->BRR = GPIO_BRR_BR_8;
+	}
 }
 void set_fan2(int value){
 	if (value)
