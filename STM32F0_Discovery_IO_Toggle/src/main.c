@@ -120,6 +120,8 @@ int dac_current_message;
 int fade_out_counter;
 int fade_in_counter;
 int silence_counter;
+char colaruim_lamps_state;
+char lamps_state;
 
 uint16_t data = 0;
 unsigned char  time_to_set = 0;
@@ -145,10 +147,6 @@ int aqua_fresh_level = 0;
 volatile int volume_level = 5;
 volatile int fan_level = 7;
 unsigned int external_read = 0;
-static unsigned char systick_prescaler = 0;
-static int pwm_cnt = 0;
-static int fan1_level = 0;
-uint32_t tim_base = 0;
 static int startup_delay = 0;
 static int stop_delay = 0;
 
@@ -393,6 +391,12 @@ int main(void)
 	read_eeprom();
 	init_periph();
 	DRESULT result = 0;
+
+	if (SysTick_Config(SystemCoreClock / (1000))){
+		while(1); // Capture error
+	}
+	NVIC_SetPriority (SysTick_IRQn, 3);
+
 	/* IWDG timeout equal to 250 ms (the timeout may varies due to LSI frequency
 		 dispersion) */
 	/* Enable write access to IWDG_PR and IWDG_RLR registers */
@@ -760,38 +764,49 @@ int main(void)
 			}
 		}
 
-		if(!startup_delay && curr_status == STATUS_WORKING)
+		if(startup_delay)
 		{
-			set_colarium_lamps(100);
-			set_fan1(percent_fan1);
-			set_fan2(percent_fan2);
+			startup_delay--;
+			if(!startup_delay && curr_status == STATUS_WORKING)
+			{
+				set_colarium_lamps(100);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+			}
 		}
-		if(!stop_delay && curr_status != STATUS_WORKING)
+		if(stop_delay)
 		{
-			set_colarium_lamps(0);
+			stop_delay--;
+			if(!stop_delay && curr_status != STATUS_WORKING)
+			{
+				set_colarium_lamps(0);
+			}
 		}
 		 /* Reload IWDG counter */
 		IWDG_ReloadCounter();
 	}
 }
 
-void EXTI0_1_IRQHandler() {
-	EXTI_ClearITPendingBit(EXTI_Line1);
+void TIM2_IRQHandler() {
+	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
 	{
-		int i;
 		zero_crossed = 1;
-		if(EXTI_InitStructure.EXTI_Trigger == EXTI_Trigger_Rising)
-		{
-			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-			EXTI_Init(&EXTI_InitStructure);
-			pwm_cnt = 1;
-		}
-		else
-		{
-			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-			EXTI_Init(&EXTI_InitStructure);
-			pwm_cnt = PWM_START_DELAY;
-		}
+		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
+		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
+			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
+		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+			TIM_ICInit(TIM2, &TIM_ICInitStructure);
+	}
+
+	if(!(GPIOC->ODR & GPIO_BSRR_BS_8) != !colaruim_lamps_state)
+	{
+		if (colaruim_lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_8;
+		else GPIOC->BRR = GPIO_BRR_BR_8;
+	}
+	if(!(GPIOC->ODR & GPIO_BSRR_BS_9) != !lamps_state) return;
+	{
+		if (lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+		else GPIOC->BRR = GPIO_BRR_BR_9;
 	}
 }
 
@@ -1195,84 +1210,53 @@ void update_status(void){
 }
 void TimingDelay_Decrement(void)
 {
-	if (systick_prescaler )
+	if (Gv_SystickCounter != 0x00)
 	{
-		systick_prescaler--;
+		Gv_SystickCounter--;
 	}
-	else
-	{
-		systick_prescaler = 10;
-		if (Gv_SystickCounter != 0x00)
-		{
-			Gv_SystickCounter--;
-		}
-		if( ++ refresh_counter>200L){
-			refresh_counter = 0;
-			flash_counter++;
-		}
-		if(aqua_fresh_level == 1){
-			if(Gv_miliseconds>59000L ){
-				set_aquafresh(1);
-			}
-			else {
-				set_aquafresh(0);
-			}
-		}
-		else if(aqua_fresh_level == 2){
-			if(Gv_miliseconds %15000 >14000L ){
-				set_aquafresh(1);
-			}
-			else {
-				set_aquafresh(0);
-			}
+	if( ++ refresh_counter>200L){
+		refresh_counter = 0;
+		flash_counter++;
+	}
+	if(aqua_fresh_level == 1){
+		if(Gv_miliseconds>59000L ){
+			set_aquafresh(1);
 		}
 		else {
 			set_aquafresh(0);
 		}
-		if(Gv_miliseconds++>60000L){
-			Gv_miliseconds = 0;
-			if (pre_time)pre_time--;
-			else if (main_time) {
-				main_time--;
-				minute_counter ++;
-			}
-			else if (cool_time) cool_time--;
-			update_status();
+	}
+	else if(aqua_fresh_level == 2){
+		if(Gv_miliseconds %15000 >14000L ){
+			set_aquafresh(1);
 		}
-		if  (Gv_UART_Timeout){
-			Gv_UART_Timeout--;
-			if(! Gv_UART_Timeout) {
-				rx_state = 0;
-				pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
-			}
+		else {
+			set_aquafresh(0);
 		}
-		if(startup_delay)
-		{
-			startup_delay--;
+	}
+	else {
+		set_aquafresh(0);
+	}
+	if(Gv_miliseconds++>60000L){
+		Gv_miliseconds = 0;
+		if (pre_time)pre_time--;
+		else if (main_time) {
+			main_time--;
+			minute_counter ++;
 		}
-		if(stop_delay)
-		{
-			stop_delay--;
+		else if (cool_time) cool_time--;
+		update_status();
+	}
+	if  (Gv_UART_Timeout){
+		Gv_UART_Timeout--;
+		if(! Gv_UART_Timeout) {
+			rx_state = 0;
+			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 		}
+	}
+
 	//	if(zero_crossed) zero_crossed-=10;
 	//	if(percent_fan1) set_fan1(zero_crossed && (!(zero_crossed > percent_fan1)));
-	}
-	if(pwm_cnt<PWM_START_DELAY + PWM_END_DELAY + PWM_LENGTH)
-	{
-
-		if(tim_base  == pwm_cnt && fan1_level)
-		{
-			GPIOA->BSRR = GPIO_BSRR_BS_3;
-		}
-		pwm_cnt++;
-	}
-	else
-	{
-		if(fan1_level < 100)
-		{
-			GPIOA->BSRR = GPIO_BSRR_BR_3;
-		}
-	}
 }
 
 
@@ -1358,30 +1342,10 @@ void set_start_out_signal(int value){
 }
 
 void set_lamps(int value){
-	if(!(GPIOC->ODR & GPIO_BSRR_BS_9) == !value) return;
-	else
-	{
-		int counter = 100000;
-		while(!zero_crossed && counter)
-		{
-			counter--;
-		}
-		if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-		else GPIOC->BRR = GPIO_BRR_BR_9;
-	}
+	lamps_state = value;
 }
 void set_colarium_lamps(int value){
-	if(!(GPIOC->ODR & GPIO_BSRR_BS_8) == !value) return;
-	else
-	{
-		int counter = 100000;
-		while(!zero_crossed && counter)
-		{
-			counter--;
-		}
-		if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-		else GPIOC->BRR = GPIO_BRR_BR_8;
-	}
+	colaruim_lamps_state = value;
 }
 void set_fan2(int value){
 	if (value)
@@ -1393,44 +1357,61 @@ void set_fan2(int value){
 void set_fan1(int value){
 	//
 //	uint32 counter = 0xFFFFFFF;
+	uint32_t tim_base=7;
+	TIM_Cmd(TIM2, DISABLE);
 
+	zero_crossed = 0;
 
-	fan1_level = value;
-//	zero_crossed = 0;
 //	while (!zero_crossed && (counter--));
 	switch(value){
 	case 10:
-		tim_base = PWM_START_DELAY + (2*PWM_LENGTH)/20;
+		tim_base = 60; //Reverse polarity
 		break;
 	case 9:
-		tim_base = PWM_START_DELAY + (14*PWM_LENGTH)/40;
+		tim_base = 32;
 		break;
 	case 8:
-		tim_base = PWM_START_DELAY + (16*PWM_LENGTH)/40;
+		tim_base = 36;
 		break;
 	case 7:
-		tim_base = PWM_START_DELAY + (17*PWM_LENGTH)/40;
+		tim_base = 40;
 		break;
 	case 6:
-		tim_base = PWM_START_DELAY + (18*PWM_LENGTH)/40;
+		tim_base = 45;
 		break;
 	case 5:
-		tim_base = PWM_START_DELAY + (19*PWM_LENGTH)/40;
+		tim_base = 50;
 		break;
 	case 4:
-		tim_base = PWM_START_DELAY + (20*PWM_LENGTH)/40;
+		tim_base = 55;
 		break;
 	case 3:
-		tim_base = PWM_START_DELAY + (21*PWM_LENGTH)/40;
+		tim_base = 60;
 		break;
 	case 2:
-		tim_base = PWM_START_DELAY + (22*PWM_LENGTH)/40;
+		tim_base = 65;
 		break;
 	case 1:
 	default:
-		tim_base = PWM_START_DELAY + (23*PWM_LENGTH)/40;
+		tim_base = 70;
 		break;
 	}
+	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+	else  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_TimeBaseStructure.TIM_Period = tim_base;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+
+	/* TIM2 PWM2 Mode configuration: Channel4 */
+	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
+	else  TIM_OCInitStructure.TIM_Pulse = 9;
+
+	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+//	if (value) TIM_Cmd(TIM2, ENABLE);
+//	else TIM_Cmd(TIM2, DISABLE);
+	TIM_Cmd(TIM2, ENABLE);
 }
 
 void set_aquafresh(int value){
@@ -1580,7 +1561,7 @@ void play_message(int index){
 		if(index == message_start_working)
 		{
 			fade_in_counter =  10000;
-			TIM_Cmd(TIM14, ENABLE);
+			//TIM_Cmd(TIM14, ENABLE);
 		}
 		return;
 	}

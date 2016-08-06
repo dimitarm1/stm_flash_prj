@@ -18,9 +18,6 @@
 #define EXIT_SERVICE_TIME   (1200000L)
 #define START_DELAY         (200000L)
 
-#define PWM_LENGTH			 (79)
-#define PWM_START_DELAY      (12)
-#define PWM_END_DELAY        (1)
 
 // Buttons
 #define BUTTON_PLUS      (0x004)

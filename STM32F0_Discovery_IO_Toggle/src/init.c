@@ -6,7 +6,6 @@
  */
 #include "init.h"
 extern  unsigned char controller_address;
-extern EXTI_InitTypeDef   			EXTI_InitStructure;
 
 int selected_I2C_pair = 0;
 
@@ -32,7 +31,7 @@ void init_periph(){
 
 
 	/* Configure PA in output push-pull mode (for segments)*/
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_8 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_8 | GPIO_Pin_11| GPIO_Pin_12 ; // LATER!| GPIO_Pin_13 | GPIO_Pin_14;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -133,70 +132,81 @@ void init_periph(){
 	// Zero cross
 	// Zero cross detection timer
 	//Configure Timer 2 pins:   ----------------------------
-	//Configure EXTI pin:   ----------------------------
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_1;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+	//Configure Timer 2 pins:   ----------------------------
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_2); // TIM2_CH2
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_2); // TIM2_CH4
+
 	// Zero cross detection timer
 
-//	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
-//	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-//	TIM_TimeBaseStructure.TIM_Period = 70 ;
-//	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-//	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-//
-//	/* TIM2 PWM2 Mode configuration: Channel4 */
-//	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
-//	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
-//	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-//	TIM_OCInitStructure.TIM_Pulse = 65;
-//	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-//
-//	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
-//
-//	/* TIM2 configuration in Input Capture Mode */
-//
-//	TIM_ICStructInit(&TIM_ICInitStructure);
-//	TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
-//	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-//	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
-//	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
-//	TIM_ICInitStructure.TIM_ICFilter = 0;
-//
-//
-//	TIM_ICInit(TIM2, &TIM_ICInitStructure);
-//
-//	/* One Pulse Mode selection */
-//	TIM_SelectOnePulseMode(TIM2, TIM_OPMode_Single);
-//
-//	/* Input Trigger selection */
-//	TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
-//
-//	/* Slave Mode selection: Trigger Mode */
-//	TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Trigger);
-//
-//	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
-//
-//	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-//	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
-//
-//	/* TIM2 enable counter */
-//	TIM_Cmd(TIM2, ENABLE);
+	TIM_TimeBaseStructure.TIM_Prescaler = 4000 ;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_Period = 70 ;
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 
-	// Zero cross detection
-	SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOA,EXTI_PinSource3); // PA3 set as EXTI source
-	EXTI_InitStructure.EXTI_Line = EXTI_Line1;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-	EXTI_Init(&EXTI_InitStructure);
+	/* TIM2 PWM2 Mode configuration: Channel4 */
+	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+	TIM_OCInitStructure.TIM_Pulse = 65;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
-	NVIC_EnableIRQ(EXTI0_1_IRQn);
+	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
 
+	/* TIM2 configuration in Input Capture Mode */
+
+	TIM_ICStructInit(&TIM_ICInitStructure);
+	TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
+	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+	TIM_ICInitStructure.TIM_ICFilter = 0;
+
+
+	TIM_ICInit(TIM2, &TIM_ICInitStructure);
+
+	/* One Pulse Mode selection */
+	TIM_SelectOnePulseMode(TIM2, TIM_OPMode_Single);
+
+	/* Input Trigger selection */
+	TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
+
+	/* Slave Mode selection: Trigger Mode */
+	TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Trigger);
+
+	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
+
+	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
+
+	/* TIM2 enable counter */
+	TIM_Cmd(TIM2, ENABLE);
+
+	/* Input Trigger selection */
+	TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
+
+	/* Slave Mode selection: Trigger Mode */
+	TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Trigger);
+
+	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
+
+	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
+
+	/* TIM2 enable counter */
+	TIM_Cmd(TIM2, ENABLE);
 
 	if(controller_address !=15){ // Address 15 reserved for external control
 
@@ -313,9 +323,6 @@ void init_periph(){
 //		while(1); // Capture error
 //	}
 //	NVIC_SetPriority (SysTick_IRQn, 3);
-	SysTick_Config(SystemCoreClock / (10000));
-	NVIC_SetPriority (SysTick_IRQn, 3);
-
 }
 
 
