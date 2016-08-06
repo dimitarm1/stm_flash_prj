@@ -31,6 +31,9 @@
 #define BUTTON_VOL_PLUS  (0x020)
 #define BUTTON_VOL_MINUS (0x040)
 
+#define ON 100
+#define OFF 0
+
 
 
 #endif /* DEFINES_H_ */

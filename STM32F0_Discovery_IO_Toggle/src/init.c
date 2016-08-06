@@ -248,7 +248,7 @@ void init_periph(){
 	// Timer 6 used for DAC playback
 	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN; // Enable TIM6 clock
 	TIM6->PSC = 10; // Set prescaler to 41999
-	TIM6->ARR = 20; // Set auto-reload to 5999
+	TIM6->ARR = 599; // Set auto-reload to 5999
 	// TIM6->CR1 |= TIM_CR1_OPM; // One pulse mode
 	TIM6->CR1 |= TIM_CR1_ARPE; // Auto reload
 	TIM6->EGR |= TIM_EGR_UG; // Force update
@@ -257,34 +257,39 @@ void init_periph(){
 	//NVIC_EnableIRQ(TIM6_DAC_IRQn); // Enable TIM6 IRQ
 	//TIM6->CR1 |= TIM_CR1_CEN; // Enable TIM6 counter
 
+
+	//
+	// Това обърква таймера за вентилатора!!! Да се провери каква е връзката между двата таймера!!
+	//
+	//
 	/* Configure PA.04 (TIM14_CH1) as AF4 */
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_4); // Tim14_CH1
-
-	RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; // Enable TIM14 clock
-
-	TIM_TimeBaseStructure.TIM_Prescaler = 1 ;
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseStructure.TIM_Period = 255 ;
-	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-	TIM_TimeBaseInit(TIM14, &TIM_TimeBaseStructure);
-
-	/* TIM2 PWM2 Mode configuration: Channel4 */
-	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_Pulse = 128;
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-
-	TIM_OC1Init(TIM14, &TIM_OCInitStructure);
-	TIM_OC1PreloadConfig(TIM14, TIM_OCPreload_Enable);
-	TIM14->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	NVIC_EnableIRQ(TIM14_IRQn); // Enable TIM14 IRQ
-	//TIM_Cmd(TIM14, ENABLE);
+//	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_4;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+//	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+//	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+//	GPIO_Init(GPIOA, &GPIO_InitStructure);
+//	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_4); // Tim14_CH1
+//
+//	RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; // Enable TIM14 clock
+//
+//	TIM_TimeBaseStructure.TIM_Prescaler = 1 ;
+//	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+//	TIM_TimeBaseStructure.TIM_Period = 255;
+//	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+//	TIM_TimeBaseInit(TIM14, &TIM_TimeBaseStructure);
+//
+//	/* TIM2 PWM2 Mode configuration: Channel4 */
+//	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+//	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+//	TIM_OCInitStructure.TIM_Pulse = 128;
+//	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+//	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+//
+//	TIM_OC1Init(TIM14, &TIM_OCInitStructure);
+//	TIM_OC1PreloadConfig(TIM14, TIM_OCPreload_Enable);
+//	TIM14->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+//	NVIC_EnableIRQ(TIM14_IRQn); // Enable TIM14 IRQ
+//	TIM_Cmd(TIM14, ENABLE);
 
 
 #ifdef USE_DAC

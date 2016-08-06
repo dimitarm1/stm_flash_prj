@@ -120,8 +120,8 @@ int dac_current_message;
 int fade_out_counter;
 int fade_in_counter;
 int silence_counter;
-char colaruim_lamps_state;
-char lamps_state;
+int colaruim_lamps_state;
+int lamps_state;
 
 uint16_t data = 0;
 unsigned char  time_to_set = 0;
@@ -633,12 +633,12 @@ int main(void)
 			if(!(pre_time || main_time || cool_time)){
 				// Some Paranoia...
 				// turn off all
-				set_lamps(0);
-				set_colarium_lamps(0);
+				set_lamps(OFF);
+				set_colarium_lamps(OFF);
 				percent_fan1 = 0;
 				set_fan1(0);
-				set_fan2(0);
-				set_aquafresh(0);
+				set_fan2(OFF);
+				set_aquafresh(OFF);
 
 //				state = state_set_time;
 			}
@@ -764,24 +764,7 @@ int main(void)
 			}
 		}
 
-		if(startup_delay)
-		{
-			startup_delay--;
-			if(!startup_delay && curr_status == STATUS_WORKING)
-			{
-				set_colarium_lamps(100);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-			}
-		}
-		if(stop_delay)
-		{
-			stop_delay--;
-			if(!stop_delay && curr_status != STATUS_WORKING)
-			{
-				set_colarium_lamps(0);
-			}
-		}
+
 		 /* Reload IWDG counter */
 		IWDG_ReloadCounter();
 	}
@@ -790,24 +773,18 @@ int main(void)
 void TIM2_IRQHandler() {
 	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
 	{
-		zero_crossed = 1;
 		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
 			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
 		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-			TIM_ICInit(TIM2, &TIM_ICInitStructure);
+		TIM_ICInit(TIM2, &TIM_ICInitStructure);
 	}
+	zero_crossed = 1;
 
-	if(!(GPIOC->ODR & GPIO_BSRR_BS_8) != !colaruim_lamps_state)
-	{
-		if (colaruim_lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-		else GPIOC->BRR = GPIO_BRR_BR_8;
-	}
-	if(!(GPIOC->ODR & GPIO_BSRR_BS_9) != !lamps_state) return;
-	{
-		if (lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-		else GPIOC->BRR = GPIO_BRR_BR_9;
-	}
+	if (colaruim_lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_8;
+	else GPIOC->BRR = GPIO_BRR_BR_8;
+	if (lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_9;
+	else GPIOC->BRR = GPIO_BRR_BR_9;
 }
 
 
@@ -1114,7 +1091,7 @@ void ProcessButtons(void)
 //			volume_level = 6;
 			fan_level = 7;
 			percent_fan1 = fan_level;
-			set_lamps(100);
+			set_lamps(ON);
 //			zero_crossed = 0;
 			startup_delay = 2000;
 //			set_colarium_lamps(100);
@@ -1142,7 +1119,7 @@ void ProcessButtons(void)
 			percent_aquafresh = 0;
 			aqua_fresh_level = 0;
 			zero_crossed = 0;
-			set_lamps(0);
+			set_lamps(OFF);
 //			zero_crossed = 0;
 			stop_delay = 1000;
 //			set_colarium_lamps(0);
@@ -1156,10 +1133,10 @@ void ProcessButtons(void)
 		if (curr_status == STATUS_FREE){
 			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 			aqua_fresh_level = 0;
-			//				set_lamps(0);
-			//set_colarium_lamps(0);
+			set_lamps(OFF);
+			set_colarium_lamps(OFF);
 			set_fan1(0);
-			set_fan2(0);
+			set_fan2(OFF);
 //			set_aquafresh(percent_aquafresh);
 			minute_counter = 0;
 			flash_mode = 0;
@@ -1208,6 +1185,8 @@ void update_status(void){
 		curr_status = STATUS_FREE;
 	}
 }
+
+// Each 1 mS
 void TimingDelay_Decrement(void)
 {
 	if (Gv_SystickCounter != 0x00)
@@ -1237,6 +1216,56 @@ void TimingDelay_Decrement(void)
 	else {
 		set_aquafresh(0);
 	}
+
+	if(fade_in_counter){
+		fade_in_counter--;
+		if(!(fade_in_counter%100)){
+			set_volume(fade_in_counter/100);
+		}
+		if(!fade_in_counter){
+			GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+			silence_counter = 10000;
+		}
+	}
+
+	if(fade_out_counter){
+		fade_out_counter--;
+		if(!(fade_out_counter%100)){
+			set_volume(10 - fade_out_counter/100);
+		}
+		if(fade_out_counter<=0){
+			TIM_Cmd(TIM14, DISABLE);
+		}
+		GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
+	}
+	if(silence_counter)
+	{
+		silence_counter--;
+		if(!silence_counter)
+		{
+			fade_out_counter = 1000;
+		}
+	}
+
+	if(startup_delay)
+	{
+		startup_delay--;
+		if(!startup_delay && curr_status == STATUS_WORKING)
+		{
+			set_colarium_lamps(ON);
+			set_fan1(percent_fan1);
+			set_fan2(ON);
+		}
+	}
+	if(stop_delay)
+	{
+		stop_delay--;
+		if(!stop_delay && curr_status != STATUS_WORKING)
+		{
+			set_colarium_lamps(OFF);
+		}
+	}
+
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
 		if (pre_time)pre_time--;
@@ -1560,7 +1589,7 @@ void play_message(int index){
 	{
 		if(index == message_start_working)
 		{
-			fade_in_counter =  10000;
+			fade_in_counter =  1000;
 			//TIM_Cmd(TIM14, ENABLE);
 		}
 		return;
@@ -1575,7 +1604,7 @@ void play_message(int index){
 
 	dac_ping_pong_state = 0;
 	dac_prev_ping_pong_state = dac_ping_pong_state;
-	fade_in_counter =  10000;
+	fade_in_counter =  1000;
 	if (result) dac_out_counter = dac_out_counter;
 	//DAC_Cmd(DAC_Channel_1, ENABLE);
 	//TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
@@ -1610,40 +1639,40 @@ void TIM14_IRQHandler() {
 		if (dummy++<10) goto finish_TIM14_isr;
 		dummy = 0;//
 
-		if(fade_in_counter){
-			fade_in_counter--;
-			if(!(fade_in_counter%1000)){
-				set_volume(fade_in_counter/1000);
-			}
-			if(!fade_in_counter){
-				GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
-				silence_counter = 100000;
-			}
-			goto finish_TIM14_isr;
-		}
-
-		if(fade_out_counter){
-			fade_out_counter--;
-			if(!(fade_out_counter%1000)){
-				set_volume(10 - fade_out_counter/1000);
-			}
-			if(fade_out_counter<=0){
-				TIM_Cmd(TIM14, DISABLE);
-			}
-			GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
-			goto finish_TIM14_isr;
-		}
+//		if(fade_in_counter){
+//			fade_in_counter--;
+//			if(!(fade_in_counter%1000)){
+//				set_volume(fade_in_counter/1000);
+//			}
+//			if(!fade_in_counter){
+//				GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+//				silence_counter = 100000;
+//			}
+//			goto finish_TIM14_isr;
+//		}
+//
+//		if(fade_out_counter){
+//			fade_out_counter--;
+//			if(!(fade_out_counter%1000)){
+//				set_volume(10 - fade_out_counter/1000);
+//			}
+//			if(fade_out_counter<=0){
+//				TIM_Cmd(TIM14, DISABLE);
+//			}
+//			GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
+//			goto finish_TIM14_isr;
+//		}
 		unsigned char vol = 10; //10-volume_message%10;
 		if(disk_status(0) == STA_NOINIT)
 		{
-			if(silence_counter)
-			{
-				silence_counter--;
-				if(!silence_counter)
-				{
-					fade_out_counter = 10000;
-				}
-			}
+//			if(silence_counter)
+//			{
+//				silence_counter--;
+//				if(!silence_counter)
+//				{
+//					fade_out_counter = 10000;
+//				}
+//			}
 
 		}
 		else
