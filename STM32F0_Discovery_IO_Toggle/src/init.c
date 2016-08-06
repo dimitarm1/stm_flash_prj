@@ -194,20 +194,6 @@ void init_periph(){
 	/* TIM2 enable counter */
 	TIM_Cmd(TIM2, ENABLE);
 
-	/* Input Trigger selection */
-	TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
-
-	/* Slave Mode selection: Trigger Mode */
-	TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Trigger);
-
-	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
-
-	TIM2->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-	NVIC_EnableIRQ(TIM2_IRQn); // Enable TIM2 IRQ
-
-	/* TIM2 enable counter */
-	TIM_Cmd(TIM2, ENABLE);
-
 	if(controller_address !=15){ // Address 15 reserved for external control
 
 
@@ -323,7 +309,6 @@ void init_periph(){
 //		while(1); // Capture error
 //	}
 //	NVIC_SetPriority (SysTick_IRQn, 3);
+
 }
-
-
 
