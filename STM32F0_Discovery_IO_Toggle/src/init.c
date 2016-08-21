@@ -174,6 +174,8 @@ void init_periph(){
 	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
 	TIM_ICInitStructure.TIM_ICFilter = 0;
 
+	TIM_ARRPreloadConfig(TIM2, DISABLE);  // Auto reload register not buffered
+
 
 	TIM_ICInit(TIM2, &TIM_ICInitStructure);
 

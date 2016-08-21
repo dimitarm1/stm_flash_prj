@@ -146,6 +146,7 @@ int zero_crossed = 0;
 int aqua_fresh_level = 0;
 volatile int volume_level = 5;
 volatile int fan_level = 7;
+uint32_t tim_base=7; // Timer 2 time delay
 unsigned int external_read = 0;
 static int startup_delay = 0;
 static int stop_delay = 0;
@@ -418,7 +419,7 @@ int main(void)
 	IWDG_ReloadCounter();
 
 	/* Enable IWDG (the LSI oscillator will be enabled by hardware) */
-	IWDG_Enable();
+//	IWDG_Enable();
 
 
 //	/* Unlock the Flash Program Erase controller */
@@ -773,18 +774,25 @@ int main(void)
 void TIM2_IRQHandler() {
 	if((TIM2->SR & TIM_SR_UIF) != 0) // If update flag is set
 	{
-		TIM2->SR &= ~TIM_SR_UIF; // Interrupt has been handled }
 		if(TIM_ICInitStructure.TIM_ICPolarity == TIM_ICPolarity_Rising)
+		{
 			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
-		else TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-		TIM_ICInit(TIM2, &TIM_ICInitStructure);
+			TIM_ICInit(TIM2, &TIM_ICInitStructure);
+		}
+		else
+		{
+			TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+			TIM_ICInit(TIM2, &TIM_ICInitStructure);
+		}
 	}
+
 	zero_crossed = 1;
 
 	if (colaruim_lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_8;
 	else GPIOC->BRR = GPIO_BRR_BR_8;
 	if (lamps_state)	GPIOC->BSRR = GPIO_BSRR_BS_9;
 	else GPIOC->BRR = GPIO_BRR_BR_9;
+	TIM2->SR = 0; // Interrupt has been handled }
 }
 
 
@@ -1386,7 +1394,6 @@ void set_fan2(int value){
 void set_fan1(int value){
 	//
 //	uint32 counter = 0xFFFFFFF;
-	uint32_t tim_base=7;
 	TIM_Cmd(TIM2, DISABLE);
 
 	zero_crossed = 0;
@@ -1397,28 +1404,28 @@ void set_fan1(int value){
 		tim_base = 60; //Reverse polarity
 		break;
 	case 9:
-		tim_base = 32;
+		tim_base = 37;
 		break;
 	case 8:
-		tim_base = 36;
+		tim_base = 43;
 		break;
 	case 7:
-		tim_base = 40;
+		tim_base = 48;
 		break;
 	case 6:
-		tim_base = 45;
+		tim_base = 52;
 		break;
 	case 5:
-		tim_base = 50;
+		tim_base = 56;
 		break;
 	case 4:
-		tim_base = 55;
+		tim_base = 59;
 		break;
 	case 3:
-		tim_base = 60;
+		tim_base = 62;
 		break;
 	case 2:
-		tim_base = 65;
+		tim_base = 63;
 		break;
 	case 1:
 	default:
@@ -1429,7 +1436,6 @@ void set_fan1(int value){
 	else  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 	TIM_TimeBaseStructure.TIM_Period = tim_base;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-
 	/* TIM2 PWM2 Mode configuration: Channel4 */
 	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
 	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
