@@ -37,16 +37,16 @@
 #define SPIx_SD_SCK_SOURCE              GPIO_PinSource5
 #define SPIx_SD_SCK_AF                  GPIO_AF_SPI1
 
-#define SPIx_SD_MISO_PIN                GPIO_Pin_6
+#define SPIx_SD_MISO_PIN                GPIO_Pin_7
 #define SPIx_SD_MISO_GPIO_PORT          GPIOA
 #define SPIx_SD_MISO_GPIO_CLK           RCC_AHBPeriph_GPIOA
-#define SPIx_SD_MISO_SOURCE             GPIO_PinSource6
+#define SPIx_SD_MISO_SOURCE             GPIO_PinSource7
 #define SPIx_SD_MISO_AF                 GPIO_AF_SPI1
 
-#define SPIx_SD_MOSI_PIN                GPIO_Pin_7
+#define SPIx_SD_MOSI_PIN                GPIO_Pin_6
 #define SPIx_SD_MOSI_GPIO_PORT          GPIOA
 #define SPIx_SD_MOSI_GPIO_CLK           RCC_AHBPeriph_GPIOA
-#define SPIx_SD_MOSI_SOURCE             GPIO_PinSource7
+#define SPIx_SD_MOSI_SOURCE             GPIO_PinSource6
 #define SPIx_SD_MOSI_AF                 GPIO_AF_SPI1
 
 #define SPIx_SD_NSS_PIN                 GPIO_Pin_15
@@ -429,7 +429,7 @@ static uint8_t send_cmd(uint8_t cmd, uint32_t arg) {
 
   /* Declaration des variables ----------------------------- */
   uint8_t n, res;
-  volatile uint8_t test;
+
   /* Test si c'est cmd ACDM -------------------------------- */
   if (cmd & 0x80) {
     cmd &= 0x7F;
@@ -448,12 +448,12 @@ static uint8_t send_cmd(uint8_t cmd, uint32_t arg) {
   }
 
   /* Send command packet ----------------------------------- */
-  test = stm32_spi_rw(cmd); // Send command index
+  stm32_spi_rw(cmd); // Send command index
 
-  test = stm32_spi_rw((uint8_t)(arg >> 24)); // Send argument[31..24]
-  test = stm32_spi_rw((uint8_t)(arg >> 16)); // Send argument[23..16]
-  test = stm32_spi_rw((uint8_t)(arg >> 8)); // Send argument[15..8]
-  test = stm32_spi_rw((uint8_t) arg); // Send argument[7..0]
+  stm32_spi_rw((uint8_t)(arg >> 24)); // Send argument[31..24]
+  stm32_spi_rw((uint8_t)(arg >> 16)); // Send argument[23..16]
+  stm32_spi_rw((uint8_t)(arg >> 8)); // Send argument[15..8]
+  stm32_spi_rw((uint8_t) arg); // Send argument[7..0]
 
   n = 0x01; // Stop : Dummy CRC
   if (cmd == CMD0)
