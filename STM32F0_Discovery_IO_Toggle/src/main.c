@@ -368,8 +368,8 @@ int main(void)
 	  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	  /* Configure PA0 -  PA2 in output push-pull mode (for Digits 0,2 )*/
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 ;
+	  /* Configure PA0 -  PA2 in output push-pull mode (for Digits 0,2,1* )*/
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_1 ; // *- For compatibility with old pcb
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -915,18 +915,18 @@ void TimingDelay_Decrement(void)
 			case 2:
 				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
 				GPIOA->BSRR = GPIO_BSRR_BR_0 ;
-				GPIOC->BSRR = GPIO_BSRR_BR_3;
+				GPIOC->BSRR = GPIO_BSRR_BR_3; GPIOA->BSRR = GPIO_BSRR_BR_1; // for compatibility with old pcb!!!
 				break;
 
 			case 1:
-				GPIOC->BSRR = GPIO_BSRR_BS_3 ;
+				GPIOC->BSRR = GPIO_BSRR_BS_3 ; GPIOA->BSRR = GPIO_BSRR_BS_1 ;
 				GPIOA->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_2;
 				break;
 			case 0:
 			default:
 				GPIOA->BSRR = GPIO_BSRR_BS_0 ;
 				GPIOA->BSRR = GPIO_BSRR_BR_2;
-				GPIOC->BSRR = GPIO_BSRR_BR_3;
+				GPIOC->BSRR = GPIO_BSRR_BR_3; GPIOA->BSRR = GPIO_BSRR_BR_1;
 				break;
 			}
 		}
