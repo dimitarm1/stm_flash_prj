@@ -880,6 +880,8 @@ void ProcessButtons(void)
 					update_status();
 					percent_fan1 = 10;
 					set_fan1(percent_fan1);
+					aqua_fresh_level = 0;
+					percent_aquafresh = 0;
 				}
 				if(state >= state_enter_service){
 					start_counter = 0;
