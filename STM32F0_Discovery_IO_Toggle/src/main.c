@@ -1528,7 +1528,7 @@ void set_fan1(int value){
 		break;
 	case 1:
 	default:
-		tim_base = 70;
+		tim_base = 65;
 		break;
 	}
 	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
