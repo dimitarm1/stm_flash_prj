@@ -400,6 +400,7 @@ int main(void)
 	static uint8_t counter=0;
 	SystemInit();
 //	while (stop);
+	new_read_eeprom();
 	//	/* Unlock the Flash Program Erase controller */
 
 	init_periph();
@@ -435,11 +436,11 @@ int main(void)
 	//FLASH_Unlock();
 	//	/* EEPROM Init */
 	//EE_Init();
-	for (counter = 0; counter < sizeof(flash_data); counter++)
-	{
-		VirtAddVarTab[counter] = counter;
-	}
-	new_read_eeprom();
+//	for (counter = 0; counter < sizeof(flash_data); counter++)
+//	{
+//		VirtAddVarTab[counter] = counter;
+//	}
+//	new_read_eeprom();
 //
 //
 	/*
