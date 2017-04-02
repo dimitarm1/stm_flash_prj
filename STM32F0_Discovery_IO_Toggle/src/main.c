@@ -14,6 +14,7 @@
 #include "stdint.h"
 #include "stm32f0xx_iwdg.h"
 #include "eeprom.h"
+#include "math.h"
 
 
 /** @addtogroup STM32F0_Discovery_Peripheral_Examples
@@ -64,9 +65,11 @@ int useUart=0;
 
 /* Private variables ---------------------------------------------------------*/
 /* Virtual address defined by the user: 0xFFFF value is prohibited */
-uint16_t VirtAddVarTab[NB_OF_VAR] = {0x5555, 0x6666, 0x7777};
-uint16_t VarDataTab[NB_OF_VAR] = {0, 0, 0};
+flash_struct flash_data;
+uint16_t VirtAddVarTab[sizeof(flash_data)/2];
+//uint16_t VarDataTab[NB_OF_VAR] = {0, 0, 0};
 uint16_t VarValue = 0;
+
 
 /* Private function prototypes -----------------------------------------------*/
 void SystickDelay(__IO uint32_t nTime);
@@ -84,6 +87,8 @@ void set_fan2(int value);
 void set_aquafresh(int value);
 void set_volume(int value);
 void play_message(int index);
+void new_read_eeprom(void);
+void new_write_eeprom(void);
 
 /* Global variables ----------------------------------------------------------*/
 
@@ -392,9 +397,11 @@ void show_digit(int digit){
 volatile int stop=1;
 int main(void)
 {
+	static uint8_t counter=0;
 	SystemInit();
 //	while (stop);
-	read_eeprom();
+	//	/* Unlock the Flash Program Erase controller */
+
 	init_periph();
 	DRESULT result = 0;
 
@@ -424,47 +431,15 @@ int main(void)
 	IWDG_ReloadCounter();
 
 	/* Enable IWDG (the LSI oscillator will be enabled by hardware) */
-//	IWDG_Enable();
-
-
-//	/* Unlock the Flash Program Erase controller */
-//	FLASH_Unlock();
-//	/* EEPROM Init */
-//	EE_Init();
-//
-//
-//	/* --- Store successively many values of the three variables in the EEPROM ---*/
-//    /* Store 0x1000 values of Variable1 in EEPROM */
-//    for (VarValue = 1; VarValue <= 0x64; VarValue++)
-//    {
-//      EE_WriteVariable(VirtAddVarTab[0], VarValue);
-//    }
-//
-//    /* read the last stored variables data*/
-//    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
-//
-//
-//    /* Store 0x2000 values of Variable2 in EEPROM */
-//    for (VarValue = 1; VarValue <= 0xC8; VarValue++)
-//    {
-//      EE_WriteVariable(VirtAddVarTab[1], VarValue);
-//    }
-//
-//    /* read the last stored variables data*/
-//    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
-//    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
-//
-//
-//    /* Store 0x3000 values of Variable3 in EEPROM */
-//    for (VarValue = 1; VarValue <= 0x1C2; VarValue++)
-//    {
-//      EE_WriteVariable(VirtAddVarTab[2], VarValue);
-//    }
-//
-//    /* read the last stored variables data*/
-//    EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0]);
-//    EE_ReadVariable(VirtAddVarTab[1], &VarDataTab[1]);
-//    EE_ReadVariable(VirtAddVarTab[2], &VarDataTab[2]);
+	IWDG_Enable();
+	//FLASH_Unlock();
+	//	/* EEPROM Init */
+	//EE_Init();
+	for (counter = 0; counter < sizeof(flash_data); counter++)
+	{
+		VirtAddVarTab[counter] = counter;
+	}
+	new_read_eeprom();
 //
 //
 	/*
@@ -490,7 +465,7 @@ int main(void)
 	if(!preset_pre_time || ! preset_cool_time){
 		preset_pre_time = 7;
 		preset_cool_time = 3;
-		write_eeprom();// Paranoia check
+		new_write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
 	//GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
@@ -868,8 +843,8 @@ void ProcessButtons(void)
 								work_hours[1] = 0;
 								work_hours[2] = 0;
 							}
-							write_eeprom();
-							read_eeprom();
+							new_write_eeprom();
+							new_read_eeprom();
 							start_counter = 0;
 							service_mode = mode_null;
 							if (state == state_address){
@@ -896,8 +871,8 @@ void ProcessButtons(void)
 				if(state >= state_enter_service){
 					start_counter = 0;
 					state = state_show_time;
-					write_eeprom();
-					read_eeprom();
+					new_write_eeprom();
+					new_read_eeprom();
 				}
 				break;
 			case BUTTON_FAN_PLUS:
@@ -1103,8 +1078,8 @@ void ProcessButtons(void)
 				start_counter--;
 				if(!start_counter){
 					state = state_show_time;
-					write_eeprom();
-					read_eeprom();
+					new_write_eeprom();
+					new_read_eeprom();
 				}
 			}
 			else {
@@ -1125,7 +1100,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-				write_eeprom();
+				new_write_eeprom();
 			}
 			flash_mode = 0;
 			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
@@ -1161,7 +1136,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-				write_eeprom();
+				new_write_eeprom();
 				play_message(message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
@@ -1359,8 +1334,56 @@ void TimingDelay_Decrement(void)
 	//	if(percent_fan1) set_fan1(zero_crossed && (!(zero_crossed > percent_fan1)));
 }
 
+//void new_read_eeprom(void)
+//{
+//	uint16_t counter;
+//	uint8_t result = 0;
+//	flash_struct *flash_mem = &flash_data;
+//	for(counter = 0; counter < sizeof(flash_data); counter++)
+//	{
+//		result += EE_ReadVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]);
+//	}
+//	if(result)
+//	{
+//		// Set defaults
+//		flash_mem->settings.pre_time = 7;
+//		flash_mem->settings.cool_time = 3;
+//		flash_mem->time.hours_h = 0;
+//		flash_mem->time.hours_l = 0;
+//		flash_mem->time.minutes = 0;
+//		flash_mem->settings.volume_dac = 5;
+//		flash_mem->settings.temperatue_max = 90;
+//		flash_mem->settings.ext_mode = 0;
+//		flash_mem->settings.addresse = 0x0e;
+//		new_write_eeprom();
+//	}
+//
+//	preset_pre_time = flash_mem->settings.pre_time ;
+//	preset_cool_time = flash_mem->settings.cool_time;
+//	controller_address = flash_mem->settings.addresse & 0x0f;
+//	work_hours[0] = flash_mem->time.hours_h;
+//	work_hours[1] = flash_mem->time.hours_l;
+//	work_hours[2] = flash_mem->time.minutes;
+//	volume_message = flash_mem->settings.volume_dac;
+//	temperature_threshold = flash_mem->settings.temperatue_max;
+//	ext_mode = flash_mem->settings.ext_mode;
+//
+//}
+//
+//void new_write_eeprom(void)
+//{
+//	uint16_t counter;
+//	for(counter = 0; counter < sizeof(flash_data); counter++)
+//	{
+//		if(FLASH_COMPLETE != EE_WriteVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]))
+//		{
+//			// Second chance
+//			EE_WriteVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]);
+//		}
+//	}
+//}
 
-void read_eeprom(void){
+void new_read_eeprom(void){
 	int index = 0;
 	flash_struct *flash_mem;
 	while((eeprom_array[index]!=0xFFFFFFFFUL)&&(index<(512)))index+=(sizeof(flash_struct)/sizeof(uint32_t));
@@ -1399,7 +1422,7 @@ void read_eeprom(void){
 	ext_mode = flash_mem->settings.ext_mode;
 }
 
-void write_eeprom(void){
+void new_write_eeprom(void){
 	int index = 0;
 	FLASH_Unlock();
 	volatile flash_struct flash_mem;
@@ -1429,7 +1452,17 @@ void write_eeprom(void){
 		flash_mem.settings.temperatue_max = temperature_threshold;
 		flash_mem.settings.ext_mode = ext_mode;
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
+		if(sts != FLASH_COMPLETE)
+		{
+			// second chance
+			FLASH_ProgramWord((uint32_t)&eeprom_array[index],p[0]);
+		}
 		sts = FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
+		if(sts != FLASH_COMPLETE)
+		{
+			// second chance
+			FLASH_ProgramWord((uint32_t)&eeprom_array[index+1],p[1]);
+		}
 		index = sizeof(flash_mem);
 		index ++;
 		if (sts){
@@ -1444,16 +1477,10 @@ void set_start_out_signal(int value){
 }
 
 void set_lamps(int value){
-	short int counter = 0;
- 	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_9;
-	else GPIOC->BRR = GPIO_BRR_BR_9;
+	lamps_state = value;
 }
 void set_colarium_lamps(int value){
-	short int counter = 0;
-	while(!zero_crossed && --counter);
-	if (value)	GPIOC->BSRR = GPIO_BSRR_BS_8;
-	else GPIOC->BRR = GPIO_BRR_BR_8;
+	colaruim_lamps_state = value;
 }
 void set_fan2(int value){
 	if (value)

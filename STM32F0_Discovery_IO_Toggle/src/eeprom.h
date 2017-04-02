@@ -33,12 +33,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx.h"
 
+extern const uint32_t eeprom_array[512];
 /* Exported constants --------------------------------------------------------*/
 /* Define the size of the sectors to be used */
 #define PAGE_SIZE             ((uint32_t)0x0400)  /* Page size = 1KByte */
 
 /* EEPROM start address in Flash */
-#define EEPROM_START_ADDRESS  ((uint32_t)0x08002000) /* EEPROM emulation start address:
+//#define EEPROM_START_ADDRESS  ((uint32_t)0x08002000) /* EEPROM emulation start address:
+#define EEPROM_START_ADDRESS  ((uint32_t)&eeprom_array[0]) /* EEPROM emulation start address:
                                                         from sector2, after 8KByte of used 
                                                         Flash memory */
 
@@ -69,7 +71,7 @@
 #define PAGE_FULL             ((uint8_t)0x80)
 
 /* Variables' number */
-#define NB_OF_VAR             ((uint8_t)0x03)
+#define NB_OF_VAR             ((uint8_t)0x0C)
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
