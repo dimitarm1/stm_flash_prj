@@ -1,5 +1,0 @@
-set logging file e:/gdb_log.txt
-set logging on
-target remote :3333
-monitor reset halt
-

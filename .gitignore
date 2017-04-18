@@ -1,8 +1,0 @@
-.metadata/
-.settings
-Debug/
-*~
-*.swp
-/STM32F0_Discovery_IO_Toggle
-*.d
-*.o
