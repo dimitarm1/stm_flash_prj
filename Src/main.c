@@ -41,6 +41,7 @@
 #include "stm32f1xx_hal.h"
 
 /* USER CODE BEGIN Includes */
+#include "string.h"
 
 /* USER CODE END Includes */
 
@@ -120,13 +121,20 @@ void scan_keys()
 		key_states &= ~(1 << (row_index + col_index*3));
 	}
 }
+
+
+char display_buffer[8];
+void Display_refresh()
+{
+	HAL_SPI_Transmit(&hspi2, (void*)display_buffer, sizeof(display_buffer), 0);
+}
 /* USER CODE END 0 */
 
 int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  memset(display_buffer, 0xAA, sizeof(display_buffer));
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -155,6 +163,7 @@ int main(void)
   MX_TIM2_Init();
 
   /* USER CODE BEGIN 2 */
+  Display_refresh();
 
   /* USER CODE END 2 */
 
@@ -165,6 +174,7 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+	  HAL_Delay(100);
 	  scan_keys();
 
   }
