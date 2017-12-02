@@ -54,7 +54,7 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+int key_states;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,7 +74,13 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+char key_redings[9];
+char col_index;
+char row_index;
+void scan_keys()
+{
 
+}
 /* USER CODE END 0 */
 
 int main(void)
@@ -118,6 +124,7 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+	  scan_keys();
 
   }
   /* USER CODE END 3 */
