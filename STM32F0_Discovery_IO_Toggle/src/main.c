@@ -469,8 +469,8 @@ int main(void)
 		new_write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
-	//GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
-	GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
+	//GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
 	update_status();
 	set_volume(0);
 
@@ -1266,20 +1266,20 @@ void TimingDelay_Decrement(void)
 
 	if(fade_in_counter){
 		fade_in_counter--;
-		if(!(fade_in_counter%100)){
-			set_volume(fade_in_counter/100);
-		}
+//		if(!(fade_in_counter%100)){
+//			set_volume(fade_in_counter/100);
+//		}
 		if(!fade_in_counter){
 			GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
-			silence_counter = 10000;
+			silence_counter = 100;
 		}
 	}
 
 	if(fade_out_counter){
 		fade_out_counter--;
-		if(!(fade_out_counter%100)){
-			set_volume(10 - fade_out_counter/100);
-		}
+//		if(!(fade_out_counter%100)){
+//			set_volume(10 - fade_out_counter/100);
+//		}
 		if(fade_out_counter<=0){
 			TIM_Cmd(TIM14, DISABLE);
 		}
@@ -1290,7 +1290,7 @@ void TimingDelay_Decrement(void)
 		silence_counter--;
 		if(!silence_counter)
 		{
-			fade_out_counter = 1000;
+			fade_out_counter = 100;
 		}
 	}
 
@@ -1731,7 +1731,7 @@ void play_message(int index){
 	{
 		if(index == message_start_working)
 		{
-			fade_in_counter =  1000;
+			fade_in_counter =  100;
 			//TIM_Cmd(TIM14, ENABLE);
 		}
 		return;
@@ -1746,7 +1746,7 @@ void play_message(int index){
 
 	dac_ping_pong_state = 0;
 	dac_prev_ping_pong_state = dac_ping_pong_state;
-	fade_in_counter =  1000;
+	fade_in_counter =  100;
 	if (result) dac_out_counter = dac_out_counter;
 	//DAC_Cmd(DAC_Channel_1, ENABLE);
 	//TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
