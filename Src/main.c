@@ -126,7 +126,10 @@ void scan_keys()
 char display_buffer[8];
 void Display_refresh()
 {
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi2, (void*)display_buffer, sizeof(display_buffer), 0);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 }
 /* USER CODE END 0 */
 
@@ -176,6 +179,7 @@ int main(void)
   /* USER CODE BEGIN 3 */
 	  HAL_Delay(100);
 	  scan_keys();
+	  Display_refresh();
 
   }
   /* USER CODE END 3 */
