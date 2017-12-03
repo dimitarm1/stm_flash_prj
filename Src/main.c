@@ -123,12 +123,11 @@ void scan_keys()
 }
 
 
-char display_buffer[8];
+char display_buffer[16];
 void Display_refresh()
 {
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi2, (void*)display_buffer, sizeof(display_buffer), 0);
-	HAL_Delay(10);
+	HAL_SPI_Transmit(&hspi2, (void*)display_buffer, 16, 26000);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 }
 /* USER CODE END 0 */
@@ -137,7 +136,28 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  memset(display_buffer, 0xAA, sizeof(display_buffer));
+  char i;
+  for (i = 0; i < 8; i++)
+  {
+	  display_buffer[i*2] = 0x0;
+	  display_buffer[i*2+1] = 0;
+  }
+  display_buffer[0] = 0;
+  display_buffer[1] = 9; // No decode mode
+  display_buffer[2] = 0x7F;
+  display_buffer[3] = 0x0A; // Intensity
+  display_buffer[4] = 0x7;
+  display_buffer[5] = 0x0B; // Scan Limit
+  display_buffer[6] = 0x1;
+  display_buffer[7] = 0x0C; // Shutdown register
+  Display_refresh();
+  HAL_Delay(100);
+
+  for (i = 0; i < 8; i++)
+  {
+	  display_buffer[i*2] = 0x33;
+	  display_buffer[i*2+1] = i;
+  }
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -180,6 +200,7 @@ int main(void)
 	  HAL_Delay(100);
 	  scan_keys();
 	  Display_refresh();
+
 
   }
   /* USER CODE END 3 */
@@ -285,7 +306,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
