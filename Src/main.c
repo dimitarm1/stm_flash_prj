@@ -43,6 +43,7 @@
 /* USER CODE BEGIN Includes */
 #include "string.h"
 #include "max7219.h"
+#include "LedControl.h"
 
 /* USER CODE END Includes */
 
@@ -58,6 +59,7 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 int key_states;
+LedControl led_control;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -130,7 +132,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	char index;
+	char index = 0;
+
 //  char i;
 //  for (i = 0; i < 8; i++)
 //  {
@@ -153,7 +156,12 @@ int main(void)
 //	  display_buffer[i*2] = 0x33;
 //	  display_buffer[i*2+1] = i;
 //  }
-  MAX7219_Init();
+//  MAX7219_Init();
+  LedControl_init(&led_control, 15, GPIOB, 13,  GPIOB, 12,  GPIOB, 1);
+  LedControl_shutdown(&led_control, 0, 0); //Turn ON
+  LedControl_setIntensity(&led_control, 0, 8);
+  LedControl_clearDisplay(&led_control, 0);
+
 //  SPI_Write(0x0C,0x01);        // Normal Operation
 //  SPI_Write(0x09,0xFF);        // Code B Decode for Digit 7 to 0
 //  SPI_Write(0x0B,0x07);        // Scan digit 7 to 0
@@ -199,13 +207,14 @@ int main(void)
   /* USER CODE BEGIN 3 */
 	  HAL_Delay(1000);
 	  scan_keys();
-	  MAX7219_DisplayChar(1,index & 0x0f);
-	  MAX7219_DisplayChar(2,(index>>4) & 0x0f);
+	  LedControl_setRow(&led_control, 0, index&3, index);
+//	  MAX7219_DisplayChar(1,index & 0x0f);
+//	  MAX7219_DisplayChar(2,(index>>4) & 0x0f);
 	  index++;
 	  HAL_Delay(1000);
-	  MAX7219_ShutdownStart();
+//	  MAX7219_ShutdownStart();
 	  HAL_Delay(1000);
-	  MAX7219_ShutdownStop();
+//	  MAX7219_ShutdownStop();
 //	  Display_refresh();
 
 
