@@ -210,7 +210,9 @@ int main(void)
 	  LedControl_setDigit(&led_control, 0, 0, index & 0x0f, 0);
 	  LedControl_setDigit(&led_control, 0, 1, index & 0x0f, 0);
 	  LedControl_setDigit(&led_control, 0, 2, index & 0x0f, 0);
-//	  LedControl_setRow(&led_control, 0, index&3, index);
+	  LedControl_setRow(&led_control, 0, 3, 1<<(index & 7));
+	  LedControl_setRow(&led_control, 0, 5, 1<<(index & 7));
+	  LedControl_setRow(&led_control, 0, 6, 1<<(index & 7));
 //	  MAX7219_DisplayChar(1,index & 0x0f);
 //	  MAX7219_DisplayChar(2,(index>>4) & 0x0f);
 	  index++;
