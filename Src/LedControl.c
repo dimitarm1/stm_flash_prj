@@ -58,7 +58,7 @@ void digitalWrite(GPIO_TypeDef* port, uint16_t pin_number, unsigned char  value)
 {
 	 HAL_GPIO_WritePin(port, 1<<pin_number, (GPIO_PinState) value);
 }
-void shiftOut(GPIO_TypeDef* data_port, uint16_t data_pinm, GPIO_TypeDef* clk_port, uint16_t clk_pin, unsigned char data)
+void shiftOut(GPIO_TypeDef* data_port, uint16_t data_pin, GPIO_TypeDef* clk_port, uint16_t clk_pin, unsigned char data)
 {
 	unsigned char i,val;
 	for(i = 0; i< 8; i++)
@@ -66,7 +66,7 @@ void shiftOut(GPIO_TypeDef* data_port, uint16_t data_pinm, GPIO_TypeDef* clk_por
 		HAL_GPIO_WritePin(clk_port, 1<<clk_pin, (GPIO_PinState) 0);
 		val = ((data & 0x80) != 0);
 		data = data << 1;
-		HAL_GPIO_WritePin(clk_port, 1<<clk_pin, (GPIO_PinState) val);
+		HAL_GPIO_WritePin(data_port, 1<<data_pin, (GPIO_PinState) val);
 		HAL_GPIO_WritePin(clk_port, 1<<clk_pin, (GPIO_PinState) 1);
 	}
 }

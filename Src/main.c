@@ -157,10 +157,7 @@ int main(void)
 //	  display_buffer[i*2+1] = i;
 //  }
 //  MAX7219_Init();
-  LedControl_init(&led_control, 15, GPIOB, 13,  GPIOB, 12,  GPIOB, 1);
-  LedControl_shutdown(&led_control, 0, 0); //Turn ON
-  LedControl_setIntensity(&led_control, 0, 8);
-  LedControl_clearDisplay(&led_control, 0);
+
 
 //  SPI_Write(0x0C,0x01);        // Normal Operation
 //  SPI_Write(0x09,0xFF);        // Code B Decode for Digit 7 to 0
@@ -194,7 +191,10 @@ int main(void)
   MX_TIM2_Init();
 
   /* USER CODE BEGIN 2 */
-
+  LedControl_init(&led_control, 15, GPIOB, 13,  GPIOB, 12,  GPIOB, 1);
+  LedControl_shutdown(&led_control, 0, 0); //Turn ON
+  LedControl_setIntensity(&led_control, 0, 8);
+  LedControl_clearDisplay(&led_control, 0);
 
   /* USER CODE END 2 */
 
