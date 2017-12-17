@@ -207,13 +207,16 @@ int main(void)
   /* USER CODE BEGIN 3 */
 	  HAL_Delay(1000);
 	  scan_keys();
-	  LedControl_setRow(&led_control, 0, index&3, index);
+	  LedControl_setDigit(&led_control, 0, 0, index & 0x0f, 0);
+	  LedControl_setDigit(&led_control, 0, 1, index & 0x0f, 0);
+	  LedControl_setDigit(&led_control, 0, 2, index & 0x0f, 0);
+//	  LedControl_setRow(&led_control, 0, index&3, index);
 //	  MAX7219_DisplayChar(1,index & 0x0f);
 //	  MAX7219_DisplayChar(2,(index>>4) & 0x0f);
 	  index++;
-	  HAL_Delay(1000);
+//	  HAL_Delay(1000);
 //	  MAX7219_ShutdownStart();
-	  HAL_Delay(1000);
+//	  HAL_Delay(1000);
 //	  MAX7219_ShutdownStop();
 //	  Display_refresh();
 
