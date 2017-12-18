@@ -469,8 +469,8 @@ int main(void)
 		new_write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
-	//GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
-	GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
+	//GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
 	update_status();
 	set_volume(0);
 
@@ -1270,7 +1270,7 @@ void TimingDelay_Decrement(void)
 //			set_volume(fade_in_counter/100);
 //		}
 		if(!fade_in_counter){
-			//GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+			GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
 			silence_counter = 100;
 		}
 	}
@@ -1479,14 +1479,6 @@ void set_start_out_signal(int value){
 
 void set_lamps(int value){
 	lamps_state = value;
-	if (value == OFF)
-	{
-		GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
-	}
-	else
-	{
-		GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
-	}
 }
 void set_colarium_lamps(int value){
 	colaruim_lamps_state = value;
