@@ -122,7 +122,22 @@ void scan_keys()
 	}
 }
 
+char bar_conversion_table[] = {0x00, 0x00, 0x00, 0x80, 0x81, 0x83, 0x87, 0x8F, 0x9F, 0xBF, 0xFF};
 
+void ShowBarIndicators(unsigned char bar1, unsigned char bar2)
+{
+	  unsigned char val = 0;
+	  if(bar1 > 10) bar1 = 10;
+	  if (bar2 > 10) bar2 = 10;
+//	  LedControl_setRow(&led_control, 0, 3, (1<<(bar1-3)) - 1);
+	  LedControl_setRow(&led_control, 0, 3, bar_conversion_table[bar1]);
+	  LedControl_setRow(&led_control, 0, 5, bar_conversion_table[bar2]);
+	  if(bar2 > 0) val |= 0x08;
+	  if(bar2 > 1) val |= 0x10;
+	  if(bar1 > 0) val |= 0x20;
+	  if(bar1 > 1) val |= 0x40;
+	  LedControl_setRow(&led_control, 0, 4, val);
+}
 
 char display_buffer[16];
 
@@ -210,9 +225,13 @@ int main(void)
 	  LedControl_setDigit(&led_control, 0, 0, index & 0x0f, 0);
 	  LedControl_setDigit(&led_control, 0, 1, index & 0x0f, 0);
 	  LedControl_setDigit(&led_control, 0, 2, index & 0x0f, 0);
-	  LedControl_setRow(&led_control, 0, 3, 1<<(index & 7));
-	  LedControl_setRow(&led_control, 0, 5, 1<<(index & 7));
-	  LedControl_setRow(&led_control, 0, 6, 1<<(index & 7));
+	  if((index & 0x0f) < 11)
+	  {
+	      ShowBarIndicators(index & 0x0f, 0);
+	  }
+//	  LedControl_setRow(&led_control, 0, 3, 1<<(index & 7));
+//	  LedControl_setRow(&led_control, 0, 5, 1<<(index & 7));
+//	  LedControl_setRow(&led_control, 0, 6, 1<<(index & 7));
 //	  MAX7219_DisplayChar(1,index & 0x0f);
 //	  MAX7219_DisplayChar(2,(index>>4) & 0x0f);
 	  index++;
