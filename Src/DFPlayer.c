@@ -131,11 +131,14 @@ Ype Brada 2015-04-06
 #include "DFPlayer.h"
 #include "stm32f1xx_hal.h"
 
+extern UART_HandleTypeDef huart3;
 unsigned char Receive_buffer[10];
-void DFPlayerInit ()
+UART_HandleTypeDef *DFPlayer_huart = 0;
+void DFPlayerInit (UART_HandleTypeDef *huart)
 {
+ DFPlayer_huart = huart;
  DFPlayerEexecCMD(0x3F, 0, 0); // Send request for initialization parameters
- HAL_UART_Receive(USART3, &Receive_buffer[0], sizeof(Receive_buffer), 500);
+ HAL_UART_Receive(&huart3, &Receive_buffer[0], sizeof(Receive_buffer), 500);
  HAL_Delay(30);
 // while (Serial1.available()<10) // Wait until initialization parameters are received (10 bytes)
 // delay(30); // Pretty long delays between succesive commands needed (not always the same)
@@ -162,5 +165,6 @@ void DFPlayerEexecCMD(unsigned char CMD, unsigned char Par1, unsigned char Par2)
 	Command_line[8] = checksum & 0xFF;
 
 	//Send the command line to the module
-	HAL_UART_Transmit_IT(USART3, &Command_line[0], sizeof(Command_line));
+	HAL_UART_Transmit(&huart3, &Command_line[0], sizeof(Command_line), 1000);
+	//HAL_UART_Transmit_IT(USART3, &Command_line[0], sizeof(Command_line));
 }

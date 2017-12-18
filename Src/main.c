@@ -162,8 +162,8 @@ static void MX_TIM2_Init(void);
 static void MX_IWDG_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
-                                
+								
+								
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -382,6 +382,8 @@ int main(void)
   MX_IWDG_Init();
 
   /* USER CODE BEGIN 2 */
+  __HAL_UART_ENABLE(&huart1);
+  __HAL_UART_ENABLE(&huart3);
 
   /* Enable the UART Parity Error Interrupt */
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_PE);
@@ -428,7 +430,6 @@ int main(void)
 	  //	  HAL_Delay(1000);
 	  //	  MAX7219_ShutdownStop();
 	  //	  Display_refresh();
-		scan_keys();
 		if ((state < state_enter_service) && ((flash_counter >> 4) & 1))
 		{
 			if (controller_address == 15) {
@@ -644,7 +645,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -695,7 +696,7 @@ static void MX_ADC1_Init(void)
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -709,7 +710,7 @@ static void MX_IWDG_Init(void)
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -732,30 +733,30 @@ static void MX_TIM1_Init(void)
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_OC_Init(&htim1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_OnePulse_Init(&htim1, TIM_OPMODE_SINGLE) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sConfigOC.OCMode = TIM_OCMODE_TIMING;
@@ -767,7 +768,7 @@ static void MX_TIM1_Init(void)
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
@@ -779,7 +780,7 @@ static void MX_TIM1_Init(void)
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
   if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   HAL_TIM_MspPostInit(&htim1);
@@ -802,25 +803,25 @@ static void MX_TIM2_Init(void)
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
@@ -829,7 +830,7 @@ static void MX_TIM2_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   HAL_TIM_MspPostInit(&htim2);
@@ -850,7 +851,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -869,17 +870,17 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
 
 /** Configure pins as 
-        * Analog 
-        * Input 
-        * Output
-        * EVENT_OUT
-        * EXTI
+		* Analog 
+		* Input 
+		* Output
+		* EVENT_OUT
+		* EXTI
 */
 static void MX_GPIO_Init(void)
 {
@@ -1101,129 +1102,115 @@ void set_volume(int value){
 #endif
 }
 
-void usart1_IT_handler()
-{
-	 uint32_t isrflags   = READ_REG(USART1->SR);
-	 uint32_t cr1its     = READ_REG(USART1->CR1);
-	 uint32_t cr3its     = READ_REG(USART1->CR3);
-	 uint32_t errorflags = 0x00U;
-	 uint32_t dmarequest = 0x00U;
-	 useUart = 1;
-	 enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
 
-	 /* If no error occurs */
-	 errorflags = (isrflags & (uint32_t)(USART_SR_PE | USART_SR_FE | USART_SR_ORE | USART_SR_NE));
-	 if(errorflags == RESET)
-	 {
-		 /* UART in mode Receiver -------------------------------------------------*/
-		 if(((isrflags & USART_SR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
-		 {
-			 data = USART1->DR & (uint16_t)0x00FF;
-			 if ((data & 0x80)){
-			 		last_rx_address = (data >> 3U)&0x0f;
-			 		unsigned char addr_is_ok = 0;
+void usart_receive(void){
+	useUart = 1;
+	enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
+	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
+	data =  USART_ReceiveData(USART1);
 
-			 		if(ext_mode == ext_mode_colarium){
-			 			if(last_rx_address  == controller_address ){
-			 				if (curr_status != STATUS_FREE ){
-			 					if( lamps_mode == lamps_all) addr_is_ok = 1;
-			 				}
-			 				else {
-			 					addr_is_ok = 1;
-			 				}
-			 			}
-			 			if(last_rx_address  == controller_address + 1){
-			 				if (curr_status != STATUS_FREE ){
-			 					if( lamps_mode == lamps_uv) addr_is_ok = 1;
-			 				}
-			 				else {
-			 					addr_is_ok = 1;
-			 				}
-			 			}
-			 			if(last_rx_address  == controller_address + 2){
-			 				if (curr_status != STATUS_FREE ){
-			 					if( lamps_mode == lamps_colagen) addr_is_ok = 1;
-			 				}
-			 				else {
-			 					addr_is_ok = 1;
-			 				}
-			 			}
-			 		}
-			 		else {
-			 			addr_is_ok = (last_rx_address == controller_address);
-			 		}
-			 		if (!addr_is_ok) return;
-			 		// Command
-			 		if(addr_is_ok){
-			 			Gv_UART_Timeout = 1500;
-			 		}
-			 		if((data & 0x07) == 0x00 ){ // Status
-			 			data = (curr_status<<6)| ToBCD(curr_time);
-			 //			data = (STATUS_WORKING<<6)|4;
-			 			USART1->DR = data;
-			 		}
-			 		else if ((data & 0x07) == 1) //Command 1 - Start
-			 		{
-			 			pre_time = 0;
-			 			update_status();
-			 		}
-			 		else if ((data & 0x07) == 2)  //Command 2 == Pre_time_set
-			 		{
-			 			rx_state = rx_state_pre_time;
-			 		}
-			 		else if ((data & 0x07) == 5) //Command 5 == Main_time_set
-			 		{
-			 			rx_state = rx_state_main_time;
-			 		}
-			 		else if ((data & 0x07) == 3) //Command 3 == Cool_time_set
-			 		{
-			 			rx_state = rx_state_cool_time;
-			 		}
+	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 
-			 	} else if (rx_state){
-			 		// payload
-			 		int time_in_hex = ToBCD(main_time_sent);
-			 		if(rx_state == rx_state_get_checksum){
-			 			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
-			 			if(	data == checksum){
-			 				pre_time = pre_time_sent;
-			 				main_time = main_time_sent;
-			 				cool_time = cool_time_sent;
-			 				update_status();
-			 				Gv_miliseconds = 0;
-			 			}
-			 			rx_state = 0;
-			 		}
-			 		if(rx_state == rx_state_pre_time){
-			 			pre_time_sent = data;
-			 			rx_state = 0;
-			 		}
-			 		if(rx_state == rx_state_main_time){
-			 			main_time_sent = FromBCD(data);
-			 			rx_state = 0;
-			 			if (last_rx_address == controller_address)	lamps_mode = lamps_all;
-			 			if (last_rx_address == controller_address+1)lamps_mode = lamps_uv;
-			 			if (last_rx_address == controller_address+2)lamps_mode = lamps_colagen;
+	if ((data & 0x80)){
+		last_rx_address = (data >> 3U)&0x0f;
+		unsigned char addr_is_ok = 0;
 
-			 		}
-			 		if(rx_state == rx_state_cool_time){
-			 			cool_time_sent = data;
-			 			rx_state = rx_state_get_checksum;
-			 			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
-			 			data = checksum;
-			 			USART1->DR = data;
-			 		}
+		if(ext_mode == ext_mode_colarium){
+			if(last_rx_address  == controller_address ){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_all) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+			if(last_rx_address  == controller_address + 1){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_uv) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+			if(last_rx_address  == controller_address + 2){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_colagen) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+		}
+		else {
+			addr_is_ok = (last_rx_address == controller_address);
+		}
+		if (!addr_is_ok) return;
+		// Command
+		if(addr_is_ok){
+			Gv_UART_Timeout = 1500;
+		}
+		if((data & 0x07) == 0x00 ){ // Status
+			data = (curr_status<<6)| ToBCD(curr_time);
+//			data = (STATUS_WORKING<<6)|4;
+			USART_SendData(USART1,data);
+		}
+		else if ((data & 0x07) == 1) //Command 1 - Start
+		{
+			pre_time = 0;
+			update_status();
+		}
+		else if ((data & 0x07) == 2)  //Command 2 == Pre_time_set
+		{
+			rx_state = rx_state_pre_time;
+		}
+		else if ((data & 0x07) == 5) //Command 5 == Main_time_set
+		{
+			rx_state = rx_state_main_time;
+		}
+		else if ((data & 0x07) == 3) //Command 3 == Cool_time_set
+		{
+			rx_state = rx_state_cool_time;
+		}
+
+	} else if (rx_state){
+		// payload
+		int time_in_hex = ToBCD(main_time_sent);
+		if(rx_state == rx_state_get_checksum){
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			if(	data == checksum){
+				pre_time = pre_time_sent;
+				main_time = main_time_sent;
+				cool_time = cool_time_sent;
+				update_status();
+				Gv_miliseconds = 0;
+			}
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_pre_time){
+			pre_time_sent = data;
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_main_time){
+			main_time_sent = FromBCD(data);
+			rx_state = 0;
+			if (last_rx_address == controller_address)	lamps_mode = lamps_all;
+			if (last_rx_address == controller_address+1)lamps_mode = lamps_uv;
+			if (last_rx_address == controller_address+2)lamps_mode = lamps_colagen;
+
+		}
+		if(rx_state == rx_state_cool_time){
+			cool_time_sent = data;
+			rx_state = rx_state_get_checksum;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			data = checksum;
+			USART_SendData(USART1,data);
+		}
 
 
-			 	}
-		 }
-	 }
-	 else
-	 {
-		 rx_state= 0;
-	 }
+	}
+	//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+	//	USART_SendData(USART1,0x80);
 }
-
 
 void play_message(int index){
 
