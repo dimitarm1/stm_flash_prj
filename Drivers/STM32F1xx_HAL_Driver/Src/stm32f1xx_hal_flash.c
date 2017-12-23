@@ -145,7 +145,7 @@ FLASH_ProcessTypeDef pFlash;
 /** @defgroup FLASH_Private_Functions FLASH Private Functions
   * @{
   */
-static  void   FLASH_Program_HalfWord(uint32_t Address, uint16_t Data);
+void   FLASH_Program_HalfWord(uint32_t Address, uint16_t Data);
 static  void   FLASH_SetErrorCode(void);
 extern void    FLASH_PageErase(uint32_t PageAddress);
 /**
@@ -807,7 +807,7 @@ uint32_t HAL_FLASH_GetError(void)
   * @param  Data    specify the data to be programmed.
   * @retval None
   */
-static void FLASH_Program_HalfWord(uint32_t Address, uint16_t Data)
+void FLASH_Program_HalfWord(uint32_t Address, uint16_t Data)
 {
   /* Clean the error context */
   pFlash.ErrorCode = HAL_FLASH_ERROR_NONE;

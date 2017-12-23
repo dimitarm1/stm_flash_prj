@@ -76,6 +76,8 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+IWDG_HandleTypeDef hiwdg;
+
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
@@ -155,10 +157,11 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
-									
+static void MX_IWDG_Init(void);
+
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-								
-								
+                                
+                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -166,6 +169,21 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+int ToBCD(int value);
+//void write_eeprom(void);
+//void read_eeprom(void);
+void ProcessButtons(void);
+void update_status(void);
+void set_start_out_signal(int value);
+void set_lamps(int value);
+void set_colarium_lamps(int value);
+void set_fan1(int value);
+void set_fan2(int value);
+void set_aquafresh(int value);
+void set_volume(int value);
+void play_message(int index);
+void new_read_eeprom(void);
+void new_write_eeprom(void);
 typedef struct time_str{
 	 uint8_t used_flag :8;
 	 uint8_t hours_h   :8;
@@ -269,7 +287,7 @@ void show_digit(int digit){
 int main(void)
 {
 
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 	char index = 0;
 
 	//  char i;
@@ -304,14 +322,14 @@ int main(void)
 
 
 
-	  /* USER CODE END 1 */
+  /* USER CODE END 1 */
 
-	  /* MCU Configuration----------------------------------------------------------*/
+  /* MCU Configuration----------------------------------------------------------*/
 
-	  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 	digits[0] = 0;
 	digits[1] = 1;
 	digits[2] = 2;
@@ -325,45 +343,46 @@ int main(void)
 	if (!preset_pre_time || !preset_cool_time) {
 		preset_pre_time = 7;
 		preset_cool_time = 3;
-		new_write_eeprom();// Paranoia check
+		//new_write_eeprom();// Paranoia check
 	}
 	update_status();
 	//set_volume(0);
 
 	//play_message(message_power_up);
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE BEGIN SysInit */
 
-	/* USER CODE END SysInit */
+  /* USER CODE END SysInit */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_ADC1_Init();
-	MX_USART1_UART_Init();
-	MX_USART3_UART_Init();
-	MX_TIM1_Init();
-	MX_TIM2_Init();
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_ADC1_Init();
+  MX_USART1_UART_Init();
+  MX_USART3_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_IWDG_Init();
 
-	/* USER CODE BEGIN 2 */
+  /* USER CODE BEGIN 2 */
 	LedControl_init(&led_control, 15, GPIOB, 13, GPIOB, 12, GPIOB, 1);
 	LedControl_shutdown(&led_control, 0, 0); //Turn ON
 	LedControl_setIntensity(&led_control, 0, 8);
 	LedControl_clearDisplay(&led_control, 0);
 
-	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		/* USER CODE END WHILE */
+  /* USER CODE END WHILE */
 
-		/* USER CODE BEGIN 3 */
+  /* USER CODE BEGIN 3 */
 	  //	  HAL_Delay(1000);
 	  //	  scan_keys();
 	  //	  LedControl_setDigit(&led_control, 0, 0, index & 0x0f, 0);
@@ -552,7 +571,7 @@ int main(void)
 		IWDG_ReloadCounter();
 
 	}
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
 
 }
 
@@ -565,24 +584,25 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
-	/**Initializes the CPU, AHB and APB busses clocks 
-	*/
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    /**Initializes the CPU, AHB and APB busses clocks 
+    */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
-	/**Initializes the CPU, AHB and APB busses clocks 
-	*/
+    /**Initializes the CPU, AHB and APB busses clocks 
+    */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-							  |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -590,22 +610,22 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
   PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
-	/**Configure the Systick interrupt time 
-	*/
+    /**Configure the Systick interrupt time 
+    */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
-	/**Configure the Systick 
-	*/
+    /**Configure the Systick 
+    */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
@@ -618,8 +638,8 @@ static void MX_ADC1_Init(void)
 
   ADC_ChannelConfTypeDef sConfig;
 
-	/**Common config 
-	*/
+    /**Common config 
+    */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
@@ -629,17 +649,31 @@ static void MX_ADC1_Init(void)
   hadc1.Init.NbrOfConversion = 1;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
-	/**Configure Regular Channel 
-	*/
+    /**Configure Regular Channel 
+    */
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* IWDG init function */
+static void MX_IWDG_Init(void)
+{
+
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Reload = 4095;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -662,30 +696,30 @@ static void MX_TIM1_Init(void)
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_OC_Init(&htim1) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_OnePulse_Init(&htim1, TIM_OPMODE_SINGLE) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sConfigOC.OCMode = TIM_OCMODE_TIMING;
@@ -697,7 +731,7 @@ static void MX_TIM1_Init(void)
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
@@ -709,7 +743,7 @@ static void MX_TIM1_Init(void)
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
   if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   HAL_TIM_MspPostInit(&htim1);
@@ -732,25 +766,25 @@ static void MX_TIM2_Init(void)
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
@@ -759,7 +793,7 @@ static void MX_TIM2_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
   HAL_TIM_MspPostInit(&htim2);
@@ -780,7 +814,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -799,17 +833,17 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
-	_Error_Handler(__FILE__, __LINE__);
+    _Error_Handler(__FILE__, __LINE__);
   }
 
 }
 
 /** Configure pins as 
-		* Analog 
-		* Input 
-		* Output
-		* EVENT_OUT
-		* EXTI
+        * Analog 
+        * Input 
+        * Output
+        * EVENT_OUT
+        * EXTI
 */
 static void MX_GPIO_Init(void)
 {
@@ -827,7 +861,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
-						  |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15, GPIO_PIN_RESET);
@@ -839,9 +873,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA10 
-						   PA11 PA12 PA15 */
+                           PA11 PA12 PA15 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
-						  |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -873,6 +907,323 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+int ToBCD(int value){
+	int digits[3];
+	int result;
+	digits[0] = value %10;
+	digits[1] = (value/10) % 10;
+	digits[2] = (value/100) % 10;
+	result = digits[0] | (digits[1]<<4) | (digits[2]<<8);
+	return result;
+}
+
+int FromBCD(int value){
+	int digits[3];
+	int result;
+	digits[0] = value & 0x0F;
+	digits[1] = (value>>4) & 0x0F;
+	digits[2] = (value>>8) & 0x0F;
+	result = digits[0] + digits[1]*10 + digits[2]*100;
+	return result;
+}
+
+void set_lamps(int value){
+	lamps_state = value;
+}
+void set_colarium_lamps(int value){
+	colaruim_lamps_state = value;
+}
+void set_fan2(int value){
+	if (value)
+		; //GPIOC->BSRR = GPIO_BSRR_BS_14;
+	else
+		; //GPIOC->BSRR = GPIO_BSRR_BR_14;
+}
+
+void set_fan1(int value){
+	//
+//	uint32 counter = 0xFFFFFFF;
+	TIM_Cmd(TIM2, DISABLE);
+
+	zero_crossed = 0;
+
+//	while (!zero_crossed && (counter--));
+	switch(value){
+	case 10:
+		tim_base = 60; //Reverse polarity
+		break;
+	case 9:
+		tim_base = 37;
+		break;
+	case 8:
+		tim_base = 43;
+		break;
+	case 7:
+		tim_base = 48;
+		break;
+	case 6:
+		tim_base = 52;
+		break;
+	case 5:
+		tim_base = 56;
+		break;
+	case 4:
+		tim_base = 59;
+		break;
+	case 3:
+		tim_base = 62;
+		break;
+	case 2:
+		tim_base = 63;
+		break;
+	case 1:
+	default:
+		tim_base = 65;
+		break;
+	}
+//	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+//	else  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+//	TIM_TimeBaseStructure.TIM_Period = tim_base;
+//	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+	/* TIM2 PWM2 Mode configuration: Channel4 */
+	//for one pulse mode set PWM2, output enable, pulse (1/(t_wanted=TIM_period-TIM_Pulse)), set polarity high
+//	if (value)	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+//	else 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+//	if (TIM_TimeBaseStructure.TIM_Period) TIM_OCInitStructure.TIM_Pulse = TIM_TimeBaseStructure.TIM_Period-5;
+//	else  TIM_OCInitStructure.TIM_Pulse = 9;
+
+//	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
+//	if (value) TIM_Cmd(TIM2, ENABLE);
+//	else TIM_Cmd(TIM2, DISABLE);
+	TIM_Cmd(TIM2, ENABLE);
+}
+
+void set_aquafresh(int value){
+
+//	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_5;
+//	else GPIOB->BRR = GPIO_BSRR_BS_5;
+}
+
+void set_volume(int value){
+#ifdef PCBVERSION_2
+	GPIOC->BRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	if (value >8)	{
+		GPIOC->BSRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
+	}
+	else if (value >5)	{
+		GPIOC->BSRR =  GPIO_BSRR_BS_3;
+	}
+	else if (value >2)	{
+		GPIOC->BSRR = GPIO_BSRR_BS_2 ;
+	}
+
+#else  //PCBVERSION_3
+//	GPIOB->BRR = GPIO_BRR_BR_6;
+//	GPIOF->BRR = GPIO_BRR_BR_6 | GPIO_BRR_BR_7;
+
+	if (value >9)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+	}
+	else if (value >7)	{
+//		GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+	}
+	else if (value >6)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+//		GPIOF->BSRR = GPIO_BSRR_BS_7;
+	}
+	else if (value >5)	{
+		GPIOB->BSRR = GPIO_BSRR_BS_6;
+		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+//		GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else if (value >4)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else if (value >3)	{
+//		GPIOB->BSRR = GPIO_BSRR_BS_6;
+//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else if (value >1)	{
+		//GPIOB->BSRR = GPIO_BSRR_BS_6;
+//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+//		GPIOF->BSRR = GPIO_BSRR_BS_7;
+		}
+	else {
+//		GPIOB->BSRR = GPIO_BSRR_BS_6;
+//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
+//		GPIOF->BSRR = GPIO_BSRR_BS_7;
+	}
+#endif
+}
+
+
+void usart_receive(void){
+	useUart = 1;
+	enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
+	//	USART_ITConfig(USART1,USART_IT_RXNE,DISABLE);
+	data =  USART_ReceiveData(USART1);
+
+	//pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+
+	if ((data & 0x80)){
+		last_rx_address = (data >> 3U)&0x0f;
+		unsigned char addr_is_ok = 0;
+
+		if(ext_mode == ext_mode_colarium){
+			if(last_rx_address  == controller_address ){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_all) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+			if(last_rx_address  == controller_address + 1){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_uv) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+			if(last_rx_address  == controller_address + 2){
+				if (curr_status != STATUS_FREE ){
+					if( lamps_mode == lamps_colagen) addr_is_ok = 1;
+				}
+				else {
+					addr_is_ok = 1;
+				}
+			}
+		}
+		else {
+			addr_is_ok = (last_rx_address == controller_address);
+		}
+		if (!addr_is_ok) return;
+		// Command
+		if(addr_is_ok){
+			Gv_UART_Timeout = 1500;
+		}
+		if((data & 0x07) == 0x00 ){ // Status
+			data = (curr_status<<6)| ToBCD(curr_time);
+//			data = (STATUS_WORKING<<6)|4;
+			USART_SendData(USART1,data);
+		}
+		else if ((data & 0x07) == 1) //Command 1 - Start
+		{
+			pre_time = 0;
+			update_status();
+		}
+		else if ((data & 0x07) == 2)  //Command 2 == Pre_time_set
+		{
+			rx_state = rx_state_pre_time;
+		}
+		else if ((data & 0x07) == 5) //Command 5 == Main_time_set
+		{
+			rx_state = rx_state_main_time;
+		}
+		else if ((data & 0x07) == 3) //Command 3 == Cool_time_set
+		{
+			rx_state = rx_state_cool_time;
+		}
+
+	} else if (rx_state){
+		// payload
+		int time_in_hex = ToBCD(main_time_sent);
+		if(rx_state == rx_state_get_checksum){
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			if(	data == checksum){
+				pre_time = pre_time_sent;
+				main_time = main_time_sent;
+				cool_time = cool_time_sent;
+				update_status();
+				Gv_miliseconds = 0;
+			}
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_pre_time){
+			pre_time_sent = data;
+			rx_state = 0;
+		}
+		if(rx_state == rx_state_main_time){
+			main_time_sent = FromBCD(data);
+			rx_state = 0;
+			if (last_rx_address == controller_address)	lamps_mode = lamps_all;
+			if (last_rx_address == controller_address+1)lamps_mode = lamps_uv;
+			if (last_rx_address == controller_address+2)lamps_mode = lamps_colagen;
+
+		}
+		if(rx_state == rx_state_cool_time){
+			cool_time_sent = data;
+			rx_state = rx_state_get_checksum;
+			int checksum = (pre_time_sent + cool_time_sent  - time_in_hex - 5) & 0x7F;
+			data = checksum;
+			USART_SendData(USART1,data);
+		}
+
+
+	}
+	//	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+	//	USART_SendData(USART1,0x80);
+}
+
+void play_message(int index){
+
+//	disk_initialize(0);
+//	if(disk_status(0) == STA_NOINIT)
+//	{
+//		if(index == message_start_working)
+//		{
+//			fade_in_counter =  1000;
+//			//TIM_Cmd(TIM14, ENABLE);
+//		}
+//		return;
+//	}
+//	dac_ping_pong_state = 0;
+//	dac_current_message = index;
+//	DRESULT result;
+//	dac_out_counter = 0;
+//
+//	result = disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
+//	dac_current_block = 0;
+//
+//	dac_ping_pong_state = 0;
+//	dac_prev_ping_pong_state = dac_ping_pong_state;
+//	fade_in_counter =  1000;
+//	if (result) dac_out_counter = dac_out_counter;
+//	//DAC_Cmd(DAC_Channel_1, ENABLE);
+//	//TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
+//	//TIM_Cmd(TIM6, ENABLE);
+//	TIM_Cmd(TIM14, ENABLE);
+//	//while(1)
+//	{
+//		if (dac_current_block < message_sector_counts[dac_current_message]){
+//			if(dac_prev_ping_pong_state != dac_ping_pong_state)
+//			{
+//				dac_prev_ping_pong_state = dac_ping_pong_state;
+//				//TIM14->CCER &= ~TIM_OutputState_Enable;
+//				disk_read(0, &dac_buffer[dac_prev_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
+//				dac_current_block++;
+//				dac_current_block++;
+//				//TIM14->CCER |= TIM_OutputState_Enable;
+//			}
+//		}
+//		//dac_current_block = 0;
+//	}
+
+//	TIM6->CR1 |= TIM_CR1_CEN;
+
+}
+
+
 /**
  * @brief  Manage the activity on buttons
  * @param  None
@@ -915,12 +1266,12 @@ void ProcessButtons(void)
 								work_hours[1] = 0;
 								work_hours[2] = 0;
 							}
-							new_write_eeprom();
-							new_read_eeprom();
+//							new_write_eeprom();
+//							new_read_eeprom();
 							start_counter = 0;
 							service_mode = mode_null;
 							if (state == state_address) {
-								init_periph();
+//								init_periph();
 							}
 						}
 						else {
