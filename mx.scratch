@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>C:\STM32_Upravlenie_Voice\Upravlenie_Solarium_Voice\\Upravlenie_Solarium_Voice</ProjectName>
+<ProjectName>E:\stm_upravlenie_voice\\Upravlenie_Solarium_Voice</ProjectName>
 <CMSIS>..\Drivers\CMSIS</CMSIS>
-<HAL_Driver>C:\Users\John\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.0\Drivers\CMSIS</HAL_Driver>
+<HAL_Driver>C:\Users\Work\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.0\Drivers\CMSIS</HAL_Driver>
 
 <Toolchain>SW4STM32</Toolchain>
 <Version>0</Version>

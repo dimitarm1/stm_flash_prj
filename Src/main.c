@@ -39,6 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f1xx_hal.h"
+#include "DFPlayer.h"
 
 /* USER CODE BEGIN Includes */
 #include "string.h"
@@ -160,8 +161,8 @@ static void MX_TIM2_Init(void);
 static void MX_IWDG_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
-                                
+								
+								
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -350,6 +351,7 @@ int main(void)
 
 	//play_message(message_power_up);
 
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -373,6 +375,9 @@ int main(void)
 	LedControl_shutdown(&led_control, 0, 0); //Turn ON
 	LedControl_setIntensity(&led_control, 0, 8);
 	LedControl_clearDisplay(&led_control, 0);
+	DFPlayerInit();
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // MP3 Player select
+	DFPlayerEexecCMD(0x0D, 0, 0);
 
   /* USER CODE END 2 */
 
@@ -568,7 +573,8 @@ int main(void)
 		flash_counter++;
 
 		/* Reload IWDG counter */
-		IWDG_ReloadCounter();
+//		IWDG_ReloadCounter();
+		HAL_IWDG_Refresh(&hiwdg);
 
 	}
   /* USER CODE END 3 */
@@ -584,8 +590,8 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
+	/**Initializes the CPU, AHB and APB busses clocks 
+	*/
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
@@ -596,13 +602,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
+	/**Initializes the CPU, AHB and APB busses clocks 
+	*/
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+							  |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -610,22 +616,22 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
   PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Configure the Systick interrupt time 
-    */
+	/**Configure the Systick interrupt time 
+	*/
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
-    /**Configure the Systick 
-    */
+	/**Configure the Systick 
+	*/
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
@@ -638,8 +644,8 @@ static void MX_ADC1_Init(void)
 
   ADC_ChannelConfTypeDef sConfig;
 
-    /**Common config 
-    */
+	/**Common config 
+	*/
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
@@ -649,17 +655,17 @@ static void MX_ADC1_Init(void)
   hadc1.Init.NbrOfConversion = 1;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Configure Regular Channel 
-    */
+	/**Configure Regular Channel 
+	*/
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -673,7 +679,7 @@ static void MX_IWDG_Init(void)
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -696,30 +702,30 @@ static void MX_TIM1_Init(void)
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_OC_Init(&htim1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_OnePulse_Init(&htim1, TIM_OPMODE_SINGLE) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sConfigOC.OCMode = TIM_OCMODE_TIMING;
@@ -731,7 +737,7 @@ static void MX_TIM1_Init(void)
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
@@ -743,7 +749,7 @@ static void MX_TIM1_Init(void)
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
   if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   HAL_TIM_MspPostInit(&htim1);
@@ -766,25 +772,25 @@ static void MX_TIM2_Init(void)
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
@@ -793,7 +799,7 @@ static void MX_TIM2_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
   HAL_TIM_MspPostInit(&htim2);
@@ -805,7 +811,7 @@ static void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 1200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -814,7 +820,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
@@ -824,7 +830,7 @@ static void MX_USART3_UART_Init(void)
 {
 
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 115200;
+  huart3.Init.BaudRate = 9600;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
@@ -833,17 +839,17 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+	_Error_Handler(__FILE__, __LINE__);
   }
 
 }
 
 /** Configure pins as 
-        * Analog 
-        * Input 
-        * Output
-        * EVENT_OUT
-        * EXTI
+		* Analog 
+		* Input 
+		* Output
+		* EVENT_OUT
+		* EXTI
 */
 static void MX_GPIO_Init(void)
 {
@@ -861,7 +867,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
+						  |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15, GPIO_PIN_RESET);
@@ -873,9 +879,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA10 
-                           PA11 PA12 PA15 */
+						   PA11 PA12 PA15 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
+						  |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -944,7 +950,7 @@ void set_fan2(int value){
 void set_fan1(int value){
 	//
 //	uint32 counter = 0xFFFFFFF;
-	TIM_Cmd(TIM2, DISABLE);
+//	TIM_Cmd(TIM2, DISABLE);
 
 	zero_crossed = 0;
 
@@ -996,7 +1002,7 @@ void set_fan1(int value){
 //	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
 //	if (value) TIM_Cmd(TIM2, ENABLE);
 //	else TIM_Cmd(TIM2, DISABLE);
-	TIM_Cmd(TIM2, ENABLE);
+//	TIM_Cmd(TIM2, ENABLE);
 }
 
 void set_aquafresh(int value){
@@ -1038,7 +1044,7 @@ void set_volume(int value){
 //		GPIOF->BSRR = GPIO_BSRR_BS_7;
 	}
 	else if (value >5)	{
-		GPIOB->BSRR = GPIO_BSRR_BS_6;
+//		GPIOB->BSRR = GPIO_BSRR_BS_6;
 		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
 //		GPIOF->BSRR = GPIO_BSRR_BS_7;
 		}
@@ -1295,8 +1301,8 @@ void ProcessButtons(void)
 				if (state >= state_enter_service) {
 					start_counter = 0;
 					state = state_show_time;
-					new_write_eeprom();
-					new_read_eeprom();
+//					new_write_eeprom();
+//					new_read_eeprom();
 				}
 				break;
 			case BUTTON_FAN_PLUS:
@@ -1486,11 +1492,11 @@ void ProcessButtons(void)
 				service_mode = mode_set_max_temp; //
 			}
 		}
-		set_start_out_signal(1);
+//		set_start_out_signal(1);
 	}
 	else
 	{
-		set_start_out_signal(0);
+//		set_start_out_signal(0);
 		if (start_counter) {
 			if (state == state_show_hours) {
 				start_counter--;
@@ -1505,8 +1511,8 @@ void ProcessButtons(void)
 				start_counter--;
 				if (!start_counter) {
 					state = state_show_time;
-					new_write_eeprom();
-					new_read_eeprom();
+//					new_write_eeprom();
+//					new_read_eeprom();
 				}
 			}
 			else {
@@ -1527,7 +1533,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-				new_write_eeprom();
+//				new_write_eeprom();
 			}
 			flash_mode = 0;
 			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
@@ -1563,7 +1569,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-				new_write_eeprom();
+//				new_write_eeprom();
 				play_message(message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;

@@ -81,6 +81,9 @@
     <ClCompile Include="src\system_stm32f1xx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\DFPlayer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drivers\cmsis\device\st\stm32f1xx\include\stm32f103xb.h">
@@ -211,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="src\max7219.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\DFPlayer.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

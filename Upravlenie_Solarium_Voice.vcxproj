@@ -64,7 +64,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <IncludePath>C:\Ac6\SystemWorkbench\plugins\fr.ac6.mcu.externaltools.arm-none.win32_1.15.0.201708311556\tools\compiler\arm-none-eabi\include\sys;C:\Ac6\SystemWorkbench\plugins\fr.ac6.mcu.externaltools.arm-none.win32_1.15.0.201708311556\tools\compiler\arm-none-eabi\include;C:\STM32_Upravlenie_Voice\Upravlenie_Solarium_Voice\Drivers\CMSIS\Include;C:\STM32_Upravlenie_Voice\Upravlenie_Solarium_Voice\Drivers\STM32F1xx_HAL_Driver\Inc;C:\STM32_Upravlenie_Voice\Upravlenie_Solarium_Voice\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Ac6\SystemWorkbench\plugins\fr.ac6.mcu.externaltools.arm-none.win32_1.15.0.201708311556\tools\compiler\arm-none-eabi\include\sys;C:\Ac6\SystemWorkbench\plugins\fr.ac6.mcu.externaltools.arm-none.win32_1.15.0.201708311556\tools\compiler\arm-none-eabi\include;$(ProjectDir)\Drivers\CMSIS\Include;$(ProjectDir)\Drivers\STM32F1xx_HAL_Driver\Inc;$(ProjectDir)\Inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -87,6 +87,7 @@
     <ClCompile Include="drivers\stm32f1xx_hal_driver\src\stm32f1xx_hal_tim.c" />
     <ClCompile Include="drivers\stm32f1xx_hal_driver\src\stm32f1xx_hal_tim_ex.c" />
     <ClCompile Include="drivers\stm32f1xx_hal_driver\src\stm32f1xx_hal_uart.c" />
+    <ClCompile Include="Src\DFPlayer.c" />
     <ClCompile Include="src\eeprom.c" />
     <ClCompile Include="src\LedControl.c" />
     <ClCompile Include="src\main.c" />
@@ -136,6 +137,7 @@
     <ClInclude Include="inc\main.h" />
     <ClInclude Include="inc\stm32f1xx_hal_conf.h" />
     <ClInclude Include="inc\stm32f1xx_it.h" />
+    <ClInclude Include="Src\DFPlayer.h" />
     <ClInclude Include="src\eeprom.h" />
     <ClInclude Include="src\LedControl.h" />
     <ClInclude Include="src\max7219.h" />
