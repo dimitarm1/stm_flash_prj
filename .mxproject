@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=E:/stm_upravlenie_voice/Inc
+HeaderPath=C:/STM32_Upravlenie_Voice/Upravlenie_Solarium_Voice/Inc
 HeaderFiles=stm32f1xx_it.h;stm32f1xx_hal_conf.h;main.h;
-SourcePath=E:/stm_upravlenie_voice/Src
+SourcePath=C:/STM32_Upravlenie_Voice/Upravlenie_Solarium_Voice/Src
 SourceFiles=stm32f1xx_it.c;stm32f1xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]
