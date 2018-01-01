@@ -133,6 +133,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 {
 
+  GPIO_InitTypeDef GPIO_InitStruct;
   if(htim_base->Instance==TIM1)
   {
   /* USER CODE BEGIN TIM1_MspInit 0 */
@@ -140,6 +141,15 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM1_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_TIM1_CLK_ENABLE();
+  
+    /**TIM1 GPIO Configuration    
+    PA8     ------> TIM1_CH1 
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /* USER CODE BEGIN TIM1_MspInit 1 */
 
   /* USER CODE END TIM1_MspInit 1 */
@@ -152,6 +162,33 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     /* Peripheral clock enable */
     __HAL_RCC_TIM2_CLK_ENABLE();
   /* USER CODE BEGIN TIM2_MspInit 1 */
+    // Select capture source - 10: CC2 channel is configured as input, IC2 is mapped on TI1
+
+//    HAL_TIMEx_OnePulseN_Start(htim_base, 1);
+    htim_base->Instance->CCMR1 = (htim_base->Instance->CCMR1 & (~TIM_CCMR1_CC2S_Msk)) | TIM_CCMR1_CC2S_1;
+    htim_base->Instance->SMCR = (htim_base->Instance->SMCR & (~(TIM_SMCR_TS_Msk | TIM_SMCR_SMS_Msk))) |   TIM_SMCR_TS_2 | TIM_SMCR_SMS_2;
+
+    htim_base->Instance->ARR = 5000; // TIM auto-reload register
+    htim_base->Instance->BDTR = TIM_BDTR_MOE; // TIM break and dead-time register
+    htim_base->Instance->CCER = 0; // TIM capture/compare enable register
+    htim_base->Instance->CCMR1 = TIM_CCMR1_OC2M_Msk; // TIM  capture/compare mode register 1
+    htim_base->Instance->CCMR2 = 0; // TIM  capture/compare mode register 2
+
+    htim_base->Instance->CCR2 = 2500; // TIM capture/compare register 2
+    htim_base->Instance->CCR3 = 0; // TIM capture/compare register 3
+    htim_base->Instance->CCR4 = 0; // TIM capture/compare register 4
+    htim_base->Instance->CNT = 0; // TIM counter register
+    htim_base->Instance->CR1 = 0; // TIM control register 1
+    htim_base->Instance->CR2 = 0; // TIM control register 2
+    htim_base->Instance->DCR = 0; // TIM DMA control register
+    htim_base->Instance->DMAR = 0; // TIM DMA address for full transfer register
+    htim_base->Instance->EGR = 0; // TIM event generation register
+    //htim_base->Instance->OR = 0; // TIM option register // Not implemented
+    htim_base->Instance->PSC = 512; // TIM prescaler register
+    htim_base->Instance->RCR = 0; // TIM  repetition counter register
+    htim_base->Instance->SMCR = TIM_SMCR_TS_2 | TIM_SMCR_SMS_2; // TIM slave Mode Control register
+    htim_base->Instance->SR = 0; // TIM status register
+    htim_base->Instance->CCR1 = TIM_CR1_OPM | TIM_CR1_CEN; // TIM capture/compare register 1
 
   /* USER CODE END TIM2_MspInit 1 */
   }
@@ -212,6 +249,13 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM1_CLK_DISABLE();
+  
+    /**TIM1 GPIO Configuration    
+    PA8     ------> TIM1_CH1
+    PA9     ------> TIM1_CH2 
+    */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_8|GPIO_PIN_9);
+
   /* USER CODE BEGIN TIM1_MspDeInit 1 */
 
   /* USER CODE END TIM1_MspDeInit 1 */
@@ -253,7 +297,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 
     GPIO_InitStruct.Pin = GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     __HAL_AFIO_REMAP_USART1_ENABLE();
@@ -284,7 +328,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 
     GPIO_InitStruct.Pin = GPIO_PIN_11;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* USART3 interrupt Init */
