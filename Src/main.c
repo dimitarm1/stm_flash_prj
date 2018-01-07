@@ -92,6 +92,7 @@ int key_states;
 LedControl led_control;
 __IO uint32_t TimingDelay;
 int tim_reload_value = 31000;
+int Gv_SystickCounter;
 
 unsigned char controller_address = 0x0e;
 int curr_status;
@@ -969,22 +970,24 @@ int FromBCD(int value){
 
 void set_lamps(int value){
 	lamps_state = value;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS11;
+	else GPIOA->BSRR = GPIO_BSRR_BR11;
 }
 void set_colarium_lamps(int value){
 	colaruim_lamps_state = value;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS12;
+	else GPIOA->BSRR = GPIO_BSRR_BR12;
 }
 void set_fan2(int value){
-	if (value)
-		; //GPIOC->BSRR = GPIO_BSRR_BS_14;
-	else
-		; //GPIOC->BSRR = GPIO_BSRR_BR_14;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS10;
+	else GPIOA->BSRR = GPIO_BSRR_BR10;
 }
 
 void set_fan1(int value){
 	//
 //	uint32 counter = 0xFFFFFFF;
 //	TIM_Cmd(TIM2, DISABLE);
-
+	int multiplier = 10;
 	zero_crossed = 0;
 
 //	while (!zero_crossed && (counter--));
@@ -1036,12 +1039,24 @@ void set_fan1(int value){
 //	if (value) TIM_Cmd(TIM2, ENABLE);
 //	else TIM_Cmd(TIM2, DISABLE);
 //	TIM_Cmd(TIM2, ENABLE);
+	if(value == 10)
+	{
+		TIM1->CCR2 = TIM1->ARR -1;
+	}
+	else if(value == 0)
+	{
+		TIM1->CCR2 = 0;
+	}
+	else
+	{
+		TIM1->CCR2 = TIM1->ARR -(multiplier*tim_base);
+	}
 }
 
 void set_aquafresh(int value){
 
-//	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_5;
-//	else GPIOB->BRR = GPIO_BSRR_BS_5;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS15;
+	else GPIOA->BSRR = GPIO_BSRR_BR15;
 }
 
 void set_volume(int value){
@@ -1700,6 +1715,113 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	htim1.Instance->CNT = 0;
 
 }
+
+void HAL_SYSTICK_Callback(void)
+{
+	if( ++ refresh_counter>200L){
+		refresh_counter = 0;
+		flash_counter++;
+	}
+#ifndef LICEVI_LAMPI_VMESTO_AQAFRESH
+	if(aqua_fresh_level == 1){
+		if(Gv_miliseconds>59000L ){
+			set_aquafresh(1);
+		}
+		else {
+			set_aquafresh(0);
+		}
+	}
+	else if(aqua_fresh_level == 2){
+		if(Gv_miliseconds %15000 >14000L ){
+			set_aquafresh(1);
+		}
+		else {
+			set_aquafresh(0);
+		}
+	}
+	else {
+		set_aquafresh(0);
+	}
+#else
+	if(aqua_fresh_level > 0){
+		set_aquafresh(1);
+	}
+	else {
+		set_aquafresh(0);
+	}
+#endif
+
+	if(fade_in_counter){
+		fade_in_counter--;
+//		if(!(fade_in_counter%100)){
+//			set_volume(fade_in_counter/100);
+//		}
+		if(!fade_in_counter){
+			//GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+			silence_counter = 100;
+		}
+	}
+
+	if(fade_out_counter){
+		fade_out_counter--;
+//		if(!(fade_out_counter%100)){
+//			set_volume(10 - fade_out_counter/100);
+//		}
+		if(fade_out_counter<=0){
+			//TIM_Cmd(TIM14, DISABLE);
+		}
+		//GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
+	}
+	if(silence_counter)
+	{
+		silence_counter--;
+		if(!silence_counter)
+		{
+			fade_out_counter = 100;
+		}
+	}
+
+	if(startup_delay)
+	{
+		startup_delay--;
+		if(!startup_delay && curr_status == STATUS_WORKING)
+		{
+			set_colarium_lamps(ON);
+			set_fan1(percent_fan1);
+			set_fan2(ON);
+		}
+	}
+	if(stop_delay)
+	{
+		stop_delay--;
+		if(!stop_delay && curr_status != STATUS_WORKING)
+		{
+			set_colarium_lamps(OFF);
+		}
+	}
+
+	if(Gv_miliseconds++>60000L){
+		Gv_miliseconds = 0;
+		if (pre_time)pre_time--;
+		else if (main_time) {
+			main_time--;
+			minute_counter ++;
+		}
+		else if (cool_time) cool_time--;
+		update_status();
+	}
+	if  (Gv_UART_Timeout){
+		Gv_UART_Timeout--;
+		if(! Gv_UART_Timeout) {
+			rx_state = 0;
+			pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
+		}
+	}
+
+	//	if(zero_crossed) zero_crossed-=10;
+	//	if(percent_fan1) set_fan1(zero_crossed && (!(zero_crossed > percent_fan1)));
+}
+
 
 
 /* USER CODE END 4 */
