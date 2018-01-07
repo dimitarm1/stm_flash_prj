@@ -386,9 +386,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   __HAL_UART_ENABLE(&huart1);
   __HAL_UART_ENABLE(&huart3);
-  HAL_TIM_Base_Start(&htim1);
-  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);;
-
+//  HAL_TIM_Base_Start(&htim1);
+//  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
+  set_fan1(0);
   /* Enable the UART Parity Error Interrupt */
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_PE);
 
@@ -434,6 +434,7 @@ int main(void)
 	  //	  HAL_Delay(1000);
 	  //	  MAX7219_ShutdownStop();
 	  //	  Display_refresh();
+		scan_keys();
 		if ((state < state_enter_service) && ((flash_counter >> 4) & 1))
 		{
 			if (controller_address == 15) {
@@ -464,6 +465,17 @@ int main(void)
 				state = state_set_time;
 				display_data = ToBCD(time_to_set);
 				//				display_data = ToBCD(last_button); //Debug
+			}
+			else if (!pre_time && !main_time && cool_time)
+			{
+				if(flash_counter & 0x20)
+				{
+					display_data = 0xFFF;
+				}
+				else
+				{
+					display_data = ToBCD(abs(cool_time));
+				}
 			}
 			else {
 				state = state_show_time;
@@ -586,7 +598,7 @@ int main(void)
 		//				while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // wAIT UNTIL TX BUFFER IS EMPTY
 		if (pre_time) {
 			// Indicate pre_time by moving bars
-			ShowBarIndicators((flash_counter >> 2) & 0x07, (flash_counter >> 2) & 0x07);
+			ShowBarIndicators((flash_counter >> 4) %10, (flash_counter >> 4) % 10);
 		}
 		else {
 			ShowBarIndicators(volume_level, fan_level);
@@ -765,7 +777,7 @@ static void MX_TIM1_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -896,7 +908,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13|GPIO_PIN_14, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_9 
                           |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -908,9 +920,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA0 PA1 PA2 PA10 
+  /*Configure GPIO pins : PA0 PA1 PA2 PA9 
                            PA11 PA12 PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_9 |GPIO_PIN_10
                           |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -979,15 +991,16 @@ void set_colarium_lamps(int value){
 	else GPIOA->BSRR = GPIO_BSRR_BR12;
 }
 void set_fan2(int value){
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS10;
-	else GPIOA->BSRR = GPIO_BSRR_BR10;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS9;
+	else GPIOA->BSRR = GPIO_BSRR_BR9;
 }
 
 void set_fan1(int value){
 	//
+	GPIO_InitTypeDef GPIO_InitStruct;
 //	uint32 counter = 0xFFFFFFF;
 //	TIM_Cmd(TIM2, DISABLE);
-	int multiplier = 10;
+	int multiplier = 285;
 	zero_crossed = 0;
 
 //	while (!zero_crossed && (counter--));
@@ -1023,6 +1036,9 @@ void set_fan1(int value){
 	default:
 		tim_base = 65;
 		break;
+	case 0:
+		tim_base = 0;
+		break;
 	}
 //	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
 //	else  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
@@ -1039,18 +1055,29 @@ void set_fan1(int value){
 //	if (value) TIM_Cmd(TIM2, ENABLE);
 //	else TIM_Cmd(TIM2, DISABLE);
 //	TIM_Cmd(TIM2, ENABLE);
-	if(value == 10)
+	if(value == 0)
 	{
-		TIM1->CCR2 = TIM1->ARR -1;
-	}
-	else if(value == 0)
-	{
-		TIM1->CCR2 = 0;
+		GPIO_InitStruct.Pin = GPIO_PIN_10;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 	}
 	else
 	{
-		TIM1->CCR2 = TIM1->ARR -(multiplier*tim_base);
+		MX_TIM1_Init();
+		HAL_TIM_Base_Start(&htim1);
+		HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
+		if(value == 10)
+		{
+			TIM1->CCR3 = TIM1->ARR -1;
+		}
+		else
+		{
+			TIM1->CCR3 = TIM1->ARR -(multiplier*tim_base);
+		}
 	}
+
 }
 
 void set_aquafresh(int value){
@@ -1702,17 +1729,23 @@ void update_status(void) {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-
-	if(htim1.Instance->CNT > 10 )
+	if(tim_base == 0)
 	{
-		tim_reload_value++;
+		htim1.Instance->ARR = 0;
 	}
-	if(htim1.Instance->CNT < 5 )
+	else
 	{
-		tim_reload_value--;
+		if(htim1.Instance->CNT > 10 )
+		{
+			tim_reload_value++;
+		}
+		if(htim1.Instance->CNT < 5 )
+		{
+			tim_reload_value--;
+		}
+		htim1.Instance->ARR = tim_reload_value;
+		htim1.Instance->CNT = 1;
 	}
-	htim1.Instance->ARR = tim_reload_value;
-	htim1.Instance->CNT = 0;
 
 }
 
