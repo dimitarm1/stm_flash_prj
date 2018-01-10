@@ -46,6 +46,7 @@
 #include "LedControl.h"
 #include "math.h"
 #include "DFPlayer.h"
+#include "eeprom.h"
 
 
 #define STATUS_FREE    (0L)
@@ -88,6 +89,7 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+const uint32_t eeprom_array[512];
 int key_states;
 LedControl led_control;
 __IO uint32_t TimingDelay;
@@ -169,7 +171,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
+void new_read_eeprom(void);
+void new_write_eeprom(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -208,6 +211,8 @@ typedef struct flash_struct{
 	 time_str time;
 	 settings_str settings;
 }flash_struct;
+flash_struct flash_data;
+uint16_t VirtAddVarTab[sizeof(flash_data)/2];
 
 typedef enum ext_modes {ext_mode_none, ext_mode_colarium}ext_modes;
 typedef enum lamps_modes {lamps_all, lamps_uv, lamps_colagen}lamps_modes;
@@ -384,6 +389,11 @@ int main(void)
   MX_IWDG_Init();
 
   /* USER CODE BEGIN 2 */
+  /* Unlock the Flash Program Erase controller */
+  HAL_FLASH_Unlock();
+  EE_Init();
+  new_read_eeprom();
+
   __HAL_UART_ENABLE(&huart1);
   __HAL_UART_ENABLE(&huart3);
 //  HAL_TIM_Base_Start(&htim1);
@@ -922,7 +932,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA9 
                            PA11 PA12 PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_9 |GPIO_PIN_10
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_9 
                           |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1856,6 +1866,56 @@ void HAL_SYSTICK_Callback(void)
 }
 
 
+void new_read_eeprom(void)
+{
+	uint16_t counter;
+	uint8_t result = 0;
+	flash_struct *flash_mem = &flash_data;
+	uint16_t * data;
+	for(counter = 0; counter < sizeof(flash_data); counter++)
+	{
+		data = (uint16_t*)&flash_data;
+		result += EE_ReadVariable(VirtAddVarTab[counter],  &(data[counter]));
+	}
+	if(result)
+	{
+		// Set defaults
+		flash_mem->settings.pre_time = 7;
+		flash_mem->settings.cool_time = 3;
+		flash_mem->time.hours_h = 0;
+		flash_mem->time.hours_l = 0;
+		flash_mem->time.minutes = 0;
+		flash_mem->settings.volume_dac = 5;
+		flash_mem->settings.temperatue_max = 90;
+		flash_mem->settings.ext_mode = 0;
+		flash_mem->settings.addresse = 0x0e;
+		new_write_eeprom();
+	}
+
+	preset_pre_time = flash_mem->settings.pre_time ;
+	preset_cool_time = flash_mem->settings.cool_time;
+	controller_address = flash_mem->settings.addresse & 0x0f;
+	work_hours[0] = flash_mem->time.hours_h;
+	work_hours[1] = flash_mem->time.hours_l;
+	work_hours[2] = flash_mem->time.minutes;
+	volume_message = flash_mem->settings.volume_dac;
+	temperature_threshold = flash_mem->settings.temperatue_max;
+	ext_mode = flash_mem->settings.ext_mode;
+
+}
+
+void new_write_eeprom(void)
+{
+	uint16_t counter;
+	for(counter = 0; counter < sizeof(flash_data); counter++)
+	{
+//		if(FLASH_COMPLETE != EE_WriteVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]))
+		{
+			// Second chance
+			EE_WriteVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]);
+		}
+	}
+}
 
 /* USER CODE END 4 */
 
