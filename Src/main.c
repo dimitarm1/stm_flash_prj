@@ -53,12 +53,22 @@
 #define STATUS_WAITING (3L)
 #define STATUS_WORKING (1L)
 #define STATUS_COOLING (2L)
-#define START_COUNTER_TIME  (1000000L)
-#define ENTER_SERVICE_DELAY (2000000L)
-#define SERVICE_NEXT_DELAY  (400000L)
-#define EXIT_SERVICE_TIME   (1200000L)
-#define START_DELAY         (200000L)
+#define START_COUNTER_TIME  (1000L)
+#define ENTER_SERVICE_DELAY (2000L)
+#define SERVICE_NEXT_DELAY  (400)
+#define EXIT_SERVICE_TIME   (1200L)
+#define START_DELAY         (200L)
 
+// Virtual addreses
+#define ADDRESS_HOURS_H		1
+#define ADDRESS_HOURS_L		2
+#define ADDRESS_MINUTES		3
+#define ADDRESS_ADDRESSE	4
+#define ADDRESS_PRE_TIME	5
+#define ADDRESS_COOL_TIME	6
+#define ADDRESS_EXT_MODE	7
+#define ADDRESS_VOLUME		8
+#define ADDRESS_TEMP_MAX	9
 
 // Buttons
 #define BUTTON_PLUS      (1<<0x02)
@@ -171,8 +181,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-void new_read_eeprom(void);
-void new_write_eeprom(void);
+void read_settings(void);
+void write_settings(void);
+void read_stored_time(void);
+void write_stored_time(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -192,27 +204,24 @@ void play_message(int index);
 void new_read_eeprom(void);
 void new_write_eeprom(void);
 typedef struct time_str{
-	 uint8_t used_flag :8;
-	 uint8_t hours_h   :8;
-	 uint8_t hours_l   :8;
-	 uint8_t minutes   :8;
+	 uint16_t hours_h;
+	 uint16_t hours_l;
+	 uint16_t minutes;
 }time_str;
 typedef struct settings_str{
-	 uint8_t addresse  :8;
-	 uint8_t pre_time  :8;
-	 uint8_t cool_time :8;
-	 uint8_t ext_mode  :8;
-	 uint8_t volume_dac:8;
-	 uint8_t temperatue_max:8;
-	 uint8_t unused_3  :8;
-	 uint8_t checksum  :8;
+	 uint16_t addresse;
+	 uint16_t pre_time;
+	 uint16_t cool_time;
+	 uint16_t ext_mode;
+	 uint16_t volume;
+	 uint16_t temperatue_max;
 }settings_str;
 typedef struct flash_struct{
 	 time_str time;
 	 settings_str settings;
 }flash_struct;
 flash_struct flash_data;
-uint16_t VirtAddVarTab[sizeof(flash_data)/2];
+uint16_t VirtAddVarTab[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};//sizeof(flash_data)/2];
 
 typedef enum ext_modes {ext_mode_none, ext_mode_colarium}ext_modes;
 typedef enum lamps_modes {lamps_all, lamps_uv, lamps_colagen}lamps_modes;
@@ -362,7 +371,7 @@ int main(void)
 	if (!preset_pre_time || !preset_cool_time) {
 		preset_pre_time = 7;
 		preset_cool_time = 3;
-		//new_write_eeprom();// Paranoia check
+		write_settings();// Paranoia check
 	}
 	update_status();
 	//set_volume(0);
@@ -392,7 +401,9 @@ int main(void)
   /* Unlock the Flash Program Erase controller */
   HAL_FLASH_Unlock();
   EE_Init();
-  new_read_eeprom();
+
+  read_settings();
+  read_stored_time();
 
   __HAL_UART_ENABLE(&huart1);
   __HAL_UART_ENABLE(&huart3);
@@ -500,9 +511,9 @@ int main(void)
 				flash_mode = 3; // All flashing
 			}
 			{
-				int index = ((flash_counter / 0x200) + 3) % 4;
-				if (index < 3) {
-					display_data = ToBCD(work_hours[index]);
+				int index = ((flash_counter / 0x30)) % 8;
+				if ((index < 6) && (index & 1)) {
+					display_data = ToBCD(work_hours[index/2]);
 				}
 				else {
 					display_data = 0xFFF;
@@ -516,7 +527,7 @@ int main(void)
 
 		case state_clear_hours:
 			//			flash_mode = 3;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				display_data = 0xFFC;
 			}
 			else {
@@ -525,7 +536,7 @@ int main(void)
 			break;
 		case state_address:
 			flash_mode = 0;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				if (controller_address != 15) { // Address 15 reserved for external control
 					display_data = controller_address;
 				}
@@ -539,7 +550,7 @@ int main(void)
 			break;
 		case state_pre_time:
 			//			flash_mode = 3;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				display_data = preset_pre_time;
 			}
 			else {
@@ -548,7 +559,7 @@ int main(void)
 			break;
 		case state_cool_time:
 			//			flash_mode = 3;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				display_data = preset_cool_time;
 			}
 			else {
@@ -557,7 +568,7 @@ int main(void)
 			break;
 		case state_ext_mode:
 			//			flash_mode = 0;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				display_data = ext_mode;
 			}
 			else {
@@ -567,7 +578,7 @@ int main(void)
 
 		case state_volume:
 			//			flash_mode = 0;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				display_data = volume_message;
 			}
 			else {
@@ -577,7 +588,7 @@ int main(void)
 
 		case state_max_temp:
 			//			flash_mode = 0;
-			if ((flash_counter / 0x400) & 1) {
+			if ((flash_counter / 0x30) & 1) {
 				display_data = temperature_threshold;
 			}
 			else {
@@ -1371,8 +1382,7 @@ void ProcessButtons(void)
 								work_hours[1] = 0;
 								work_hours[2] = 0;
 							}
-//							new_write_eeprom();
-//							new_read_eeprom();
+							write_stored_time();
 							start_counter = 0;
 							service_mode = mode_null;
 							if (state == state_address) {
@@ -1400,8 +1410,7 @@ void ProcessButtons(void)
 				if (state >= state_enter_service) {
 					start_counter = 0;
 					state = state_show_time;
-//					new_write_eeprom();
-//					new_read_eeprom();
+					write_settings();
 				}
 				break;
 			case BUTTON_FAN_PLUS:
@@ -1632,7 +1641,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-//				new_write_eeprom();
+				write_stored_time();
 			}
 			flash_mode = 0;
 			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
@@ -1668,7 +1677,7 @@ void ProcessButtons(void)
 						work_hours[0]++;
 					}
 				}
-//				new_write_eeprom();
+				write_stored_time();
 				play_message(message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
@@ -1866,54 +1875,132 @@ void HAL_SYSTICK_Callback(void)
 }
 
 
-void new_read_eeprom(void)
+
+void read_settings(void)
 {
 	uint16_t counter;
 	uint8_t result = 0;
 	flash_struct *flash_mem = &flash_data;
-	uint16_t * data;
-	for(counter = 0; counter < sizeof(flash_data); counter++)
-	{
-		data = (uint16_t*)&flash_data;
-		result += EE_ReadVariable(VirtAddVarTab[counter],  &(data[counter]));
-	}
+	uint16_t  data;
+
+	result += EE_ReadVariable(ADDRESS_ADDRESSE,  &data);
+	controller_address = data;
+	result += EE_ReadVariable(ADDRESS_PRE_TIME,  &data);
+	preset_pre_time = data;
+	result += EE_ReadVariable(ADDRESS_COOL_TIME,  &data);
+	preset_cool_time = data;
+	result += EE_ReadVariable(ADDRESS_EXT_MODE,  &data);
+	ext_mode = data;
+	result += EE_ReadVariable(ADDRESS_VOLUME,  &data);
+	volume_message = data;
+	result += EE_ReadVariable(ADDRESS_TEMP_MAX,  &data);
+	temperature_threshold = data;
+
 	if(result)
 	{
 		// Set defaults
-		flash_mem->settings.pre_time = 7;
-		flash_mem->settings.cool_time = 3;
-		flash_mem->time.hours_h = 0;
-		flash_mem->time.hours_l = 0;
-		flash_mem->time.minutes = 0;
-		flash_mem->settings.volume_dac = 5;
-		flash_mem->settings.temperatue_max = 90;
-		flash_mem->settings.ext_mode = 0;
-		flash_mem->settings.addresse = 0x0e;
-		new_write_eeprom();
+		preset_pre_time = 7;
+		preset_cool_time = 3;
+		controller_address = 14;
+		volume_message = 5;
+		temperature_threshold = 80;
+		ext_mode = 0;
+		work_hours[0] = 0;
+		work_hours[1] = 0;
+		work_hours[2] = 0;
+		write_settings();
+		write_stored_time();
 	}
-
-	preset_pre_time = flash_mem->settings.pre_time ;
-	preset_cool_time = flash_mem->settings.cool_time;
-	controller_address = flash_mem->settings.addresse & 0x0f;
-	work_hours[0] = flash_mem->time.hours_h;
-	work_hours[1] = flash_mem->time.hours_l;
-	work_hours[2] = flash_mem->time.minutes;
-	volume_message = flash_mem->settings.volume_dac;
-	temperature_threshold = flash_mem->settings.temperatue_max;
-	ext_mode = flash_mem->settings.ext_mode;
-
+}
+void read_stored_time(void)
+{
+	uint16_t  data;
+	if(!EE_ReadVariable(ADDRESS_HOURS_H,  &data))
+	{
+		work_hours[0] = data;
+	}
+	else
+	{
+		work_hours[0] = 0;
+	}
+	if(!EE_ReadVariable(ADDRESS_HOURS_L,  &data))
+	{
+		work_hours[1] = data;
+	}
+	else
+	{
+		work_hours[1] = 0;
+	}
+	if(!EE_ReadVariable(ADDRESS_MINUTES,  &data))
+	{
+		work_hours[2] = data;
+	}
+	else
+	{
+		work_hours[2] = 0;
+	}
 }
 
-void new_write_eeprom(void)
+void write_settings(void)
 {
 	uint16_t counter;
-	for(counter = 0; counter < sizeof(flash_data); counter++)
+	for(counter = 0; counter < 3; counter++)
 	{
-//		if(FLASH_COMPLETE != EE_WriteVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]))
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_ADDRESSE,  controller_address))
 		{
 			// Second chance
-			EE_WriteVariable(VirtAddVarTab[counter],  ((uint16_t*)(&flash_data))[counter]);
+			continue;
 		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_PRE_TIME,  preset_pre_time))
+		{
+			// Second chance
+			continue;
+		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_COOL_TIME,  preset_cool_time))
+		{
+			// Second chance
+			continue;
+		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_EXT_MODE,  ext_mode))
+		{
+			// Second chance
+			continue;
+		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_VOLUME,  volume_message))
+		{
+			// Second chance
+			continue;
+		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_TEMP_MAX,  temperature_threshold))
+		{
+			// Second chance
+			continue;
+		}
+		break;
+	}
+}
+
+void write_stored_time(void)
+{
+	uint16_t counter;
+	for(counter = 0; counter < 3; counter++)
+	{
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_HOURS_H,  work_hours[0]))
+		{
+			// Second chance
+			continue;
+		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_HOURS_L,  work_hours[1]))
+		{
+			// Second chance
+			continue;
+		}
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_MINUTES,  work_hours[2]))
+		{
+			// Second chance
+			continue;
+		}
+		break;
 	}
 }
 
