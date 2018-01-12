@@ -305,7 +305,16 @@ char display_buffer[16];
 
 
 void show_level(int level){
-	level = level & 0x0F;
+  unsigned char val = 0;
+  if (level == 1)
+  {
+	  val = 0x0f;
+  }
+  else if (level >= 2)
+  {
+	  val = 0xff;
+  }
+  LedControl_setRow(&led_control, 0, 6, val);
 }
 void show_digit(int digit){
 	digit = digit & 0x0F;
@@ -318,38 +327,6 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 	char index = 0;
-
-	//  char i;
-	//  for (i = 0; i < 8; i++)
-	//  {
-	//	  display_buffer[i*2] = 0x0;
-	//	  display_buffer[i*2+1] = 0;
-	//  }
-	//  display_buffer[0] = 0;
-	//  display_buffer[1] = 9; // No decode mode
-	//  display_buffer[2] = 0x7F;
-	//  display_buffer[3] = 0x0A; // Intensity
-	//  display_buffer[4] = 0x7;
-	//  display_buffer[5] = 0x0B; // Scan Limit
-	//  display_buffer[6] = 0x1;
-	//  display_buffer[7] = 0x0C; // Shutdown register
-	//  Display_refresh();
-	//  HAL_Delay(100);
-	//
-	//  for (i = 0; i < 8; i++)
-	//  {
-	//	  display_buffer[i*2] = 0x33;
-	//	  display_buffer[i*2+1] = i;
-	//  }
-	//  MAX7219_Init();
-
-
-	//  SPI_Write(0x0C,0x01);        // Normal Operation
-	//  SPI_Write(0x09,0xFF);        // Code B Decode for Digit 7 to 0
-	//  SPI_Write(0x0B,0x07);        // Scan digit 7 to 0
-	//  SPI_Write(0x0A,0x0F);        // Set Default Intensity to Max
-
-
 
   /* USER CODE END 1 */
 
@@ -436,26 +413,6 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  //	  HAL_Delay(1000);
-	  //	  scan_keys();
-	  //	  LedControl_setDigit(&led_control, 0, 0, index & 0x0f, 0);
-	  //	  LedControl_setDigit(&led_control, 0, 1, index & 0x0f, 0);
-	  //	  LedControl_setDigit(&led_control, 0, 2, index & 0x0f, 0);
-	  //	  if((index & 0x0f) < 11)
-	  //	  {
-	  //	      ShowBarIndicators(index & 0x0f, 0);
-	  //	  }
-	  //	  LedControl_setRow(&led_control, 0, 3, 1<<(index & 7));
-	  //	  LedControl_setRow(&led_control, 0, 5, 1<<(index & 7));
-	  //	  LedControl_setRow(&led_control, 0, 6, 1<<(index & 7));
-	  //	  MAX7219_DisplayChar(1,index & 0x0f);
-	  //	  MAX7219_DisplayChar(2,(index>>4) & 0x0f);
-	  //	  index++;
-	  //	  HAL_Delay(1000);
-	  //	  MAX7219_ShutdownStart();
-	  //	  HAL_Delay(1000);
-	  //	  MAX7219_ShutdownStop();
-	  //	  Display_refresh();
 		scan_keys();
 		if ((state < state_enter_service) && ((flash_counter >> 4) & 1))
 		{
@@ -625,6 +582,7 @@ int main(void)
 		else {
 			ShowBarIndicators(volume_level, fan_level);
 		}
+		show_level(aqua_fresh_level);
 		HAL_Delay(10);
 //		display_data = 0xFFF;
 //		for(int i = 0; i < 9; i++)
