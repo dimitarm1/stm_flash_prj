@@ -297,6 +297,7 @@ void ShowBarIndicators(unsigned char bar1, unsigned char bar2)
 	  if(bar2 > 1) val |= 0x10;
 	  if(bar1 > 0) val |= 0x20;
 	  if(bar1 > 1) val |= 0x40;
+
 	  LedControl_setRow(&led_control, 0, 4, val);
 }
 
