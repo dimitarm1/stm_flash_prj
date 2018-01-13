@@ -105,6 +105,8 @@ LedControl led_control;
 __IO uint32_t TimingDelay;
 int tim_reload_value = 31000;
 int Gv_SystickCounter;
+uint32_t g_ADCValue;
+uint32_t g_MeasurementNumber;
 
 unsigned char controller_address = 0x0e;
 int curr_status;
@@ -162,6 +164,14 @@ int led_counter = 0;
 int digit_num = 0;
 __IO uint32_t LsiFreq = 40000;
 
+/* Application general parameters */
+#define VDD_APPLI                      ((uint32_t) 3300)    /* Value of analog voltage supply Vdda (unit: mV) */
+#define RANGE_8BITS                    ((uint32_t)  255)    /* Max digital value for a full range of 8 bits */
+#define RANGE_12BITS                   ((uint32_t) 4095)    /* Max digital value for a full range of 12 bits */
+
+/* ADC parameters */
+#define ADCCONVERTEDVALUES_BUFFER_SIZE ((uint32_t)  256)    /* Size of array containing ADC converted values */
+
 
 /* USER CODE END PV */
 
@@ -174,6 +184,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_IWDG_Init(void);
+static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -374,6 +385,9 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_IWDG_Init();
+
+  /* Initialize interrupts */
+  MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
   /* Unlock the Flash Program Erase controller */
@@ -583,6 +597,7 @@ int main(void)
 			ShowBarIndicators(volume_level, fan_level);
 		}
 		show_level(aqua_fresh_level);
+		HAL_ADC_Start_IT(&hadc1);
 		HAL_Delay(10);
 //		display_data = 0xFFF;
 //		for(int i = 0; i < 9; i++)
@@ -663,6 +678,15 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+}
+
+/** NVIC Configuration
+*/
+static void MX_NVIC_Init(void)
+{
+  /* ADC1_2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
 }
 
 /* ADC1 init function */
@@ -863,6 +887,21 @@ static void MX_USART3_UART_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+}
+
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
 
@@ -1962,6 +2001,12 @@ void write_stored_time(void)
 		break;
 	}
 }
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
+  {
+      g_ADCValue = HAL_ADC_GetValue(AdcHandle);
+      g_MeasurementNumber++;
+  }
 
 /* USER CODE END 4 */
 
