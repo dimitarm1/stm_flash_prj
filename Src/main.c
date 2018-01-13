@@ -417,6 +417,7 @@ int main(void)
 	DFPlayerInit();
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // MP3 Player select
 	DFPlayerEexecCMD(0x0D, 0, 0);
+//	DFPlayerEexecCMD(0x0F, 01, 01);
 
   /* USER CODE END 2 */
 

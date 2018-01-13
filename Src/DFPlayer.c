@@ -145,6 +145,7 @@ void DFPlayerInit (UART_HandleTypeDef *huart)
 
  // Initialize sound to very low volume. Adapt according used speaker and wanted volume
  DFPlayerEexecCMD(0x06, 0, 0x30); // Set the volume (0x00~0x30)
+ HAL_Delay(10);
 }
 
 
@@ -168,3 +169,41 @@ void DFPlayerEexecCMD(unsigned char CMD, unsigned char Par1, unsigned char Par2)
 	HAL_UART_Transmit(&huart3, &Command_line[0], sizeof(Command_line), 1000);
 	//HAL_UART_Transmit_IT(USART3, &Command_line[0], sizeof(Command_line));
 }
+
+unsigned char DFPlayerIsBuisy()
+{
+	return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4);
+}
+
+/*
+ uint32_t msCmdReceived;
+
+void sendCmd(int cmd, int lb, int hb, bool reply = false)
+{                 // standard format for module command stream
+    uint8_t buf[] = {0x7E, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF};
+    int16_t chksum = 0;
+    int idx = 3;                    // position of first command byte
+
+    buf[idx++] = (uint8_t)cmd;      // inject command byte in buffer
+    if (reply) buf[idx++] = 0x01;   // set if reply is needed/wanted
+    if (hb >= 0)                    // if there is a high byte data field
+        buf[idx++] = (uint8_t)hb;   // add it to the buffer
+    if (lb >= 0)                    // if there is a low byte data field
+        buf[idx++] = (uint8_t)lb;   // add it to the buffer
+    buf[2] = idx - 1;               // inject command length into buffer
+
+    for (int i=1; i < idx; i++)     // calculate check sum for the provided data
+        chksum += buf[i];
+    chksum *= -1;
+
+    buf[idx++] = (chksum >> 8);     // inject high byte of checksum before
+    buf[idx++] = chksum & 0xFF;     // low byte of checksum
+    buf[idx++] = 0xEF;              // place end-of-command byte
+
+    Serial1.write(buf, idx);        // send the command to module
+    for (int i = 0; i < idx; i++)   // send command as hex string to MCU
+      Serial.printf("%02X ", buf[i]);
+    Serial.println();
+}
+ *
+ * */
