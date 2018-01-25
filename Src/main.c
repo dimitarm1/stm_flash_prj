@@ -106,7 +106,9 @@ __IO uint32_t TimingDelay;
 int tim_reload_value = 31000;
 int Gv_SystickCounter;
 uint32_t g_ADCValue;
+uint32_t g_ADCMeanValue;
 uint32_t g_MeasurementNumber;
+uint32_t g_Temperature;
 
 unsigned char controller_address = 0x0e;
 int curr_status;
@@ -171,7 +173,8 @@ __IO uint32_t LsiFreq = 40000;
 
 /* ADC parameters */
 #define ADCCONVERTEDVALUES_BUFFER_SIZE ((uint32_t)  256)    /* Size of array containing ADC converted values */
-
+#define ADC_36_6_DEGREE_VALUE (1024 - 0x617)
+#define ADC_0_DEGREE_VALUE (1024 - 0xB70)
 
 /* USER CODE END PV */
 
@@ -610,6 +613,14 @@ int main(void)
 //			}
 //
 //		}
+		if(aqua_fresh_level == 0)
+		{
+		display_data = ToBCD(g_Temperature);
+		}
+		else
+		{
+			display_data = g_ADCMeanValue;
+		}
 		LedControl_setDigit(&led_control, 0, 0, display_data & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 1, (display_data>>4) & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 2, (display_data>>8) & 0x0f, 0);
@@ -1775,7 +1786,7 @@ void HAL_SYSTICK_Callback(void)
 	}
 #ifndef LICEVI_LAMPI_VMESTO_AQAFRESH
 	if(aqua_fresh_level == 1){
-		if(Gv_miliseconds>59000L ){
+		if(Gv_miliseconds %30000 >29000L ){
 			set_aquafresh(1);
 		}
 		else {
@@ -2005,8 +2016,12 @@ void write_stored_time(void)
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
   {
+	//CorrectedValue = (((RawValue – RawLow) * ReferenceRange) / RawRange) + ReferenceLow
       g_ADCValue = HAL_ADC_GetValue(AdcHandle);
+      g_ADCMeanValue = (g_ADCMeanValue*9 + g_ADCValue)/10;
+      g_ADCValue = 1024 - g_ADCValue;
       g_MeasurementNumber++;
+      g_Temperature = (g_Temperature*9 + (((g_ADCValue - ADC_0_DEGREE_VALUE)*366)/(ADC_36_6_DEGREE_VALUE - ADC_0_DEGREE_VALUE)) + 0)/10;
   }
 
 /* USER CODE END 4 */

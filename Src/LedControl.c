@@ -47,8 +47,8 @@
 
 void pinMode(GPIO_TypeDef* port, uint16_t pin_num, char pin_mode)
 {
-	  GPIO_InitTypeDef GPIO_InitStruct;
-	  GPIO_InitStruct.Pin = pin_num;
+	  static GPIO_InitTypeDef GPIO_InitStruct;
+	  GPIO_InitStruct.Pin = 1ul << pin_num;
 	  GPIO_InitStruct.Mode = pin_mode;
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 	  HAL_GPIO_Init(port, &GPIO_InitStruct);
