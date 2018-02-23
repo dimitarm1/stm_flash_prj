@@ -33,7 +33,7 @@
 
 #define ON 100
 #define OFF 0
-
+#define MUZIKA_SAMO_PRI_PECHENE
 
 
 #endif /* DEFINES_H_ */

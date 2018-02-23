@@ -469,8 +469,12 @@ int main(void)
 		new_write_eeprom();// Paranoia check
 	}
 	GPIOA->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1 | GPIO_BSRR_BS_2;
+#ifdef MUZIKA_SAMO_PRI_PECHENE
+	GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+#else
 	GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
-	//GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+#endif
+
 	update_status();
 	set_volume(0);
 
@@ -1270,7 +1274,9 @@ void TimingDelay_Decrement(void)
 //			set_volume(fade_in_counter/100);
 //		}
 		if(!fade_in_counter){
+#ifndef MUZIKA_SAMO_PRI_PECHENE
 			GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+#endif
 			silence_counter = 100;
 		}
 	}
@@ -1283,7 +1289,9 @@ void TimingDelay_Decrement(void)
 		if(fade_out_counter<=0){
 			TIM_Cmd(TIM14, DISABLE);
 		}
+#ifndef MUZIKA_SAMO_PRI_PECHENE
 		GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
+#endif
 	}
 	if(silence_counter)
 	{
@@ -1479,6 +1487,14 @@ void set_start_out_signal(int value){
 
 void set_lamps(int value){
 	lamps_state = value;
+
+#ifdef MUZIKA_SAMO_PRI_PECHENE
+	if(!value)
+		GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
+	else
+		GPIOC->BRR =  GPIO_BSRR_BS_3; // External sound
+#endif
+
 }
 void set_colarium_lamps(int value){
 	colaruim_lamps_state = value;
@@ -1550,7 +1566,7 @@ void set_fan1(int value){
 
 void set_aquafresh(int value){
 
-	if (value)	GPIOB->BSRR = GPIO_BSRR_BS_5;
+	if (value && (curr_status == STATUS_WORKING))	GPIOB->BSRR = GPIO_BSRR_BS_5;
 	else GPIOB->BRR = GPIO_BSRR_BS_5;
 }
 
