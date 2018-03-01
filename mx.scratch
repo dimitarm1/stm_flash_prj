@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>D:\stm_flash_prj_Upravlenie_Voice\\Upravlenie_Solarium_Voice</ProjectName>
+<ProjectName>H:\stm_projects\Upravlenie_CubeMX\RF_Relay\\RF_Relay</ProjectName>
 <CMSIS>..\Drivers\CMSIS</CMSIS>
 <HAL_Driver>C:\Users\didi\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.0\Drivers\CMSIS</HAL_Driver>
 
@@ -22,7 +22,7 @@
 
 <configs>
   <config>
-    <name>Upravlenie_Solarium_Voice</name>				
+    <name>RF_Relay</name>				
     <device>STM32F103C8Tx</device>		 
     <heapSize>0x200</heapSize>
     <stackSize>0x400</stackSize>
@@ -30,9 +30,9 @@
     	<board>custom</board>
 			
     <usedDebug>true</usedDebug>
-    	<debugprobe>swd</debugprobe>
+    	<debugprobe></debugprobe>
     <optimization>6</optimization>
-    <icfloc>0</icfloc>
+    <icfloc>1</icfloc>
     <Adefines>
         <define></define>
     </Adefines>   
@@ -63,6 +63,8 @@
 	   <include>..\Inc</include>
 	   <include>..\Drivers\STM32F1xx_HAL_Driver\Inc</include>
 	   <include>..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy</include>
+	   <include>..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc</include>
+	   <include>..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc</include>
 	   <include>..\Drivers\CMSIS\Device\ST\STM32F1xx\Include</include>
 	   <include>..\Drivers\CMSIS\Include</include>
 
@@ -82,6 +84,9 @@
 		    	<sourceEntry>
 		    		<name>Drivers</name>
 		    	</sourceEntry>
+		    		<sourceEntry>
+		    			<name>Middlewares</name>
+		    		</sourceEntry>
 		    </sourceEntries>
 
 </Project>
