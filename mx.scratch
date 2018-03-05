@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>H:\stm_projects\Upravlenie_CubeMX\RF_Relay\\RF_Relay</ProjectName>
+<ProjectName>E:\STM_RF_Relay\\RF_Relay</ProjectName>
 <CMSIS>..\Drivers\CMSIS</CMSIS>
-<HAL_Driver>C:\Users\didi\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.0\Drivers\CMSIS</HAL_Driver>
+<HAL_Driver>C:\Users\Work\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.0\Drivers\CMSIS</HAL_Driver>
 
 <Toolchain>SW4STM32</Toolchain>
 <Version>0</Version>
@@ -30,9 +30,9 @@
     	<board>custom</board>
 			
     <usedDebug>true</usedDebug>
-    	<debugprobe></debugprobe>
+    	<debugprobe>swd</debugprobe>
     <optimization>6</optimization>
-    <icfloc>1</icfloc>
+    <icfloc>0</icfloc>
     <Adefines>
         <define></define>
     </Adefines>   
@@ -63,8 +63,6 @@
 	   <include>..\Inc</include>
 	   <include>..\Drivers\STM32F1xx_HAL_Driver\Inc</include>
 	   <include>..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy</include>
-	   <include>..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc</include>
-	   <include>..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc</include>
 	   <include>..\Drivers\CMSIS\Device\ST\STM32F1xx\Include</include>
 	   <include>..\Drivers\CMSIS\Include</include>
 
@@ -84,9 +82,6 @@
 		    	<sourceEntry>
 		    		<name>Drivers</name>
 		    	</sourceEntry>
-		    		<sourceEntry>
-		    			<name>Middlewares</name>
-		    		</sourceEntry>
 		    </sourceEntries>
 
 </Project>
