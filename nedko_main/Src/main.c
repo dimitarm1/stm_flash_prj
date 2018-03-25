@@ -41,7 +41,10 @@
 #include "stm32f1xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "string.h"
+#include "LedControl.h"
+#include "math.h"
+#include "eeprom.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -51,7 +54,7 @@ RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+LedControl led_control;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,7 +76,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	  unsigned char counter = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -98,17 +101,25 @@ int main(void)
   MX_ADC1_Init();
 
   /* USER CODE BEGIN 2 */
-
+	LedControl_init(&led_control, 9, GPIOB, 11, GPIOB, 10, GPIOB, 6);
+	LedControl_shutdown(&led_control, 0, 0); //Turn ON
+	LedControl_setIntensity(&led_control, 0, 8);
+	LedControl_clearDisplay(&led_control, 0);
+    LedControl_setRow(&led_control, 2, 3, 0xFF);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
 
+		HAL_Delay(100);
+		LedControl_setRow(&led_control, (counter/8) % 8, counter % 8, 0x55);
+		counter++;
   }
   /* USER CODE END 3 */
 
