@@ -101,11 +101,14 @@ int main(void)
   MX_ADC1_Init();
 
   /* USER CODE BEGIN 2 */
-	LedControl_init(&led_control, 9, GPIOB, 11, GPIOB, 10, GPIOB, 6);
-	LedControl_shutdown(&led_control, 0, 0); //Turn ON
-	LedControl_setIntensity(&led_control, 0, 8);
-	LedControl_clearDisplay(&led_control, 0);
-    LedControl_setRow(&led_control, 2, 3, 0xFF);
+  LedControl_init(&led_control, 9, GPIOB, 11, GPIOB, 10, GPIOB, 11);
+  for(int i = 0; i < led_control.maxDevices; i++)
+  {
+	  LedControl_shutdown(&led_control, i, 0); //Turn ON
+	  LedControl_setIntensity(&led_control, i, 8);
+	  LedControl_clearDisplay(&led_control, i);
+  }
+  LedControl_setRow(&led_control, 2, 3, 0x0F);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -118,7 +121,7 @@ int main(void)
   /* USER CODE BEGIN 3 */
 
 		HAL_Delay(100);
-		LedControl_setRow(&led_control, (counter/8) % 8, counter % 8, 0x55);
+		LedControl_setRow(&led_control, (counter/8 ) % 8, counter % 8, 0x55);
 		counter++;
   }
   /* USER CODE END 3 */

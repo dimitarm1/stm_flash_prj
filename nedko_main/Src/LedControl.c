@@ -26,6 +26,7 @@
 
 
 #include "LedControl.h"
+#include <string.h>
 
 //the opcodes for the MAX7221 and MAX7219
 #define OP_NOOP   0
@@ -87,8 +88,7 @@ void LedControl_init(LedControl* led_control, uint16_t dataPin, GPIO_TypeDef* da
     pinMode(led_control->SPI_CS_port, led_control->SPI_CS_pin, GPIO_MODE_OUTPUT_PP);
     digitalWrite(led_control->SPI_CS_port, led_control->SPI_CS_pin,HIGH);
 
-    for(int i=0;i<64;i++) 
-    	led_control->status[i]=0x00;
+    memset(led_control->status, 0, sizeof(led_control->status));
     for(int i=0;i<led_control->maxDevices;i++) {
     	LedControl_spiTransfer(led_control, i, OP_DISPLAYTEST, 0);
         //scanlimit is set to max on startup
@@ -224,10 +224,9 @@ void LedControl_setChar(LedControl* led_control, int addr, int digit, unsigned c
 void LedControl_spiTransfer(LedControl* led_control, int addr, char opcode, char data) {
     //Create an array with the data to shift out
     int offset=addr*2;
-    int maxbytes=led_control->maxDevices*2;
+    int maxbytes=32; //led_control->maxDevices*2;
 
-    for(int i=0;i<maxbytes;i++)
-    	led_control->spidata[i]=(unsigned char)0;
+    memset(led_control->spidata, 0, sizeof(led_control->spidata));
     //put our device data into the array
     led_control->spidata[offset+1]=opcode;
     led_control->spidata[offset]=data;

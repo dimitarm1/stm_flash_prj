@@ -79,8 +79,8 @@ const static char charTable []   = {
 
 typedef struct LedControl {
 
-        /* The array for shifting the data to the devices */
-        char spidata[16];
+        /* The array for shifting the data to the devices up to 16 devices*/
+        char spidata[32];
         /* Send out a single command to the device */
 
         /* We keep track of the led-status for all 16 devices in this array */
