@@ -54,7 +54,7 @@ RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-LedControl led_control;
+extern LedControl led_control;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,14 +101,14 @@ int main(void)
   MX_ADC1_Init();
 
   /* USER CODE BEGIN 2 */
-  LedControl_init(&led_control, 9, GPIOB, 11, GPIOB, 10, GPIOB, 11);
+  LedControl_init(9, GPIOB, 11, GPIOB, 10, GPIOB, 11);
   for(int i = 0; i < led_control.maxDevices; i++)
   {
-	  LedControl_shutdown(&led_control, i, 0); //Turn ON
-	  LedControl_setIntensity(&led_control, i, 8);
-	  LedControl_clearDisplay(&led_control, i);
+	  LedControl_shutdown(i, 0); //Turn ON
+	  LedControl_setIntensity(i, 8);
+	  LedControl_clearDisplay(i);
   }
-  LedControl_setRow(&led_control, 2, 3, 0x0F);
+  LedControl_setRow(2, 3, 0x0F);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,7 +121,7 @@ int main(void)
   /* USER CODE BEGIN 3 */
 
 		HAL_Delay(100);
-		LedControl_setRow(&led_control, (counter/8 ) % 8, counter % 8, 0x55);
+		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
 		counter++;
   }
   /* USER CODE END 3 */

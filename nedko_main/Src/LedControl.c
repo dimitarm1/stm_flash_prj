@@ -46,8 +46,55 @@
 #define HIGH 1
 #define LOW 0
 
+LedControl led_control;
 
-const unsigned char CH[] = {
+/*
+ * Segments to be switched on for characters and digits on
+ * 7-Segment Displays
+ */
+
+// Original
+//const static char charTable []   = {
+//    0B01111110,0B00110000,0B01101101,0B01111001,0B00110011,0B01011011,0B01011111,0B01110000,
+//    0B01111111,0B01111011,0B01110111,0B00011111,0B00001101,0B00111101,0B01001111,0B01000111,
+//    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+//    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+//    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+//    0B00000000,0B00000000,0B00000000,0B00000000,0B10000000,0B00000001,0B10000000,0B00000000,
+//    0B01111110,0B00110000,0B01101101,0B01111001,0B00110011,0B01011011,0B01011111,0B01110000,
+//    0B01111111,0B01111011,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+//    0B00000000,0B01110111,0B00011111,0B00001101,0B00111101,0B01001111,0B01000111,0B00000000,
+//    0B00110111,0B00000000,0B00000000,0B00000000,0B00001110,0B00000000,0B00000000,0B00000000,
+//    0B01100111,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+//    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00001000,
+//    0B00000000,0B01110111,0B00011111,0B00001101,0B00111101,0B01001111,0B01000111,0B00000000,
+//    0B00110111,0B00000000,0B00000000,0B00000000,0B00001110,0B00000000,0B00010101,0B00011101,
+//    0B01100111,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+//    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000
+//};
+
+//Rotated display
+const static char charTable []   = {
+    0B01111110,0B00000110,0B01101101,0B01001111,0B00010111,0B01011011,0B01111011,0B00001110,
+    0B01111111,0B01011111,0B00111111,0B01110011,0B01100001,0B01100111,0B01111001,0B00111001,
+    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+    0B00000000,0B00000000,0B00000000,0B00000000,0B10000000,0B00000001,0B10000000,0B00000000,
+    0B01111110,0B00110000,0B01101101,0B01111001,0B00110011,0B01011011,0B01011111,0B01110000,
+    0B01111111,0B01111011,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+    0B00000000,0B01110111,0B00011111,0B00001101,0B00111101,0B01001111,0B01000111,0B00000000,
+    0B00110111,0B00000000,0B00000000,0B00000000,0B00001110,0B00000000,0B00000000,0B00000000,
+    0B01100111,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00001000,
+    0B00000000,0B01110111,0B00011111,0B00001101,0B00111101,0B01001111,0B01000111,0B00000000,
+    0B00110111,0B00000000,0B00000000,0B00000000,0B00001110,0B00000000,0B00010101,0B00011101,
+    0B01100111,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,
+    0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000,0B00000000
+};
+
+const unsigned char CH[] =
+{
   3, 8, 0B00000000, 0B00000000, 0B00000000, 0B00000000, 0B00000000, // space
   1, 8, 0B01011111, 0B00000000, 0B00000000, 0B00000000, 0B00000000, // !
   3, 8, 0B00000011, 0B00000000, 0B00000011, 0B00000000, 0B00000000, // "
@@ -150,7 +197,7 @@ const unsigned char CH[] = {
 unsigned long delaytime=50;
 unsigned char buffer[10];
 // Display=the extracted characters with scrolling
-void printCharWithShift(LedControl* led_control, char c, int shift_speed) {
+void printCharWithShift(char c, int shift_speed) {
   if (c < 32) return;
   c -= 32;
   memcpy(buffer, CH + 7 * c, 7);
@@ -163,9 +210,9 @@ void printCharWithShift(LedControl* led_control, char c, int shift_speed) {
   }
 }
 // Extract the characters from the text string
-void LedControl_printStringWithShift(LedControl* led_control, char* s, int shift_speed) {
+void LedControl_printStringWithShift(char* s, int shift_speed) {
   while (*s != 0) {
-	  LedControl_printCharWithShift(led_control, *s, shift_speed);
+	  LedControl_printCharWithShift(*s, shift_speed);
       s++;
   }
 }
@@ -196,123 +243,123 @@ void shiftOut(GPIO_TypeDef* data_port, uint16_t data_pin, GPIO_TypeDef* clk_port
 	}
 }
 
-void LedControl_init(LedControl* led_control, uint16_t dataPin, GPIO_TypeDef* data_port,
+void LedControl_init(uint16_t dataPin, GPIO_TypeDef* data_port,
 		uint16_t clkPin,  GPIO_TypeDef* clk_port, uint16_t csPin,  GPIO_TypeDef* cs_port, int numDevices) {
-	led_control->SPI_MOSI_pin=dataPin;
-	led_control->SPI_MOSI_port=data_port;
-	led_control->SPI_CLK_pin=clkPin;
-	led_control->SPI_CLK_port=clk_port;
-	led_control->SPI_CS_pin=csPin;
-	led_control->SPI_CS_port=cs_port;
+	led_control.SPI_MOSI_pin=dataPin;
+	led_control.SPI_MOSI_port=data_port;
+	led_control.SPI_CLK_pin=clkPin;
+	led_control.SPI_CLK_port=clk_port;
+	led_control.SPI_CS_pin=csPin;
+	led_control.SPI_CS_port=cs_port;
     if(numDevices<=0 || numDevices>16 )
         numDevices=16;
-    led_control->maxDevices=numDevices;
-    pinMode(led_control->SPI_MOSI_port,led_control->SPI_MOSI_pin,GPIO_MODE_OUTPUT_PP);
-    pinMode(led_control->SPI_CLK_port, led_control->SPI_CLK_pin, GPIO_MODE_OUTPUT_PP);
-    pinMode(led_control->SPI_CS_port, led_control->SPI_CS_pin, GPIO_MODE_OUTPUT_PP);
-    digitalWrite(led_control->SPI_CS_port, led_control->SPI_CS_pin,HIGH);
+    led_control.maxDevices=numDevices;
+    pinMode(led_control.SPI_MOSI_port,led_control.SPI_MOSI_pin,GPIO_MODE_OUTPUT_PP);
+    pinMode(led_control.SPI_CLK_port, led_control.SPI_CLK_pin, GPIO_MODE_OUTPUT_PP);
+    pinMode(led_control.SPI_CS_port, led_control.SPI_CS_pin, GPIO_MODE_OUTPUT_PP);
+    digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin,HIGH);
 
-    memset(led_control->status, 0, sizeof(led_control->status));
-    for(int i=0;i<led_control->maxDevices;i++) {
-    	LedControl_spiTransfer(led_control, i, OP_DISPLAYTEST, 0);
+    memset(led_control.buffer, 0, sizeof(led_control.buffer));
+    for(int i=0;i<led_control.maxDevices;i++) {
+    	LedControl_spiTransfer(i, OP_DISPLAYTEST, 0);
         //scanlimit is set to max on startup
-    	LedControl_setScanLimit(led_control, i, 7);
+    	LedControl_setScanLimit(i, 7);
         //decode is done in source
-        LedControl_spiTransfer(led_control, i, OP_DECODEMODE, 0);
-        LedControl_clearDisplay(led_control, i);
+        LedControl_spiTransfer(i, OP_DECODEMODE, 0);
+        LedControl_clearDisplay(i);
         //we go into shutdown-mode on startup
-        LedControl_shutdown(led_control, i, 1);
+        LedControl_shutdown(i, 1);
     }
 }
 
-int LedControl_getDeviceCount(LedControl* led_control){
-    return led_control->maxDevices;
+int LedControl_getDeviceCount(){
+    return led_control.maxDevices;
 }
 
-void LedControl_shutdown(LedControl* led_control, int addr, unsigned char status){
-    if(addr<0 || addr>=led_control->maxDevices)
+void LedControl_shutdown(int addr, unsigned char status){
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(status)
-    	LedControl_spiTransfer(led_control, addr, OP_SHUTDOWN,0);
+    	LedControl_spiTransfer(addr, OP_SHUTDOWN,0);
     else
-    	LedControl_spiTransfer(led_control, addr, OP_SHUTDOWN,1);
+    	LedControl_spiTransfer(addr, OP_SHUTDOWN,1);
 }
 
-void LedControl_setScanLimit(LedControl* led_control, int addr, int limit) {
-    if(addr<0 || addr>=led_control->maxDevices)
+void LedControl_setScanLimit(int addr, int limit) {
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(limit>=0 && limit<8)
-    	LedControl_spiTransfer(led_control, addr, OP_SCANLIMIT,limit);
+    	LedControl_spiTransfer(addr, OP_SCANLIMIT,limit);
 }
 
-void LedControl_setIntensity(LedControl* led_control, int addr, int intensity) {
-    if(addr<0 || addr>=led_control->maxDevices)
+void LedControl_setIntensity(int addr, int intensity) {
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(intensity>=0 && intensity<16)	
-    	LedControl_spiTransfer(led_control, addr, OP_INTENSITY,intensity);
+    	LedControl_spiTransfer(addr, OP_INTENSITY,intensity);
 }
 
-void LedControl_clearDisplay(LedControl* led_control, int addr) {
+void LedControl_clearDisplay(int addr) {
     int offset;
 
-    if(addr<0 || addr>=led_control->maxDevices)
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     offset=addr*8;
     for(int i=0;i<8;i++) {
-    	led_control->status[offset+i]=0;
-    	LedControl_spiTransfer(led_control, addr, i+1,led_control->status[offset+i]);
+    	led_control.buffer[offset+i]=0;
+    	LedControl_spiTransfer(addr, i+1,led_control.buffer[offset+i]);
     }
 }
 
-void LedControl_setLed(LedControl* led_control, int addr, int row, int col, unsigned char state) {
+void LedControl_setLed(int addr, int row, int col, unsigned char state) {
     int offset;
     unsigned char val=0x00;
 
-    if(addr<0 || addr>=led_control->maxDevices)
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(row<0 || row>7 || col<0 || col>7)
         return;
     offset=addr*8;
     val=0B10000000 >> col;
     if(state)
-    	led_control->status[offset+row]=led_control->status[offset+row]|val;
+    	led_control.buffer[offset+row]=led_control.buffer[offset+row]|val;
     else {
         val=~val;
-        led_control->status[offset+row]=led_control->status[offset+row]&val;
+        led_control.buffer[offset+row]=led_control.buffer[offset+row]&val;
     }
-    LedControl_spiTransfer(led_control, addr, row+1,led_control->status[offset+row]);
+    LedControl_spiTransfer(addr, row+1,led_control.buffer[offset+row]);
 }
 
-void LedControl_setRow(LedControl* led_control, int addr, int row, unsigned char value){
+void LedControl_setRow(int addr, int row, unsigned char value){
     int offset;
-    if(addr<0 || addr>=led_control->maxDevices)
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(row<0 || row>7)
         return;
     offset=addr*8;
-    led_control->status[offset+row]=value;
-    LedControl_spiTransfer(led_control, addr, row+1,led_control->status[offset+row]);
+    led_control.buffer[offset+row]=value;
+    LedControl_spiTransfer(addr, row+1,led_control.buffer[offset+row]);
 }
 
-void LedControl_setColumn(LedControl* led_control, int addr, int col, unsigned char value){
+void LedControl_setColumn( int col, unsigned char value){
     char val;
-
-    if(addr<0 || addr>=led_control->maxDevices)
+    int addr = col /8;
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(col<0 || col>7) 
         return;
     for(int row=0;row<8;row++) {
         val=value >> (7-row);
         val=val & 0x01;
-        LedControl_setLed(led_control, addr,row,col,val);
+        LedControl_setLed(addr,row,col,val);
     }
 }
 
-void LedControl_setDigit(LedControl* led_control, int addr, int digit, unsigned char value, unsigned char dp) {
+void LedControl_setDigit(int addr, int digit, unsigned char value, unsigned char dp) {
     int offset;
     unsigned char v;
 
-    if(addr<0 || addr>=led_control->maxDevices)
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(digit<0 || digit>7 || value>15)
         return;
@@ -320,15 +367,15 @@ void LedControl_setDigit(LedControl* led_control, int addr, int digit, unsigned 
     v=charTable[value];
     if(dp)
         v|=0B10000000;
-    led_control->status[offset+digit]=v;
-    LedControl_spiTransfer(led_control, addr, digit+1, v);
+    led_control.buffer[offset+digit]=v;
+    LedControl_spiTransfer(addr, digit+1, v);
 }
 
-void LedControl_setChar(LedControl* led_control, int addr, int digit, unsigned char value, unsigned char dp) {
+void LedControl_setChar(int addr, int digit, unsigned char value, unsigned char dp) {
     int offset;
     unsigned char index,v;
 
-    if(addr<0 || addr>=led_control->maxDevices)
+    if(addr<0 || addr>=led_control.maxDevices)
         return;
     if(digit<0 || digit>7)
         return;
@@ -341,28 +388,40 @@ void LedControl_setChar(LedControl* led_control, int addr, int digit, unsigned c
     v=charTable[index];
     if(dp)
         v|=0B10000000;
-    led_control->status[offset+digit]=v;
-    LedControl_spiTransfer(led_control, addr, digit+1, v);
+    led_control.buffer[offset+digit]=v;
+    LedControl_spiTransfer(addr, digit+1, v);
 }
 
-void LedControl_spiTransfer(LedControl* led_control, int addr, char opcode, char data) {
+void LedControl_spiTransfer(int addr, char opcode, char data) {
     //Create an array with the data to shift out
     int offset=addr*2;
     int maxbytes=32; //led_control->maxDevices*2;
 
-    memset(led_control->spidata, 0, sizeof(led_control->spidata));
+    memset(led_control.spidata, 0, sizeof(led_control.spidata));
     //put our device data into the array
-    led_control->spidata[offset+1]=opcode;
-    led_control->spidata[offset]=data;
+    led_control.spidata[offset+1]=opcode;
+    led_control.spidata[offset]=data;
     //enable the line 
-    digitalWrite(led_control->SPI_CS_port, led_control->SPI_CS_pin,LOW);
+    digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin,LOW);
     //Now shift out the data 
     for(int i=maxbytes;i>0;i--)
-        shiftOut(led_control->SPI_MOSI_port, led_control->SPI_MOSI_pin, led_control->SPI_CLK_port, led_control->SPI_CLK_pin, led_control->spidata[i-1]);
+        shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, led_control.spidata[i-1]);
     //latch the data onto the display
-    digitalWrite(led_control->SPI_CS_port, led_control->SPI_CS_pin, HIGH);
+    digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin, HIGH);
 }    
 
+
+void LedControl_bitWrite(unsigned char col, unsigned char row, unsigned char value)
+{
+	value &= 1;
+	value = value << row;
+	led_control.buffer[col] &= ~value;
+	led_control.buffer[col] |= ~value;
+}
+unsigned char LedControl_bitRead(unsigned char value, unsigned char bit)
+{
+	return !!(value & (1<<bit));
+}
 
 void LedControl_writeSprite(int x, int y, const char* sprite)
 {
@@ -374,7 +433,7 @@ void LedControl_writeSprite(int x, int y, const char* sprite)
 		{
 			int c = x + i;
 			if (c>=0 && c<80)
-				setColumn(c, sprite[i+2]);
+				LedControl_setColumn(c, sprite[i+2]);
 		}
 	else
 		for (int i=0; i<w; i++)
@@ -392,15 +451,15 @@ void LedControl_reload()
 	for (int i=0; i<8; i++)
 	{
 		int col = i;
-		digitalWrite(load, LOW);
-		for (int j=0; j<num; j++)
+		digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin,LOW);
+		for(int j=led_control.maxDevices*2;j>0;i-=2)
 		{
-			shiftOut(data, clock, MSBFIRST, i + 1);
-			shiftOut(data, clock, MSBFIRST, buffer[col]);
+		    shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, i+1);
+		    shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, led_control.buffer[col]);
 			col += 8;
 		}
-		digitalWrite(load, LOW);
-		digitalWrite(load, HIGH);
+		//latch the data onto the display
+		digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin, HIGH);
 	}
 }
 
@@ -410,43 +469,43 @@ void LedControl_shiftLeft(char rotate, char fill_zero)
 	int i;
 	for (i=0; i<80; i++)
 		buffer[i] = buffer[i+1];
-	if (rotate) buffer[num*8-1] = old;
-	else if (fill_zero) buffer[num*8-1] = 0;
+	if (rotate) buffer[led_control.maxDevices*8-1] = old;
+	else if (fill_zero) led_control.buffer[led_control.maxDevices*8-1] = 0;
 
 	reload();
 }
 
 void LedControl_shiftRight(char rotate, char fill_zero)
 {
-	int last = num*8-1;
+	int last = led_control.maxDevices*8-1;
 	char old = buffer[last];
 	int i;
 	for (i=79; i>0; i--)
-		buffer[i] = buffer[i-1];
+		buffer[i] = led_control.buffer[i-1];
 	if (rotate) buffer[0] = old;
-	else if (fill_zero) buffer[0] = 0;
+	else if (fill_zero) led_control.buffer[0] = 0;
 
 	reload();
 }
 
 void LedControl_shiftUp(char rotate)
 {
-	for (int i=0; i<num*8; i++)
+	for (int i=0; i<led_control.maxDevices*8; i++)
 	{
 		char b = buffer[i] & 1;
 		buffer[i] >>= 1;
-		if (rotate) bitWrite(buffer[i], 7, b);
+		if (rotate) bitWrite(i, 7, b);
 	}
 	reload();
 }
 
 void LedControl_shiftDown(char rotate)
 {
-	for (int i=0; i<num*8; i++)
+	for (int i=0; i<led_control.maxDevices*8; i++)
 	{
 		char b = buffer[i] & 128;
 		buffer[i] <<= 1;
-		if (rotate) bitWrite(buffer[i], 0, b);
+		if (rotate) bitWrite(i, 0, b);
 	}
 	reload();
 }
