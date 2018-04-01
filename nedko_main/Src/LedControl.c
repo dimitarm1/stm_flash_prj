@@ -26,6 +26,7 @@
 
 
 #include "LedControl.h"
+#include "common_funcs.h"
 #include <string.h>
 
 //the opcodes for the MAX7221 and MAX7219
@@ -43,8 +44,7 @@
 #define OP_SCANLIMIT   11
 #define OP_SHUTDOWN    12
 #define OP_DISPLAYTEST 15
-#define HIGH 1
-#define LOW 0
+
 #define BLOCKS_PER_ROW 5
 
 unsigned char DeviceLUT[]={4,3,2,1,0,9,8,7,6,5,10,11};
@@ -246,32 +246,6 @@ void LedControl_printString(char* s) {
   }
 }
 
-void pinMode(GPIO_TypeDef* port, uint16_t pin_num, char pin_mode)
-{
-	  GPIO_InitTypeDef GPIO_InitStruct;
-	  GPIO_InitStruct.Pin = pin_num;
-	  GPIO_InitStruct.Mode = pin_mode;
-	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-	  HAL_GPIO_Init(port, &GPIO_InitStruct);
-}
-
-void digitalWrite(GPIO_TypeDef* port, uint16_t pin_number, unsigned char  value)
-{
-	 HAL_GPIO_WritePin(port, 1<<pin_number, (GPIO_PinState) value);
-}
-void shiftOut(GPIO_TypeDef* data_port, uint16_t data_pin, GPIO_TypeDef* clk_port, uint16_t clk_pin, unsigned char data)
-{
-	unsigned char i,val;
-	for(i = 0; i< 8; i++)
-	{
-		HAL_GPIO_WritePin(clk_port, 1<<clk_pin, (GPIO_PinState) 0);
-		val = ((data & 0x80) != 0);
-		data = data << 1;
-		HAL_GPIO_WritePin(data_port, 1<<data_pin, (GPIO_PinState) val);
-		HAL_GPIO_WritePin(clk_port, 1<<clk_pin, (GPIO_PinState) 1);
-	}
-}
-
 void LedControl_init(uint16_t dataPin, GPIO_TypeDef* data_port,
 		uint16_t clkPin,  GPIO_TypeDef* clk_port, uint16_t csPin,  GPIO_TypeDef* cs_port, int numDevices) {
 	led_control.SPI_MOSI_pin=dataPin;
@@ -434,8 +408,8 @@ void LedControl_spiTransfer(int addr, char opcode, char data) {
     digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin,LOW);
     //Now shift out the data 
     for(int i=maxbytes;i>0;i--)
-        shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, led_control.spidata[i-1]);
     //latch the data onto the display
+        shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, led_control.spidata[i-1]);
     digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin, HIGH);
 }    
 
