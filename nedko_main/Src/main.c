@@ -119,10 +119,21 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+//	  if(counter < sizeof(led_control.buffer))
+//		  led_control.buffer[0] = 0xFF;
+//		  led_control.buffer[8] = 0xFF;
+//		  led_control.buffer[16] = 0x0F;
 
-		HAL_Delay(100);
-		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
+	  memset(led_control.buffer, 0, sizeof(led_control.buffer));
+	  LedControl_printCharWithShift(counter + 32,0);
+	  LedControl_reload();
+	  HAL_Delay(1300);
+	  //LedControl_shiftLeft(0, 1);
+//	  LedControl_printStringWithShift("Test", 20);
+//		HAL_Delay(100);
+//		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
 		counter++;
+		counter %= 94;
   }
   /* USER CODE END 3 */
 

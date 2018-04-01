@@ -163,7 +163,11 @@ void LedControl_setScanLimit(int addr, int limit);
          * dp	sets the decimal point.
          */
 void LedControl_setChar(int addr, int digit, unsigned char value, unsigned char dp);
-
+void LedControl_writeSprite(int x, int y, unsigned char* sprite);
+void LedControl_reload();
+void LedControl_printStringWithShift(char* s, int shift_speed);
+void LedControl_printCharWithShift(char c, int shift_speed);
+void LedControl_shiftLeft(char rotate, char fill_zero);
 
 #endif	//LedControl.h
 

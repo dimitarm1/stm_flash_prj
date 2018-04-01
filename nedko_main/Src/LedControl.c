@@ -197,17 +197,18 @@ const unsigned char CH[] =
 unsigned long delaytime=50;
 unsigned char buffer[10];
 // Display=the extracted characters with scrolling
-void printCharWithShift(char c, int shift_speed) {
+void LedControl_printCharWithShift(char c, int shift_speed) {
   if (c < 32) return;
   c -= 32;
   memcpy(buffer, CH + 7 * c, 7);
-  LedControl_writeSprite(32, 0, buffer);
-  LedControl_setColumn(32 + buffer[0], 0);
-  for (int i = 0; i < buffer[0] + 1; i++)
-  {
-	  HAL_Delay(shift_speed);
-      LedControl_shiftLeft(0, 0);
-  }
+  LedControl_writeSprite(0, 0, buffer);
+//  LedControl_writeSprite(32, 0, buffer);
+//  LedControl_setColumn(32 + buffer[0], 0);
+//  for (int i = 0; i < buffer[0] + 1; i++)
+//  {
+//	  HAL_Delay(shift_speed);
+//      LedControl_shiftLeft(0, 0);
+//  }
 }
 // Extract the characters from the text string
 void LedControl_printStringWithShift(char* s, int shift_speed) {
@@ -414,16 +415,17 @@ void LedControl_spiTransfer(int addr, char opcode, char data) {
 void LedControl_bitWrite(unsigned char col, unsigned char row, unsigned char value)
 {
 	value &= 1;
-	value = value << row;
-	led_control.buffer[col] &= ~value;
-	led_control.buffer[col] |= ~value;
+	value = value << (col%8);
+	row = row % 8;
+	led_control.buffer[row + col/8] &= ~value;
+	led_control.buffer[row + col/8] |= value;
 }
 unsigned char LedControl_bitRead(unsigned char value, unsigned char bit)
 {
 	return !!(value & (1<<bit));
 }
 
-void LedControl_writeSprite(int x, int y, const char* sprite)
+void LedControl_writeSprite_old(int x, int y, unsigned char* sprite)
 {
 	int w = sprite[0];
 	int h = sprite[1];
@@ -442,21 +444,40 @@ void LedControl_writeSprite(int x, int y, const char* sprite)
 				int c = x + i;
 				int r = y + j;
 				if (c>=0 && c<80 && r>=0 && r<8)
-					setDot(c, r, bitRead(sprite[i+2], j));
+					LedControl_bitWrite(c, r, LedControl_bitRead(sprite[i+2], j));
 			}
+
+}
+
+void LedControl_writeSprite(int x, int y, unsigned char* sprite)
+{
+	int width = sprite[0];
+	int height = sprite[1];
+
+
+	for (int i=0; i<width; i++)
+	{
+		for (int j=0; j<height; j++)
+		{
+			int col = x + i;
+			int row = y + j;
+			if (col>=0 && col<80 && row>=0 && row<8)
+				LedControl_bitWrite(col, row, LedControl_bitRead(sprite[width - i + 1], j));
+		}
+	}
 }
 
 void LedControl_reload()
 {
 	for (int i=0; i<8; i++)
 	{
-		int col = i;
+//		int col = i;
 		digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin,LOW);
-		for(int j=led_control.maxDevices*2;j>0;i-=2)
+		for(int j = (led_control.maxDevices-1); j >= 0; j--)
 		{
 		    shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, i+1);
-		    shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, led_control.buffer[col]);
-			col += 8;
+		    shiftOut(led_control.SPI_MOSI_port, led_control.SPI_MOSI_pin, led_control.SPI_CLK_port, led_control.SPI_CLK_pin, led_control.buffer[j*8+i]);
+//			col += 8;
 		}
 		//latch the data onto the display
 		digitalWrite(led_control.SPI_CS_port, led_control.SPI_CS_pin, HIGH);
@@ -472,7 +493,7 @@ void LedControl_shiftLeft(char rotate, char fill_zero)
 	if (rotate) buffer[led_control.maxDevices*8-1] = old;
 	else if (fill_zero) led_control.buffer[led_control.maxDevices*8-1] = 0;
 
-	reload();
+	LedControl_reload();
 }
 
 void LedControl_shiftRight(char rotate, char fill_zero)
@@ -485,7 +506,7 @@ void LedControl_shiftRight(char rotate, char fill_zero)
 	if (rotate) buffer[0] = old;
 	else if (fill_zero) led_control.buffer[0] = 0;
 
-	reload();
+	LedControl_reload();
 }
 
 void LedControl_shiftUp(char rotate)
@@ -496,7 +517,7 @@ void LedControl_shiftUp(char rotate)
 		buffer[i] >>= 1;
 		if (rotate) bitWrite(i, 7, b);
 	}
-	reload();
+	LedControl_reload();
 }
 
 void LedControl_shiftDown(char rotate)
@@ -507,7 +528,7 @@ void LedControl_shiftDown(char rotate)
 		buffer[i] <<= 1;
 		if (rotate) bitWrite(i, 0, b);
 	}
-	reload();
+	LedControl_reload();
 }
 
 
