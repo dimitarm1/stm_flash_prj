@@ -45,6 +45,9 @@
 #define OP_DISPLAYTEST 15
 #define HIGH 1
 #define LOW 0
+#define BLOCKS_PER_ROW 5
+
+unsigned char DeviceLUT[]={4,3,2,1,0,9,8,7,6,5,10,11};
 
 LedControl led_control;
 
@@ -210,10 +213,35 @@ void LedControl_printCharWithShift(char c, int shift_speed) {
 //      LedControl_shiftLeft(0, 0);
 //  }
 }
+
+void LedControl_SetCursor(unsigned char pos) {
+	led_control.cursor_pos = pos;
+}
+
+void LedControl_printChar(char c) {
+  if (c < 32) return;
+  c -= 32;
+  memcpy(buffer, CH + 7 * c, 7);
+  if((led_control.cursor_pos < 40) && (led_control.cursor_pos +  buffer[0]) > 40)
+  {
+	  led_control.cursor_pos = 40; // Avoid splitting characters - move to next line
+  }
+  LedControl_writeSprite(led_control.cursor_pos, 0, buffer);
+  led_control.cursor_pos += buffer[0]+1; // Advance carret to next position
+
+}
+
 // Extract the characters from the text string
 void LedControl_printStringWithShift(char* s, int shift_speed) {
   while (*s != 0) {
 	  LedControl_printCharWithShift(*s, shift_speed);
+      s++;
+  }
+}
+
+void LedControl_printString(char* s) {
+  while (*s != 0) {
+	  LedControl_printChar(*s);
       s++;
   }
 }
@@ -414,11 +442,18 @@ void LedControl_spiTransfer(int addr, char opcode, char data) {
 
 void LedControl_bitWrite(unsigned char col, unsigned char row, unsigned char value)
 {
+
 	value &= 1;
-	value = value << (col%8);
+	if(value)
+	{
+		value = 0x80 >> (col%8);
+	}
 	row = row % 8;
-	led_control.buffer[row + col/8] &= ~value;
-	led_control.buffer[row + col/8] |= value;
+	//relocate devices in a row
+	col = 8*DeviceLUT[col/8];
+
+	led_control.buffer[row + col] &= ~value;
+	led_control.buffer[row + col] |= value;
 }
 unsigned char LedControl_bitRead(unsigned char value, unsigned char bit)
 {
@@ -462,7 +497,7 @@ void LedControl_writeSprite(int x, int y, unsigned char* sprite)
 			int col = x + i;
 			int row = y + j;
 			if (col>=0 && col<80 && row>=0 && row<8)
-				LedControl_bitWrite(col, row, LedControl_bitRead(sprite[width - i + 1], j));
+				LedControl_bitWrite(col, row, LedControl_bitRead(sprite[i + 2], j));
 		}
 	}
 }
@@ -484,14 +519,14 @@ void LedControl_reload()
 	}
 }
 
-void LedControl_shiftLeft(char rotate, char fill_zero)
+void LedControl_shiftUp(char rotate)
 {
 	char old = buffer[0];
 	int i;
 	for (i=0; i<80; i++)
 		buffer[i] = buffer[i+1];
 	if (rotate) buffer[led_control.maxDevices*8-1] = old;
-	else if (fill_zero) led_control.buffer[led_control.maxDevices*8-1] = 0;
+
 
 	LedControl_reload();
 }
@@ -509,15 +544,17 @@ void LedControl_shiftRight(char rotate, char fill_zero)
 	LedControl_reload();
 }
 
-void LedControl_shiftUp(char rotate)
+void LedControl_shiftLeft(char rotate, char fill_zero)
 {
-	for (int i=0; i<led_control.maxDevices*8; i++)
+	for (int i=0; i<led_control.maxDevices; i++)
 	{
+
 		char b = buffer[i] & 1;
 		buffer[i] >>= 1;
-		if (rotate) bitWrite(i, 7, b);
+		if (rotate) LedControl_bitWrite(i, 7, b);
 	}
-	LedControl_reload();
+//	LedControl_reload();
+	if (fill_zero) led_control.buffer[led_control.maxDevices*8-1] = 0;
 }
 
 void LedControl_shiftDown(char rotate)
@@ -526,7 +563,7 @@ void LedControl_shiftDown(char rotate)
 	{
 		char b = buffer[i] & 128;
 		buffer[i] <<= 1;
-		if (rotate) bitWrite(i, 0, b);
+		if (rotate) LedControl_bitWrite(i, 0, b);
 	}
 	LedControl_reload();
 }

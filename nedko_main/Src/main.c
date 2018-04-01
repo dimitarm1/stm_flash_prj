@@ -125,11 +125,15 @@ int main(void)
 //		  led_control.buffer[16] = 0x0F;
 
 	  memset(led_control.buffer, 0, sizeof(led_control.buffer));
-	  LedControl_printCharWithShift(counter + 32,0);
+//	  LedControl_printCharWithShift(counter + 32,0);
+
+
+//	  LedControl_shiftLeft(0, 1);
+	  LedControl_SetCursor(0);
+	  LedControl_printString("Test 123456789");
+	  LedControl_printChar(counter + 32);
 	  LedControl_reload();
 	  HAL_Delay(1300);
-	  //LedControl_shiftLeft(0, 1);
-//	  LedControl_printStringWithShift("Test", 20);
 //		HAL_Delay(100);
 //		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
 		counter++;

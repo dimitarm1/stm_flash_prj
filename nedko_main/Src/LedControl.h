@@ -53,6 +53,7 @@ typedef struct LedControl {
         GPIO_TypeDef *SPI_CS_port;
         /* The maximum number of devices we use */
         int maxDevices;
+        unsigned char cursor_pos;
 }LedControl;
 
 void LedControl_spiTransfer(int addr, char opcode, char data);
@@ -168,6 +169,10 @@ void LedControl_reload();
 void LedControl_printStringWithShift(char* s, int shift_speed);
 void LedControl_printCharWithShift(char c, int shift_speed);
 void LedControl_shiftLeft(char rotate, char fill_zero);
+void LedControl_printString(char* s);
+void LedControl_printChar(char c);
+void LedControl_SetCursor(unsigned char pos);
+
 
 #endif	//LedControl.h
 
