@@ -613,14 +613,16 @@ int main(void)
 //			}
 //
 //		}
-		if(aqua_fresh_level == 0)
-		{
-		display_data = ToBCD(g_Temperature);
-		}
-		else
-		{
-			display_data = g_ADCMeanValue;
-		}
+
+		//Uncomment to check temperature
+//		if(aqua_fresh_level == 0)
+//		{
+//		display_data = ToBCD(g_Temperature);
+//		}
+//		else
+//		{
+//			display_data = g_ADCMeanValue;
+//		}
 		LedControl_setDigit(&led_control, 0, 0, display_data & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 1, (display_data>>4) & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 2, (display_data>>8) & 0x0f, 0);
