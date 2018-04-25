@@ -10,3 +10,4 @@ typedef struct{
 //extern const FONT_INFO consolas_16ptFontInfo;
 extern const uint8_t* consolas_16ptFontInfo;
 extern const FONT_CHAR_INFO consolas_16ptDescriptors[];
+extern const uint8_t  consolas_16ptBitmaps[];

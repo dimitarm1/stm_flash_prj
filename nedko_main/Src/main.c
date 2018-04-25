@@ -130,8 +130,8 @@ int main(void)
 
 //	  LedControl_shiftLeft(0, 1);
 	  LedControl_SetCursor(0);
-	  LedControl_printString("Test 123456789");
-	  LedControl_printChar(counter + 32);
+//	  LedControl_printBigString("Tes");
+	  LedControl_printBigChar(counter + 32);
 	  LedControl_reload();
 	  HAL_Delay(1300);
 //		HAL_Delay(100);

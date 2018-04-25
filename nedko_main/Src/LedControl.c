@@ -237,7 +237,7 @@ void LedControl_printBigChar(char c) {
   c -= 32;
   buffer[0] = consolas_16ptDescriptors[(unsigned char)c].width;
   buffer[1] = 16; //Height
-  memcpy(buffer,&consolas_16ptFontInfo[consolas_16ptDescriptors[(unsigned char)c].offset], (buffer[0]/8)*16);
+  memcpy(buffer,&consolas_16ptBitmaps[consolas_16ptDescriptors[(unsigned char)c].offset], (buffer[0]/8)*16);
 
   if((led_control.cursor_pos < 40) && (led_control.cursor_pos +  buffer[0]) > 40)
   {
