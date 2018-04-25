@@ -28,6 +28,7 @@
 #include "LedControl.h"
 #include "common_funcs.h"
 #include <string.h>
+#include "Font_16x16.h"
 
 //the opcodes for the MAX7221 and MAX7219
 #define OP_NOOP   0
@@ -198,7 +199,7 @@ const unsigned char CH[] =
 
 /* we always wait a bit between updates of the display */
 unsigned long delaytime=50;
-unsigned char buffer[10];
+unsigned char buffer[20];
 // Display=the extracted characters with scrolling
 void LedControl_printCharWithShift(char c, int shift_speed) {
   if (c < 32) return;
@@ -231,6 +232,23 @@ void LedControl_printChar(char c) {
 
 }
 
+void LedControl_printBigChar(char c) {
+  if (c < 32) return;
+  c -= 32;
+  buffer[0] = consolas_16ptDescriptors[(unsigned char)c].width;
+  buffer[1] = 16; //Height
+  memcpy(buffer,&consolas_16ptFontInfo[consolas_16ptDescriptors[(unsigned char)c].offset], (buffer[0]/8)*16);
+
+  if((led_control.cursor_pos < 40) && (led_control.cursor_pos +  buffer[0]) > 40)
+  {
+	  led_control.cursor_pos = 40; // Avoid splitting characters - move to next line
+  }
+  LedControl_writeBigSprite(led_control.cursor_pos, 0, buffer);
+  led_control.cursor_pos += buffer[0]+1; // Advance carret to next position
+
+}
+
+
 // Extract the characters from the text string
 void LedControl_printStringWithShift(char* s, int shift_speed) {
   while (*s != 0) {
@@ -242,6 +260,13 @@ void LedControl_printStringWithShift(char* s, int shift_speed) {
 void LedControl_printString(char* s) {
   while (*s != 0) {
 	  LedControl_printChar(*s);
+      s++;
+  }
+}
+
+void LedControl_printBigString(char* s) {
+  while (*s != 0) {
+	  LedControl_printBigChar(*s);
       s++;
   }
 }
@@ -429,6 +454,23 @@ void LedControl_bitWrite(unsigned char col, unsigned char row, unsigned char val
 	led_control.buffer[row + col] &= ~value;
 	led_control.buffer[row + col] |= value;
 }
+
+void LedControl_bitBigWrite(unsigned char col, unsigned char row, unsigned char value)
+{
+
+	value &= 1;
+	if(value)
+	{
+		value = 0x80 >> (col%8);
+	}
+	row = row % 16;
+	//relocate devices in a row
+	col = 8*DeviceLUT[col/8 + (row/8)*5];
+
+	led_control.buffer[row + col] &= ~value;
+	led_control.buffer[row + col] |= value;
+}
+
 unsigned char LedControl_bitRead(unsigned char value, unsigned char bit)
 {
 	return !!(value & (1<<bit));
@@ -472,6 +514,23 @@ void LedControl_writeSprite(int x, int y, unsigned char* sprite)
 			int row = y + j;
 			if (col>=0 && col<80 && row>=0 && row<8)
 				LedControl_bitWrite(col, row, LedControl_bitRead(sprite[i + 2], j));
+		}
+	}
+}
+
+void LedControl_writeBigSprite(int x, int y, unsigned char* sprite)
+{
+	int width = sprite[0];
+	int height = sprite[1];
+
+	for (int i=0; i<width; i++)
+	{
+		for (int j=0; j<height; j++)
+		{
+			int col = x + i;
+			int row = y + j;
+			if (col>=0 && col<80 && row>=0 && row<16)
+				LedControl_bitBigWrite(col, row, LedControl_bitRead(sprite[i*(1 + width/8) + 2], j));
 		}
 	}
 }

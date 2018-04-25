@@ -165,6 +165,7 @@ void LedControl_setScanLimit(int addr, int limit);
          */
 void LedControl_setChar(int addr, int digit, unsigned char value, unsigned char dp);
 void LedControl_writeSprite(int x, int y, unsigned char* sprite);
+void LedControl_writeBigSprite(int x, int y, unsigned char* sprite);
 void LedControl_reload();
 void LedControl_printStringWithShift(char* s, int shift_speed);
 void LedControl_printCharWithShift(char c, int shift_speed);
@@ -172,7 +173,9 @@ void LedControl_shiftLeft(char rotate, char fill_zero);
 void LedControl_printString(char* s);
 void LedControl_printChar(char c);
 void LedControl_SetCursor(unsigned char pos);
-
+void LedControl_printBigChar(char c);
+void LedControl_printBigString(char* s);
+void LedControl_bitBigWrite(unsigned char col, unsigned char row, unsigned char value);
 
 #endif	//LedControl.h
 

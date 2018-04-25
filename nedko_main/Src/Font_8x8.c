@@ -3310,12 +3310,12 @@ const FONT_CHAR_INFO consolas_8ptDescriptors[] =
     {5, 1896},    /* я*/
 };
 
-/* Font information for Consolas 8pt */
-const FONT_INFO consolas_8ptFontInfo =
-{
-    32, /*  First character ' '*/
-    1103, /*  Last character 'я'*/
-    consolas_8ptDescriptors, /*  Character descriptor array*/
-    consolas_8ptBitmaps, /*  Character bitmap array*/
-    1200, /*  CodePage utf-16*/
-};
+///* Font information for Consolas 8pt */
+//const FONT_INFO consolas_8ptFontInfo =
+//{
+//    32, /*  First character ' '*/
+//    1103, /*  Last character 'я'*/
+//    consolas_8ptDescriptors, /*  Character descriptor array*/
+//    consolas_8ptBitmaps, /*  Character bitmap array*/
+//    1200, /*  CodePage utf-16*/
+//};

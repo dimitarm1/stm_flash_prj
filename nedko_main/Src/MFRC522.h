@@ -73,8 +73,8 @@
  */
 #ifndef MFRC522_h
 #define MFRC522_h
-
-
+#include "stm32f1xx_hal.h"
+//#include "stdint.h"
 
 /**
 * MFRC522 example
@@ -147,7 +147,7 @@
 * @endcode
 */
 
-typedef struct{
+//typedef struct{
 
 
   /**
@@ -314,7 +314,7 @@ typedef struct{
   typedef struct {
     uint8_t    keyByte[MF_KEY_SIZE];
   } MIFARE_Key;
-
+typedef struct {
   // Member variables
   Uid uid;                // Used by PICC_ReadCardSerial().
   /* Chip select for MFRC522 chip. Active LOW*/
@@ -376,7 +376,7 @@ typedef struct{
   * @param count  The number of bytes to write to the register
   * @param values The values to write. Byte array.
   */
-  void    PCD_WriteRegister  (uint8_t reg, uint8_t count, uint8_t *values);
+  void    PCD_WriteRegister_2  (uint8_t reg, uint8_t count, uint8_t *values);
 
   /**
   * Reads a byte from the specified register in the MFRC522 chip.
@@ -396,7 +396,7 @@ typedef struct{
   * @param values  Byte array to store the values in.
   * @param rxAlign Only bit positions rxAlign..7 in values[0] are updated.
   */
-  void    PCD_ReadRegister   (uint8_t reg, uint8_t count, uint8_t *values, uint8_t rxAlign = 0);
+  void    PCD_ReadRegister_2   (uint8_t reg, uint8_t count, uint8_t *values, uint8_t rxAlign);
 
   /**
   * Sets the bits given in mask in register reg.
@@ -529,7 +529,7 @@ typedef struct{
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PICC_Select        (Uid *uid, uint8_t validBits = 0);
+  uint8_t PICC_Select        (Uid *uid, uint8_t validBits );
 
   /**
    * Instructs a PICC in state ACTIVE(*) to go to state HALT.
