@@ -24,7 +24,6 @@ const uint8_t consolas_16ptBitmaps[] =
     0x00, /*   */
     0x00, /*   */
     0x00, /*   */
-    0x00, /*   */
 
     /* @23 '!' (3 pixels wide)*/
     0x00, /*    */

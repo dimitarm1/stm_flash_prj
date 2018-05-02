@@ -131,6 +131,7 @@ int main(void)
 //	  LedControl_shiftLeft(0, 1);
 	  LedControl_SetCursor(0);
 //	  LedControl_printBigString("Tes");
+//	  LedControl_printBigChar('1');
 	  LedControl_printBigChar(counter + 32);
 	  LedControl_reload();
 	  HAL_Delay(1300);

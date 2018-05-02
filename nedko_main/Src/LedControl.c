@@ -237,7 +237,7 @@ void LedControl_printBigChar(char c) {
   c -= 32;
   buffer[0] = consolas_16ptDescriptors[(unsigned char)c].width;
   buffer[1] = 16; //Height
-  memcpy(buffer,&consolas_16ptBitmaps[consolas_16ptDescriptors[(unsigned char)c].offset], (buffer[0]/8)*16);
+  memcpy(&buffer[2],&consolas_16ptBitmaps[consolas_16ptDescriptors[(unsigned char)c].offset], (1 + buffer[0]/8)*16);
 
   if((led_control.cursor_pos < 40) && (led_control.cursor_pos +  buffer[0]) > 40)
   {
@@ -465,7 +465,9 @@ void LedControl_bitBigWrite(unsigned char col, unsigned char row, unsigned char 
 	}
 	row = row % 16;
 	//relocate devices in a row
-	col = 8*DeviceLUT[col/8 + (row/8)*5];
+	col = (col%40) + (row/8 )*40;
+	col = 8*DeviceLUT[col/8];
+	row = row % 8;
 
 	led_control.buffer[row + col] &= ~value;
 	led_control.buffer[row + col] |= value;
@@ -522,6 +524,9 @@ void LedControl_writeBigSprite(int x, int y, unsigned char* sprite)
 {
 	int width = sprite[0];
 	int height = sprite[1];
+	x = 0;
+	y = 0;
+
 
 	for (int i=0; i<width; i++)
 	{
@@ -529,8 +534,9 @@ void LedControl_writeBigSprite(int x, int y, unsigned char* sprite)
 		{
 			int col = x + i;
 			int row = y + j;
-			if (col>=0 && col<80 && row>=0 && row<16)
-				LedControl_bitBigWrite(col, row, LedControl_bitRead(sprite[i*(1 + width/8) + 2], j));
+			if (col>=0 && col<40 && row>=0 && row<16)
+//				LedControl_bitBigWrite(col, row, 1);
+				LedControl_bitBigWrite(row, col, LedControl_bitRead(sprite[i*(1 + width/8) + 2], 8-j));
 		}
 	}
 }
