@@ -199,7 +199,7 @@ const unsigned char CH[] =
 
 /* we always wait a bit between updates of the display */
 unsigned long delaytime=50;
-unsigned char buffer[20];
+unsigned char buffer[40];
 // Display=the extracted characters with scrolling
 void LedControl_printCharWithShift(char c, int shift_speed) {
   if (c < 32) return;
@@ -233,11 +233,13 @@ void LedControl_printChar(char c) {
 }
 
 void LedControl_printBigChar(char c) {
+	uint16_t offset;
   if (c < 32) return;
   c -= 32;
   buffer[0] = consolas_16ptDescriptors[(unsigned char)c].width;
   buffer[1] = 16; //Height
-  memcpy(&buffer[2],&consolas_16ptBitmaps[consolas_16ptDescriptors[(unsigned char)c].offset], (1 + buffer[0]/8)*16);
+  offset = consolas_16ptDescriptors[(unsigned char)c].offset;
+  memcpy(&buffer[2],&consolas_16ptBitmaps[offset], (2 + buffer[0]/8)*16);
 
   if((led_control.cursor_pos < 40) && (led_control.cursor_pos +  buffer[0]) > 40)
   {
@@ -524,6 +526,7 @@ void LedControl_writeBigSprite(int x, int y, unsigned char* sprite)
 {
 	int width = sprite[0];
 	int height = sprite[1];
+	unsigned char bit, val;
 	x = 0;
 	y = 0;
 
@@ -535,8 +538,25 @@ void LedControl_writeBigSprite(int x, int y, unsigned char* sprite)
 			int col = x + i;
 			int row = y + j;
 			if (col>=0 && col<40 && row>=0 && row<16)
-//				LedControl_bitBigWrite(col, row, 1);
-				LedControl_bitBigWrite(row, col, LedControl_bitRead(sprite[i*(1 + width/8) + 2], 8-j));
+			{
+				val = sprite[j*2 +  (i/8) + 2];
+//				if(i < 8)
+//				{
+//					bit = LedControl_bitRead(0x03, (i%8));
+//				}
+//				else
+//				{
+//					bit = 0;
+//				}
+				bit = LedControl_bitRead(val, 8 - (i & 0x07));
+//				if(col == 7) bit = 1;
+//				else bit = 0;
+//				LedControl_bitBigWrite(col, row, 1);sprite[((1 + width/8) - i%8) + j* (1 + width/8)]
+//				LedControl_bitBigWrite(col, row, LedControl_bitRead(sprite[j*(1 + width/8) + 2 + width/8], (i%8)));
+//				LedControl_bitBigWrite(col, row, LedControl_bitRead(sprite[(width - i)/8 + j*(1 + width/8)], (i%8)));
+//				LedControl_bitBigWrite(col, row, LedControl_bitRead(sprite[j*2 + (1 - i%2)], (i%8)));
+				LedControl_bitBigWrite(col, row, bit);
+			}
 		}
 	}
 }
