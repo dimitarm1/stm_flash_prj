@@ -47,6 +47,13 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define Clock_Pin GPIO_PIN_7
+#define Clock_GPIO_Port GPIOA
+#define Data_Pin GPIO_PIN_1
+#define Data_GPIO_Port GPIOB
+#define Load_Pin GPIO_PIN_10
+#define Load_GPIO_Port GPIOB
+
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
