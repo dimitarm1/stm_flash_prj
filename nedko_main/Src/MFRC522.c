@@ -164,8 +164,8 @@ void MFRC522_PCD_ReadRegister_2(uint8_t reg, uint8_t count, uint8_t *values, uin
  */
 void MFRC522_PCD_SetRegisterBits(uint8_t reg, uint8_t mask)
 {
-  uint8_t tmp = PCD_ReadRegister(reg);
-  PCD_WriteRegister(reg, tmp | mask);     // set bit mask
+  uint8_t tmp = MFRC522_PCD_ReadRegister(reg);
+  MFRC522_PCD_WriteRegister(reg, tmp | mask);     // set bit mask
 } // End PCD_SetRegisterBitMask()
 
 /**
@@ -173,8 +173,8 @@ void MFRC522_PCD_SetRegisterBits(uint8_t reg, uint8_t mask)
  */
 void MFRC522_PCD_ClrRegisterBits(uint8_t reg, uint8_t mask)
 {
-  uint8_t tmp = PCD_ReadRegister(reg);
-  PCD_WriteRegister(reg, tmp & (~mask));    // clear bit mask
+  uint8_t tmp = MFRC522_PCD_ReadRegister(reg);
+  MFRC522_PCD_WriteRegister(reg, tmp & (~mask));    // clear bit mask
 } // End PCD_ClearRegisterBitMask()
 
 
@@ -183,18 +183,18 @@ void MFRC522_PCD_ClrRegisterBits(uint8_t reg, uint8_t mask)
  */
 uint8_t MFRC522_PCD_CalculateCRC(uint8_t *data, uint8_t length, uint8_t *result)
 {
-  PCD_WriteRegister(CommandReg, PCD_Idle);      // Stop any active command.
-  PCD_WriteRegister(DivIrqReg, 0x04);           // Clear the CRCIRq interrupt request bit
-  PCD_SetRegisterBits(FIFOLevelReg, 0x80);      // FlushBuffer = 1, FIFO initialization
-  PCD_WriteRegister_2(FIFODataReg, length, data); // Write data to the FIFO
-  PCD_WriteRegister(CommandReg, PCD_CalcCRC);   // Start the calculation
+  MFRC522_PCD_WriteRegister(CommandReg, PCD_Idle);      // Stop any active command.
+  MFRC522_PCD_WriteRegister(DivIrqReg, 0x04);           // Clear the CRCIRq interrupt request bit
+  MFRC522_PCD_SetRegisterBits(FIFOLevelReg, 0x80);      // FlushBuffer = 1, FIFO initialization
+  MFRC522_PCD_WriteRegister_2(FIFODataReg, length, data); // Write data to the FIFO
+  MFRC522_PCD_WriteRegister(CommandReg, PCD_CalcCRC);   // Start the calculation
 
   // Wait for the CRC calculation to complete. Each iteration of the while-loop takes 17.73us.
   uint16_t i = 5000;
   uint8_t n;
   while (1)
   {
-    n = PCD_ReadRegister(DivIrqReg);  // DivIrqReg[7..0] bits are: Set2 reserved reserved MfinActIRq   reserved CRCIRq reserved reserved
+    n = MFRC522_PCD_ReadRegister(DivIrqReg);  // DivIrqReg[7..0] bits are: Set2 reserved reserved MfinActIRq   reserved CRCIRq reserved reserved
     if (n & 0x04)
     {
       // CRCIRq bit set - calculation done
@@ -210,11 +210,11 @@ uint8_t MFRC522_PCD_CalculateCRC(uint8_t *data, uint8_t length, uint8_t *result)
   }
 
   // Stop calculating CRC for new content in the FIFO.
-  PCD_WriteRegister(CommandReg, PCD_Idle);
+  MFRC522_PCD_WriteRegister(CommandReg, PCD_Idle);
 
   // Transfer the result from the registers to the result buffer
-  result[0] = PCD_ReadRegister(CRCResultRegL);
-  result[1] = PCD_ReadRegister(CRCResultRegH);
+  result[0] = MFRC522_PCD_ReadRegister(CRCResultRegL);
+  result[1] = MFRC522_PCD_ReadRegister(CRCResultRegH);
   return STATUS_OK;
 } // End PCD_CalculateCRC()
 
@@ -226,30 +226,45 @@ uint8_t MFRC522_PCD_CalculateCRC(uint8_t *data, uint8_t length, uint8_t *result)
 /**
  * Initializes the MFRC522 chip.
  */
-void MFRC522_PCD_Init()
+void MFRC522_PCD_Init(uint16_t csPin,  GPIO_TypeDef* cs_port, uint16_t resetPin, GPIO_TypeDef* reset_port,
+		 uint16_t mosiPin, GPIO_TypeDef* mosi_port, uint16_t misoPin, GPIO_TypeDef* miso_port, uint16_t clkPin,  GPIO_TypeDef* clk_port)
 {
+  mfrc522.m_CS_pin = csPin;
+  mfrc522.m_CS_port = cs_port;
+
+  mfrc522.m_RESET_pin = resetPin;
+  mfrc522.m_RESET_port = reset_port;
+
+  mfrc522.SPI_MOSI_pin = mosiPin;
+  mfrc522.SPI_MOSI_port = mosi_port;
+
+  mfrc522.SPI_MISO_pin = misoPin;
+  mfrc522.SPI_MISO_port = miso_port;
+
+  mfrc522.SPI_CLK_pin = clkPin;
+  mfrc522.SPI_CLK_port = clk_port;
   /* Reset MFRC522 */
   digitalWrite(mfrc522.m_RESET_port, mfrc522.m_RESET_pin,LOW);
-  wait_ms(10);
+  HAL_Delay(10);
   digitalWrite(mfrc522.m_RESET_port, mfrc522.m_RESET_pin,HIGH);
 
   // Section 8.8.2 in the datasheet says the oscillator start-up time is the start up time of the crystal + 37,74us. Let us be generous: 50ms.
-  wait_ms(50);
+  HAL_Delay(50);
 
   // When communicating with a PICC we need a timeout if something goes wrong.
   // f_timer = 13.56 MHz / (2*TPreScaler+1) where TPreScaler = [TPrescaler_Hi:TPrescaler_Lo].
   // TPrescaler_Hi are the four low bits in TModeReg. TPrescaler_Lo is TPrescalerReg.
-  PCD_WriteRegister(TModeReg, 0x80);      // TAuto=1; timer starts automatically at the end of the transmission in all communication modes at all speeds
-  PCD_WriteRegister(TPrescalerReg, 0xA9); // TPreScaler = TModeReg[3..0]:TPrescalerReg, ie 0x0A9 = 169 => f_timer=40kHz, ie a timer period of 25us.
-  PCD_WriteRegister(TReloadRegH, 0x03);   // Reload timer with 0x3E8 = 1000, ie 25ms before timeout.
-  PCD_WriteRegister(TReloadRegL, 0xE8);
+  MFRC522_PCD_WriteRegister(TModeReg, 0x80);      // TAuto=1; timer starts automatically at the end of the transmission in all communication modes at all speeds
+  MFRC522_PCD_WriteRegister(TPrescalerReg, 0xA9); // TPreScaler = TModeReg[3..0]:TPrescalerReg, ie 0x0A9 = 169 => f_timer=40kHz, ie a timer period of 25us.
+  MFRC522_PCD_WriteRegister(TReloadRegH, 0x03);   // Reload timer with 0x3E8 = 1000, ie 25ms before timeout.
+  MFRC522_PCD_WriteRegister(TReloadRegL, 0xE8);
 
-  PCD_WriteRegister(TxASKReg, 0x40);      // Default 0x00. Force a 100 % ASK modulation independent of the ModGsPReg register setting
-  PCD_WriteRegister(ModeReg, 0x3D);       // Default 0x3F. Set the preset value for the CRC coprocessor for the CalcCRC command to 0x6363 (ISO 14443-3 part 6.2.4)
+  MFRC522_PCD_WriteRegister(TxASKReg, 0x40);      // Default 0x00. Force a 100 % ASK modulation independent of the ModGsPReg register setting
+  MFRC522_PCD_WriteRegister(ModeReg, 0x3D);       // Default 0x3F. Set the preset value for the CRC coprocessor for the CalcCRC command to 0x6363 (ISO 14443-3 part 6.2.4)
 
-  PCD_WriteRegister(RFCfgReg, (0x07<<4)); // Set Rx Gain to max
+  MFRC522_PCD_WriteRegister(RFCfgReg, (0x07<<4)); // Set Rx Gain to max
 
-  PCD_AntennaOn();                        // Enable the antenna driver pins TX1 and TX2 (they were disabled by the reset)
+  MFRC522_PCD_AntennaOn();                        // Enable the antenna driver pins TX1 and TX2 (they were disabled by the reset)
 } // End PCD_Init()
 
 /**
@@ -257,14 +272,14 @@ void MFRC522_PCD_Init()
  */
 void MFRC522_PCD_Reset()
 {
-  PCD_WriteRegister(CommandReg, PCD_SoftReset); // Issue the SoftReset command.
+	MFRC522_PCD_WriteRegister(CommandReg, PCD_SoftReset); // Issue the SoftReset command.
   // The datasheet does not mention how long the SoftRest command takes to complete.
   // But the MFRC522 might have been in soft power-down mode (triggered by bit 4 of CommandReg)
   // Section 8.8.2 in the datasheet says the oscillator start-up time is the start up time of the crystal + 37,74us. Let us be generous: 50ms.
-  wait_ms(50);
+  HAL_Delay(50);
 
   // Wait for the PowerDown bit in CommandReg to be cleared
-  while (PCD_ReadRegister(CommandReg) & (1<<4))
+  while (MFRC522_PCD_ReadRegister(CommandReg) & (1<<4))
   {
     // PCD still restarting - unlikely after waiting 50ms, but better safe than sorry.
   }
@@ -276,10 +291,10 @@ void MFRC522_PCD_Reset()
  */
 void MFRC522_PCD_AntennaOn()
 {
-  uint8_t value = PCD_ReadRegister(TxControlReg);
+  uint8_t value = MFRC522_PCD_ReadRegister(TxControlReg);
   if ((value & 0x03) != 0x03)
   {
-    PCD_WriteRegister(TxControlReg, value | 0x03);
+	  MFRC522_PCD_WriteRegister(TxControlReg, value | 0x03);
   }
 } // End PCD_AntennaOn()
 
@@ -300,7 +315,7 @@ uint8_t MFRC522_PCD_TransceiveData(uint8_t *sendData,
                                     uint8_t    checkCRC)
 {
   uint8_t waitIRq = 0x30;    // RxIRq and IdleIRq
-  return PCD_CommunicateWithPICC(PCD_Transceive, waitIRq, sendData, sendLen, backData, backLen, validBits, rxAlign, checkCRC);
+  return MFRC522_PCD_CommunicateWithPICC(PCD_Transceive, waitIRq, sendData, sendLen, backData, backLen, validBits, rxAlign, checkCRC);
 } // End PCD_TransceiveData()
 
 /**
@@ -324,15 +339,15 @@ uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
   uint8_t txLastBits = validBits ? *validBits : 0;
   uint8_t bitFraming = (rxAlign << 4) + txLastBits;   // RxAlign = BitFramingReg[6..4]. TxLastBits = BitFramingReg[2..0]
 
-  PCD_WriteRegister(CommandReg, PCD_Idle);            // Stop any active command.
-  PCD_WriteRegister(ComIrqReg, 0x7F);                 // Clear all seven interrupt request bits
-  PCD_SetRegisterBits(FIFOLevelReg, 0x80);            // FlushBuffer = 1, FIFO initialization
-  PCD_WriteRegister_2(FIFODataReg, sendLen, sendData);  // Write sendData to the FIFO
-  PCD_WriteRegister(BitFramingReg, bitFraming);       // Bit adjustments
-  PCD_WriteRegister(CommandReg, command);             // Execute the command
+  MFRC522_PCD_WriteRegister(CommandReg, PCD_Idle);            // Stop any active command.
+  MFRC522_PCD_WriteRegister(ComIrqReg, 0x7F);                 // Clear all seven interrupt request bits
+  MFRC522_PCD_SetRegisterBits(FIFOLevelReg, 0x80);            // FlushBuffer = 1, FIFO initialization
+  MFRC522_PCD_WriteRegister_2(FIFODataReg, sendLen, sendData);  // Write sendData to the FIFO
+  MFRC522_PCD_WriteRegister(BitFramingReg, bitFraming);       // Bit adjustments
+  MFRC522_PCD_WriteRegister(CommandReg, command);             // Execute the command
   if (command == PCD_Transceive)
   {
-    PCD_SetRegisterBits(BitFramingReg, 0x80);      // StartSend=1, transmission of data starts
+	  MFRC522_PCD_SetRegisterBits(BitFramingReg, 0x80);      // StartSend=1, transmission of data starts
   }
 
   // Wait for the command to complete.
@@ -341,7 +356,7 @@ uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
   i = 2000;
   while (1)
   {
-    n = PCD_ReadRegister(ComIrqReg);  // ComIrqReg[7..0] bits are: Set1 TxIRq RxIRq IdleIRq   HiAlertIRq LoAlertIRq ErrIRq TimerIRq
+    n = MFRC522_PCD_ReadRegister(ComIrqReg);  // ComIrqReg[7..0] bits are: Set1 TxIRq RxIRq IdleIRq   HiAlertIRq LoAlertIRq ErrIRq TimerIRq
     if (n & waitIRq)
     {          // One of the interrupts that signal success has been set.
       break;
@@ -359,7 +374,7 @@ uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
   }
 
   // Stop now if any errors except collisions were detected.
-  uint8_t errorRegValue = PCD_ReadRegister(ErrorReg); // ErrorReg[7..0] bits are: WrErr TempErr reserved BufferOvfl   CollErr CRCErr ParityErr ProtocolErr
+  uint8_t errorRegValue = MFRC522_PCD_ReadRegister(ErrorReg); // ErrorReg[7..0] bits are: WrErr TempErr reserved BufferOvfl   CollErr CRCErr ParityErr ProtocolErr
   if (errorRegValue & 0x13)
   {  // BufferOvfl ParityErr ProtocolErr
     return STATUS_ERROR;
@@ -368,15 +383,15 @@ uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
   // If the caller wants data back, get it from the MFRC522.
   if (backData && backLen)
   {
-    n = PCD_ReadRegister(FIFOLevelReg);           // Number of bytes in the FIFO
+    n = MFRC522_PCD_ReadRegister(FIFOLevelReg);           // Number of bytes in the FIFO
     if (n > *backLen)
     {
       return STATUS_NO_ROOM;
     }
 
     *backLen = n;                       // Number of bytes returned
-    PCD_ReadRegister_2(FIFODataReg, n, backData, rxAlign);    // Get received data from FIFO
-    _validBits = PCD_ReadRegister(ControlReg) & 0x07; // RxLastBits[2:0] indicates the number of valid bits in the last received byte. If this value is 000b, the whole byte is valid.
+    MFRC522_PCD_ReadRegister_2(FIFODataReg, n, backData, rxAlign);    // Get received data from FIFO
+    _validBits = MFRC522_PCD_ReadRegister(ControlReg) & 0x07; // RxLastBits[2:0] indicates the number of valid bits in the last received byte. If this value is 000b, the whole byte is valid.
     if (validBits)
     {
       *validBits = _validBits;
@@ -406,7 +421,7 @@ uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
 
     // Verify CRC_A - do our own calculation and store the control in controlBuffer.
     uint8_t controlBuffer[2];
-    n = PCD_CalculateCRC(&backData[0], *backLen - 2, &controlBuffer[0]);
+    n = MFRC522_PCD_CalculateCRC(&backData[0], *backLen - 2, &controlBuffer[0]);
     if (n != STATUS_OK)
     {
       return n;
@@ -427,7 +442,7 @@ uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
  */
 uint8_t MFRC522_PICC_RequestA(uint8_t *bufferATQA, uint8_t *bufferSize)
 {
-  return PICC_REQA_or_WUPA(PICC_CMD_REQA, bufferATQA, bufferSize);
+  return MFRC522_PICC_REQA_or_WUPA(PICC_CMD_REQA, bufferATQA, bufferSize);
 } // End PICC_RequestA()
 
 /**
@@ -436,7 +451,7 @@ uint8_t MFRC522_PICC_RequestA(uint8_t *bufferATQA, uint8_t *bufferSize)
  */
 uint8_t MFRC522_PICC_WakeupA(uint8_t *bufferATQA, uint8_t *bufferSize)
 {
-  return PICC_REQA_or_WUPA(PICC_CMD_WUPA, bufferATQA, bufferSize);
+  return MFRC522_PICC_REQA_or_WUPA(PICC_CMD_WUPA, bufferATQA, bufferSize);
 } // End PICC_WakeupA()
 
 /*
@@ -454,13 +469,13 @@ uint8_t MFRC522_PICC_REQA_or_WUPA(uint8_t command, uint8_t *bufferATQA, uint8_t 
   }
 
   // ValuesAfterColl=1 => Bits received after collision are cleared.
-  PCD_ClrRegisterBits(CollReg, 0x80);
+  MFRC522_PCD_ClrRegisterBits(CollReg, 0x80);
 
   // For REQA and WUPA we need the short frame format
   // - transmit only 7 bits of the last (and only) byte. TxLastBits = BitFramingReg[2..0]
   validBits = 7;
 
-  status = PCD_TransceiveData(&command, 1, bufferATQA, bufferSize, &validBits, 0, 0);
+  status = MFRC522_PCD_TransceiveData(&command, 1, bufferATQA, bufferSize, &validBits, 0, 0);
   if (status != STATUS_OK)
   {
     return status;
@@ -525,7 +540,7 @@ uint8_t MFRC522_PICC_Select(Uid *uid, uint8_t validBits)
 
   // Prepare MFRC522
   // ValuesAfterColl=1 => Bits received after collision are cleared.
-  PCD_ClrRegisterBits(CollReg, 0x80);
+  MFRC522_PCD_ClrRegisterBits(CollReg, 0x80);
 
   // Repeat Cascade Level loop until we have a complete UID.
   uidComplete = false;
@@ -610,7 +625,7 @@ uint8_t MFRC522_PICC_Select(Uid *uid, uint8_t validBits)
         buffer[6] = buffer[2] ^ buffer[3] ^ buffer[4] ^ buffer[5];
 
         // Calculate CRC_A
-        result = PCD_CalculateCRC(buffer, 7, &buffer[7]);
+        result = MFRC522_PCD_CalculateCRC(buffer, 7, &buffer[7]);
         if (result != STATUS_OK)
         {
           return result;
@@ -639,13 +654,13 @@ uint8_t MFRC522_PICC_Select(Uid *uid, uint8_t validBits)
 
       // Set bit adjustments
       rxAlign = txLastBits;                     // Having a seperate variable is overkill. But it makes the next line easier to read.
-      PCD_WriteRegister(BitFramingReg, (rxAlign << 4) + txLastBits);  // RxAlign = BitFramingReg[6..4]. TxLastBits = BitFramingReg[2..0]
+      MFRC522_PCD_WriteRegister(BitFramingReg, (rxAlign << 4) + txLastBits);  // RxAlign = BitFramingReg[6..4]. TxLastBits = BitFramingReg[2..0]
 
       // Transmit the buffer and receive the response.
-      result = PCD_TransceiveData(buffer, bufferUsed, responseBuffer, &responseLength, &txLastBits, rxAlign, 0);
+      result = MFRC522_PCD_TransceiveData(buffer, bufferUsed, responseBuffer, &responseLength, &txLastBits, rxAlign, 0);
       if (result == STATUS_COLLISION)
       { // More than one PICC in the field => collision.
-        result = PCD_ReadRegister(CollReg);     // CollReg[7..0] bits are: ValuesAfterColl reserved CollPosNotValid CollPos[4:0]
+        result = MFRC522_PCD_ReadRegister(CollReg);     // CollReg[7..0] bits are: ValuesAfterColl reserved CollPosNotValid CollPos[4:0]
         if (result & 0x20)
         { // CollPosNotValid
           return STATUS_COLLISION; // Without a valid collision position we cannot continue
@@ -705,7 +720,7 @@ uint8_t MFRC522_PICC_Select(Uid *uid, uint8_t validBits)
     }
 
     // Verify CRC_A - do our own calculation and store the control in buffer[2..3] - those bytes are not needed anymore.
-    result = PCD_CalculateCRC(responseBuffer, 1, &buffer[2]);
+    result = MFRC522_PCD_CalculateCRC(responseBuffer, 1, &buffer[2]);
     if (result != STATUS_OK)
     {
       return result;
@@ -746,7 +761,7 @@ uint8_t MFRC522_PICC_HaltA()
   buffer[1] = 0;
 
   // Calculate CRC_A
-  result = PCD_CalculateCRC(buffer, 2, &buffer[2]);
+  result = MFRC522_PCD_CalculateCRC(buffer, 2, &buffer[2]);
   if (result == STATUS_OK)
   {
     // Send the command.
@@ -754,7 +769,7 @@ uint8_t MFRC522_PICC_HaltA()
     //    If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
     //    HLTA command, this response shall be interpreted as 'not acknowledge'.
     // We interpret that this way: Only STATUS_TIMEOUT is an success.
-    result = PCD_TransceiveData(buffer, sizeof(buffer), NULL, 0, 0, 0, 0);
+    result = MFRC522_PCD_TransceiveData(buffer, sizeof(buffer), NULL, 0, 0, 0, 0);
     if (result == STATUS_TIMEOUT)
     {
       result = STATUS_OK;
@@ -796,7 +811,7 @@ uint8_t MFRC522_PCD_Authenticate(uint8_t command, uint8_t blockAddr, MIFARE_Key 
   }
 
   // Start the authentication.
-  return PCD_CommunicateWithPICC(PCD_MFAuthent, waitIRq, &sendData[0], sizeof(sendData), 0, 0, 0, 0, 0);
+  return MFRC522_PCD_CommunicateWithPICC(PCD_MFAuthent, waitIRq, &sendData[0], sizeof(sendData), 0, 0, 0, 0, 0);
 } // End PCD_Authenticate()
 
 /*
@@ -806,7 +821,7 @@ uint8_t MFRC522_PCD_Authenticate(uint8_t command, uint8_t blockAddr, MIFARE_Key 
 void MFRC522_PCD_StopCrypto1()
 {
   // Clear MFCrypto1On bit
-  PCD_ClrRegisterBits(Status2Reg, 0x08); // Status2Reg[7..0] bits are: TempSensClear I2CForceHS reserved reserved   MFCrypto1On ModemState[2:0]
+	MFRC522_PCD_ClrRegisterBits(Status2Reg, 0x08); // Status2Reg[7..0] bits are: TempSensClear I2CForceHS reserved reserved   MFCrypto1On ModemState[2:0]
 } // End PCD_StopCrypto1()
 
 /*
@@ -827,14 +842,14 @@ uint8_t MFRC522_MIFARE_Read(uint8_t blockAddr, uint8_t *buffer, uint8_t *bufferS
   buffer[1] = blockAddr;
 
   // Calculate CRC_A
-  result = PCD_CalculateCRC(buffer, 2, &buffer[2]);
+  result = MFRC522_PCD_CalculateCRC(buffer, 2, &buffer[2]);
   if (result != STATUS_OK)
   {
     return result;
   }
 
   // Transmit the buffer and receive the response, validate CRC_A.
-  return PCD_TransceiveData(buffer, 4, buffer, bufferSize, NULL, 0, true);
+  return MFRC522_PCD_TransceiveData(buffer, 4, buffer, bufferSize, NULL, 0, true);
 } // End MIFARE_Read()
 
 /*
@@ -856,7 +871,7 @@ uint8_t MFRC522_MIFARE_Write(uint8_t blockAddr, uint8_t *buffer, uint8_t bufferS
   cmdBuffer[0] = PICC_CMD_MF_WRITE;
   cmdBuffer[1] = blockAddr;
   // Adds CRC_A and checks that the response is MF_ACK.
-  result = PCD_MIFARE_Transceive(cmdBuffer, 2, 0);
+  result = MFRC522_PCD_MIFARE_Transceive(cmdBuffer, 2, 0);
   if (result != STATUS_OK)
   {
     return result;
@@ -864,7 +879,7 @@ uint8_t MFRC522_MIFARE_Write(uint8_t blockAddr, uint8_t *buffer, uint8_t bufferS
 
   // Step 2: Transfer the data
   // Adds CRC_A and checks that the response is MF_ACK.
-  result = PCD_MIFARE_Transceive(buffer, bufferSize, 0);
+  result = MFRC522_PCD_MIFARE_Transceive(buffer, bufferSize, 0);
   if (result != STATUS_OK)
   {
     return result;
@@ -893,7 +908,7 @@ uint8_t MFRC522_MIFARE_UltralightWrite(uint8_t page, uint8_t *buffer, uint8_t bu
   memcpy(&cmdBuffer[2], buffer, 4);
 
   // Perform the write
-  result = PCD_MIFARE_Transceive(cmdBuffer, 6, 0); // Adds CRC_A and checks that the response is MF_ACK.
+  result = MFRC522_PCD_MIFARE_Transceive(cmdBuffer, 6, 0); // Adds CRC_A and checks that the response is MF_ACK.
   if (result != STATUS_OK)
   {
     return result;
@@ -907,7 +922,7 @@ uint8_t MFRC522_MIFARE_UltralightWrite(uint8_t page, uint8_t *buffer, uint8_t bu
  */
 uint8_t MFRC522_MIFARE_Decrement(uint8_t blockAddr, uint32_t delta)
 {
-  return MIFARE_TwoStepHelper(PICC_CMD_MF_DECREMENT, blockAddr, delta);
+  return MFRC522_MIFARE_TwoStepHelper(PICC_CMD_MF_DECREMENT, blockAddr, delta);
 } // End MIFARE_Decrement()
 
 /*
@@ -915,7 +930,7 @@ uint8_t MFRC522_MIFARE_Decrement(uint8_t blockAddr, uint32_t delta)
  */
 uint8_t MFRC522_MIFARE_Increment(uint8_t blockAddr, uint32_t delta)
 {
-  return MIFARE_TwoStepHelper(PICC_CMD_MF_INCREMENT, blockAddr, delta);
+  return MFRC522_MIFARE_TwoStepHelper(PICC_CMD_MF_INCREMENT, blockAddr, delta);
 } // End MIFARE_Increment()
 
 /**
@@ -925,7 +940,7 @@ uint8_t MFRC522_MIFARE_Restore(uint8_t blockAddr)
 {
   // The datasheet describes Restore as a two step operation, but does not explain what data to transfer in step 2.
   // Doing only a single step does not work, so I chose to transfer 0L in step two.
-  return MIFARE_TwoStepHelper(PICC_CMD_MF_RESTORE, blockAddr, 0L);
+  return MFRC522_MIFARE_TwoStepHelper(PICC_CMD_MF_RESTORE, blockAddr, 0L);
 } // End MIFARE_Restore()
 
 /*
@@ -941,7 +956,7 @@ uint8_t MFRC522_MIFARE_TwoStepHelper(uint8_t command, uint8_t blockAddr, uint32_
   cmdBuffer[1] = blockAddr;
 
   // Adds CRC_A and checks that the response is MF_ACK.
-  result = PCD_MIFARE_Transceive(cmdBuffer, 2, 0);
+  result = MFRC522_PCD_MIFARE_Transceive(cmdBuffer, 2, 0);
   if (result != STATUS_OK)
   {
     return result;
@@ -949,7 +964,7 @@ uint8_t MFRC522_MIFARE_TwoStepHelper(uint8_t command, uint8_t blockAddr, uint32_
 
   // Step 2: Transfer the data
   // Adds CRC_A and accept timeout as success.
-  result = PCD_MIFARE_Transceive((uint8_t *) &data, 4, true);
+  result = MFRC522_PCD_MIFARE_Transceive((uint8_t *) &data, 4, true);
   if (result != STATUS_OK)
   {
     return result;
@@ -970,7 +985,7 @@ uint8_t MFRC522_MIFARE_Transfer(uint8_t blockAddr)
   cmdBuffer[1] = blockAddr;
 
   // Adds CRC_A and checks that the response is MF_ACK.
-  return PCD_MIFARE_Transceive(cmdBuffer, 2, 0);
+  return MFRC522_PCD_MIFARE_Transceive(cmdBuffer, 2, 0);
 } // End MIFARE_Transfer()
 
 
@@ -995,7 +1010,7 @@ uint8_t MFRC522_PCD_MIFARE_Transceive(uint8_t *sendData, uint8_t sendLen, uint8_
 
   // Copy sendData[] to cmdBuffer[] and add CRC_A
   memcpy(cmdBuffer, sendData, sendLen);
-  result = PCD_CalculateCRC(cmdBuffer, sendLen, &cmdBuffer[sendLen]);
+  result = MFRC522_PCD_CalculateCRC(cmdBuffer, sendLen, &cmdBuffer[sendLen]);
   if (result != STATUS_OK)
   {
     return result;
@@ -1007,7 +1022,7 @@ uint8_t MFRC522_PCD_MIFARE_Transceive(uint8_t *sendData, uint8_t sendLen, uint8_
   uint8_t waitIRq = 0x30;    // RxIRq and IdleIRq
   uint8_t cmdBufferSize = sizeof(cmdBuffer);
   uint8_t validBits = 0;
-  result = PCD_CommunicateWithPICC(PCD_Transceive, waitIRq, cmdBuffer, sendLen, cmdBuffer, &cmdBufferSize, &validBits, 0, 0);
+  result = MFRC522_PCD_CommunicateWithPICC(PCD_Transceive, waitIRq, cmdBuffer, sendLen, cmdBuffer, &cmdBufferSize, &validBits, 0, 0);
   if (acceptTimeout && result == STATUS_TIMEOUT)
   {
     return STATUS_OK;
@@ -1122,7 +1137,7 @@ uint8_t MFRC522_PICC_IsNewCardPresent(void)
 {
   uint8_t bufferATQA[2];
   uint8_t bufferSize = sizeof(bufferATQA);
-  uint8_t result = PICC_RequestA(bufferATQA, &bufferSize);
+  uint8_t result = MFRC522_PICC_RequestA(bufferATQA, &bufferSize);
   return ((result == STATUS_OK) || (result == STATUS_COLLISION));
 } // End PICC_IsNewCardPresent()
 
@@ -1131,6 +1146,7 @@ uint8_t MFRC522_PICC_IsNewCardPresent(void)
  */
 uint8_t MFRC522_PICC_ReadCardSerial(void)
 {
-  uint8_t result = PICC_Select(&mfrc522.uid, 0);
+  uint8_t result = MFRC522_PICC_Select(&mfrc522.uid, 0);
   return (result == STATUS_OK);
 } // End PICC_ReadCardSerial()
+

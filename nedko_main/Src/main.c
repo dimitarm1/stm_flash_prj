@@ -45,6 +45,7 @@
 #include "LedControl.h"
 #include "math.h"
 #include "eeprom.h"
+#include "MFRC522.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -55,6 +56,7 @@ RTC_HandleTypeDef hrtc;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 extern LedControl led_control;
+extern MFRC522_t mfrc522;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,6 +103,7 @@ int main(void)
   MX_ADC1_Init();
 
   /* USER CODE BEGIN 2 */
+  MFRC522_PCD_Init(11,  GPIOA, 2, GPIOB, 13, GPIOC, 15, GPIOA, 12,  GPIOA);
   LedControl_init(9, GPIOB, 11, GPIOB, 10, GPIOB, 11);
   for(int i = 0; i < led_control.maxDevices; i++)
   {
@@ -126,18 +129,35 @@ int main(void)
 
 	  memset(led_control.buffer, 0, sizeof(led_control.buffer));
 //	  LedControl_printCharWithShift(counter + 32,0);
+	  if(MFRC522_PICC_IsNewCardPresent())
+	  {
+		  uint8_t buffer[5];
+		  uint8_t buffer_size;
+		  buffer_size = sizeof(buffer);
+		  MFRC522_PICC_WakeupA(buffer, &buffer_size);
+		  if(MFRC522_PICC_ReadCardSerial ())
+		  {
+			  LedControl_SetCursor(0, 0);
+			  for(int i = 0; i < sizeof(mfrc522.uid.uidByte); i++)
+			  {
+				  LedControl_printChar('0' + mfrc522.uid.uidByte[i]);
+			  }
+		  }
+	  }
+	  else
+	  {
 
-
-//	  LedControl_shiftLeft(0, 1);
-	  LedControl_SetCursor(counter/4, (counter/4)%3);
-	  LedControl_printBigString("TesT1234");
-//	  LedControl_printBigChar('#');
-//	  LedControl_printBigChar(counter + 32);
+	//	  LedControl_shiftLeft(0, 1);
+		  LedControl_SetCursor(counter/8, (counter/2)%2);
+		  LedControl_printBigString("K"); //ALOJAN E DOBAR");
+	//	  LedControl_printBigChar('#');
+	//	  LedControl_printBigChar(counter + 32);
+	  }
 	  LedControl_reload();
 	  HAL_Delay(100);
 //		HAL_Delay(100);
 //		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
-		counter+=4;
+		counter-=2;
 //		counter %= 94;
   }
   /* USER CODE END 3 */

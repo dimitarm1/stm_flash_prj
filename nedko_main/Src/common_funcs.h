@@ -11,7 +11,9 @@
 
 #define HIGH 1
 #define LOW 0
-#define NULL 0
+#ifndef NULL
+	#define NULL 0
+#endif
 #define true 1
 #define false 0
 

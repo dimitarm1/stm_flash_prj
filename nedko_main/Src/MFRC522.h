@@ -346,18 +346,20 @@ typedef struct {
   /**
   * Initializes the MFRC522 chip.
   */
-  void    PCD_Init           (void);
+  //void    PCD_Init           (void);
+  void MFRC522_PCD_Init(uint16_t csPin,  GPIO_TypeDef* cs_port, uint16_t resetPin, GPIO_TypeDef* reset_port,
+  		 uint16_t mosiPin, GPIO_TypeDef* mosi_port, uint16_t misoPin, GPIO_TypeDef* miso_port, uint16_t clkPin,  GPIO_TypeDef* clk_port);
 
   /**
   * Performs a soft reset on the MFRC522 chip and waits for it to be ready again.
   */
-  void    PCD_Reset          (void);
+  void    MFRC522_PCD_Reset          (void);
 
   /**
   * Turns the antenna on by enabling pins TX1 and TX2.
   * After a reset these pins disabled.
   */
-  void    PCD_AntennaOn      (void);
+  void    MFRC522_PCD_AntennaOn      (void);
 
   /**
   * Writes a byte to the specified register in the MFRC522 chip.
@@ -366,7 +368,7 @@ typedef struct {
   * @param reg   The register to write to. One of the PCD_Register enums.
   * @param value The value to write.
   */
-  void    PCD_WriteRegister  (uint8_t reg, uint8_t value);
+  void    MFRC522_PCD_WriteRegister  (uint8_t reg, uint8_t value);
 
   /**
   * Writes a number of bytes to the specified register in the MFRC522 chip.
@@ -376,7 +378,7 @@ typedef struct {
   * @param count  The number of bytes to write to the register
   * @param values The values to write. Byte array.
   */
-  void    PCD_WriteRegister_2  (uint8_t reg, uint8_t count, uint8_t *values);
+  void    MFRC522_PCD_WriteRegister_2  (uint8_t reg, uint8_t count, uint8_t *values);
 
   /**
   * Reads a byte from the specified register in the MFRC522 chip.
@@ -385,7 +387,7 @@ typedef struct {
   * @param reg The register to read from. One of the PCD_Register enums.
   * @returns Register value
   */
-  uint8_t PCD_ReadRegister   (uint8_t reg);
+  uint8_t MFRC522_PCD_ReadRegister   (uint8_t reg);
 
   /**
   * Reads a number of bytes from the specified register in the MFRC522 chip.
@@ -396,7 +398,7 @@ typedef struct {
   * @param values  Byte array to store the values in.
   * @param rxAlign Only bit positions rxAlign..7 in values[0] are updated.
   */
-  void    PCD_ReadRegister_2   (uint8_t reg, uint8_t count, uint8_t *values, uint8_t rxAlign);
+  void    MFRC522_PCD_ReadRegister_2   (uint8_t reg, uint8_t count, uint8_t *values, uint8_t rxAlign);
 
   /**
   * Sets the bits given in mask in register reg.
@@ -404,7 +406,7 @@ typedef struct {
   * @param reg  The register to update. One of the PCD_Register enums.
   * @param mask The bits to set.
   */
-  void    PCD_SetRegisterBits(uint8_t reg, uint8_t mask);
+  void    MFRC522_PCD_SetRegisterBits(uint8_t reg, uint8_t mask);
 
   /**
   * Clears the bits given in mask from register reg.
@@ -412,7 +414,7 @@ typedef struct {
   * @param reg  The register to update. One of the PCD_Register enums.
   * @param mask The bits to clear.
   */
-  void    PCD_ClrRegisterBits(uint8_t reg, uint8_t mask);
+  void    MFRC522_PCD_ClrRegisterBits(uint8_t reg, uint8_t mask);
 
   /**
   * Use the CRC coprocessor in the MFRC522 to calculate a CRC_A.
@@ -422,7 +424,7 @@ typedef struct {
   * @param result Pointer to result buffer. Result is written to result[0..1], low byte first.
   * @return STATUS_OK on success, STATUS_??? otherwise.
   */
-  uint8_t PCD_CalculateCRC   (uint8_t *data, uint8_t length, uint8_t *result);
+  uint8_t MFRC522_PCD_CalculateCRC   (uint8_t *data, uint8_t length, uint8_t *result);
 
   /**
    * Executes the Transceive command.
@@ -438,7 +440,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PCD_TransceiveData (uint8_t *sendData,
+  uint8_t MFRC522_PCD_TransceiveData (uint8_t *sendData,
                               uint8_t sendLen,
                               uint8_t *backData,
                               uint8_t *backLen,
@@ -463,7 +465,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PCD_CommunicateWithPICC(uint8_t command,
+  uint8_t MFRC522_PCD_CommunicateWithPICC(uint8_t command,
                                   uint8_t waitIRq,
                                   uint8_t *sendData,
                                   uint8_t sendLen,
@@ -482,7 +484,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PICC_RequestA      (uint8_t *bufferATQA, uint8_t *bufferSize);
+  uint8_t MFRC522_PICC_RequestA      (uint8_t *bufferATQA, uint8_t *bufferSize);
 
   /**
    * Transmits a Wake-UP command, Type A. Invites PICCs in state IDLE and HALT to go to READY(*) and prepare for anticollision or selection. 7 bit frame.
@@ -493,7 +495,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PICC_WakeupA       (uint8_t *bufferATQA, uint8_t *bufferSize);
+  uint8_t MFRC522_PICC_WakeupA       (uint8_t *bufferATQA, uint8_t *bufferSize);
 
   /**
    * Transmits REQA or WUPA commands.
@@ -505,7 +507,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PICC_REQA_or_WUPA  (uint8_t command, uint8_t *bufferATQA, uint8_t *bufferSize);
+  uint8_t MFRC522_PICC_REQA_or_WUPA  (uint8_t command, uint8_t *bufferATQA, uint8_t *bufferSize);
 
   /**
    * Transmits SELECT/ANTICOLLISION commands to select a single PICC.
@@ -529,14 +531,14 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PICC_Select        (Uid *uid, uint8_t validBits );
+  uint8_t MFRC522_PICC_Select        (Uid *uid, uint8_t validBits );
 
   /**
    * Instructs a PICC in state ACTIVE(*) to go to state HALT.
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PICC_HaltA         (void);
+  uint8_t MFRC522_PICC_HaltA         (void);
 
   // ************************************************************************************
   //@}
@@ -564,13 +566,13 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise. Probably STATUS_TIMEOUT if you supply the wrong key.
    */
-  uint8_t PCD_Authenticate   (uint8_t command, uint8_t blockAddr, MIFARE_Key *key, Uid *uid);
+  uint8_t MFRC522_PCD_Authenticate   (uint8_t command, uint8_t blockAddr, MIFARE_Key *key, Uid *uid);
 
   /**
    * Used to exit the PCD from its authenticated state.
    * Remember to call this function after communicating with an authenticated PICC - otherwise no new communications can start.
    */
-  void    PCD_StopCrypto1    (void);
+  void    MFRC522_PCD_StopCrypto1    (void);
 
   /**
    * Reads 16 bytes (+ 2 bytes CRC_A) from the active PICC.
@@ -592,7 +594,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_Read        (uint8_t blockAddr, uint8_t *buffer, uint8_t *bufferSize);
+  uint8_t MFRC522_MIFARE_Read        (uint8_t blockAddr, uint8_t *buffer, uint8_t *bufferSize);
 
   /**
    * Writes 16 bytes to the active PICC.
@@ -609,7 +611,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
  */
-  uint8_t MIFARE_Write       (uint8_t blockAddr, uint8_t *buffer, uint8_t bufferSize);
+  uint8_t MFRC522_MIFARE_Write       (uint8_t blockAddr, uint8_t *buffer, uint8_t bufferSize);
 
   /**
    * Writes a 4 byte page to the active MIFARE Ultralight PICC.
@@ -620,7 +622,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_UltralightWrite(uint8_t page, uint8_t *buffer, uint8_t bufferSize);
+  uint8_t MFRC522_MIFARE_UltralightWrite(uint8_t page, uint8_t *buffer, uint8_t bufferSize);
 
   /**
    * MIFARE Decrement subtracts the delta from the value of the addressed block, and stores the result in a volatile memory.
@@ -633,7 +635,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_Decrement   (uint8_t blockAddr, uint32_t delta);
+  uint8_t MFRC522_MIFARE_Decrement   (uint8_t blockAddr, uint32_t delta);
 
   /**
    * MIFARE Increment adds the delta to the value of the addressed block, and stores the result in a volatile memory.
@@ -646,7 +648,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_Increment   (uint8_t blockAddr, uint32_t delta);
+  uint8_t MFRC522_MIFARE_Increment   (uint8_t blockAddr, uint32_t delta);
 
   /**
    * MIFARE Restore copies the value of the addressed block into a volatile memory.
@@ -658,7 +660,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_Restore     (uint8_t blockAddr);
+  uint8_t MFRC522_MIFARE_Restore     (uint8_t blockAddr);
 
   /**
    * MIFARE Transfer writes the value stored in the volatile memory into one MIFARE Classic block.
@@ -669,7 +671,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_Transfer    (uint8_t blockAddr);
+  uint8_t MFRC522_MIFARE_Transfer    (uint8_t blockAddr);
 
   // ************************************************************************************
   //@}
@@ -690,7 +692,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t PCD_MIFARE_Transceive(uint8_t *sendData, uint8_t sendLen, uint8_t acceptTimeout);
+  uint8_t MFRC522_PCD_MIFARE_Transceive(uint8_t *sendData, uint8_t sendLen, uint8_t acceptTimeout);
 
   /**
    * Translates the SAK (Select Acknowledge) to a PICC type.
@@ -699,7 +701,7 @@ typedef struct {
    *
    * @return PICC_Type
    */
-  uint8_t PICC_GetType         (uint8_t sak);
+  uint8_t MFRC522_PICC_GetType         (uint8_t sak);
 
   /**
    * Returns a string pointer to the PICC type name.
@@ -708,7 +710,7 @@ typedef struct {
    *
    * @return A string pointer to the PICC type name.
    */
-  char*   PICC_GetTypeName     (uint8_t type);
+  char*   MFRC522_PICC_GetTypeName     (uint8_t type);
 
   /**
    * Returns a string pointer to a status code name.
@@ -717,7 +719,7 @@ typedef struct {
    *
    * @return A string pointer to a status code name.
    */
-  char*   GetStatusCodeName    (uint8_t code);
+  char*   MFRC522_GetStatusCodeName    (uint8_t code);
 
   /**
    * Calculates the bit pattern needed for the specified access bits. In the [C1 C2 C3] tupples C1 is MSB (=4) and C3 is LSB (=1).
@@ -728,7 +730,7 @@ typedef struct {
    * @param g2              Access bits [C1 C2 C3] for block 2 (for sectors 0-31) or blocks 10-14 (for sectors 32-39)
    * @param g3              Access bits [C1 C2 C3] for the sector trailer, block 3 (for sectors 0-31) or block 15 (for sectors 32-39)
    */
-  void    MIFARE_SetAccessBits (uint8_t *accessBitBuffer,
+  void    MFRC522_MIFARE_SetAccessBits (uint8_t *accessBitBuffer,
                                 uint8_t g0,
                                 uint8_t g1,
                                 uint8_t g2,
@@ -749,7 +751,7 @@ typedef struct {
    *
    * @return bool
    */
-  unsigned char    PICC_IsNewCardPresent(void);
+  unsigned char    MFRC522_PICC_IsNewCardPresent(void);
 
   /**
    * Simple wrapper around PICC_Select.
@@ -759,7 +761,7 @@ typedef struct {
    *
    * @return bool
    */
-  unsigned char      PICC_ReadCardSerial  (void);
+  unsigned char      MFRC522_PICC_ReadCardSerial  (void);
 
   // ************************************************************************************
   //@}
@@ -778,7 +780,7 @@ typedef struct {
    *
    * @return STATUS_OK on success, STATUS_??? otherwise.
    */
-  uint8_t MIFARE_TwoStepHelper(uint8_t command, uint8_t blockAddr, uint32_t data);
+  uint8_t MFRC522_MIFARE_TwoStepHelper(uint8_t command, uint8_t blockAddr, uint32_t data);
 
 #endif
 
