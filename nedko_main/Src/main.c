@@ -76,7 +76,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	  unsigned char counter = 0;
+	  signed char counter = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -129,16 +129,16 @@ int main(void)
 
 
 //	  LedControl_shiftLeft(0, 1);
-	  LedControl_SetCursor(0);
-//	  LedControl_printBigString("Tes");
+	  LedControl_SetCursor(counter/4, (counter/4)%3);
+	  LedControl_printBigString("TesT1234");
 //	  LedControl_printBigChar('#');
-	  LedControl_printBigChar(counter + 32);
+//	  LedControl_printBigChar(counter + 32);
 	  LedControl_reload();
-	  HAL_Delay(1300);
+	  HAL_Delay(100);
 //		HAL_Delay(100);
 //		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
-		counter++;
-		counter %= 94;
+		counter+=4;
+//		counter %= 94;
   }
   /* USER CODE END 3 */
 
