@@ -62,8 +62,8 @@ extern MFRC522_t mfrc522;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_RTC_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_RTC_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -99,8 +99,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_RTC_Init();
   MX_ADC1_Init();
+  MX_RTC_Init();
 
   /* USER CODE BEGIN 2 */
   MFRC522_PCD_Init(11,  GPIOA, 2, GPIOB, 13, GPIOC, 15, GPIOA, 12,  GPIOA);
@@ -131,17 +131,27 @@ int main(void)
 //	  LedControl_printCharWithShift(counter + 32,0);
 	  if(MFRC522_PICC_IsNewCardPresent())
 	  {
-		  uint8_t buffer[5];
-		  uint8_t buffer_size;
-		  buffer_size = sizeof(buffer);
-		  MFRC522_PICC_WakeupA(buffer, &buffer_size);
+		  uint8_t val;
+//		  uint8_t buffer[5];
+//		  uint8_t buffer_size;
+//		  buffer_size = sizeof(buffer);
+//		  MFRC522_PICC_WakeupA(buffer, &buffer_size);
 		  if(MFRC522_PICC_ReadCardSerial ())
 		  {
 			  LedControl_SetCursor(0, 0);
-			  for(int i = 0; i < sizeof(mfrc522.uid.uidByte); i++)
+			  for(int i = 0; i < 8; i++)
 			  {
-				  LedControl_printChar('0' + mfrc522.uid.uidByte[i]);
+				  val =  ((mfrc522.uid.uidByte[i/2]>>(4*(i&1))) & 0x0F);
+				  if (val < 10)
+				  {
+					  LedControl_printChar('0' + val);
+				  }
+				  else
+				  {
+					  LedControl_printChar('A' + val - 10);
+				  }
 			  }
+			  LedControl_reload();
 		  }
 	  }
 	  else
@@ -153,7 +163,7 @@ int main(void)
 	//	  LedControl_printBigChar('#');
 	//	  LedControl_printBigChar(counter + 32);
 	  }
-	  LedControl_reload();
+//	  LedControl_reload();
 	  HAL_Delay(100);
 //		HAL_Delay(100);
 //		LedControl_setRow((counter/8 ) % 8, counter % 8, 0x55);
@@ -175,10 +185,10 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
@@ -202,7 +212,7 @@ void SystemClock_Config(void)
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -257,14 +267,42 @@ static void MX_ADC1_Init(void)
 static void MX_RTC_Init(void)
 {
 
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef DateToUpdate;
+
     /**Initialize RTC Only 
     */
   hrtc.Instance = RTC;
   hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
-  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_CALIBCLOCK;
+  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_NONE;
   if (HAL_RTC_Init(&hrtc) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Initialize RTC and set the Time and Date 
+    */
+  if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2){
+  sTime.Hours = 0x1;
+  sTime.Minutes = 0x0;
+  sTime.Seconds = 0x0;
+
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
+  DateToUpdate.Month = RTC_MONTH_JANUARY;
+  DateToUpdate.Date = 0x1;
+  DateToUpdate.Year = 0x0;
+
+  if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,0x32F2);
   }
 
 }
