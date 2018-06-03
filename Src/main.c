@@ -48,7 +48,8 @@
 #include "DFPlayer.h"
 #include "eeprom.h"
 
-
+#define INPUT_INTERNAL 	(0)
+#define INPUT_EXTERNAL 	(1)
 #define STATUS_FREE    (0L)
 #define STATUS_WAITING (3L)
 #define STATUS_WORKING (1L)
@@ -109,6 +110,7 @@ uint32_t g_ADCValue;
 uint32_t g_ADCMeanValue;
 uint32_t g_MeasurementNumber;
 uint32_t g_Temperature;
+unsigned char selected_unput;
 
 unsigned char controller_address = 0x0e;
 int curr_status;
@@ -156,6 +158,7 @@ uint32_t tim_base=7; // Timer 2 time delay
 unsigned int external_read = 0;
 static int startup_delay = 0;
 static int stop_delay = 0;
+int current_folder_index, current_file_index;
 
 char digits[3];
 // for Display:
@@ -214,7 +217,7 @@ void set_fan1(int value);
 void set_fan2(int value);
 void set_aquafresh(int value);
 void set_volume(int value);
-void play_message(int index);
+void play_message(int folder_index, int file_index);
 void new_read_eeprom(void);
 void new_write_eeprom(void);
 typedef struct time_str{
@@ -334,6 +337,50 @@ void show_digit(int digit){
 	digit = digit & 0x0F;
 }
 
+void SelectInput(unsigned char input)
+{
+	char v;
+
+	if(input == INPUT_INTERNAL)
+	{
+		selected_unput = INPUT_INTERNAL;
+		v = 0;
+	}
+	else
+	{
+		v = volume_level;
+		if(v > 1) v -= 1;
+		if(v > 1) v -= 1;
+		if(v > 6) volume_level = 6;
+		v++;
+		selected_unput = INPUT_EXTERNAL;
+	}
+	if(v & 1)
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	}
+	if(v & 2)
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+	}
+	if(v & 4)
+	{
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+	}
+}
+
 /* USER CODE END 0 */
 
 int main(void)
@@ -368,7 +415,7 @@ int main(void)
 	update_status();
 	//set_volume(0);
 
-	//play_message(message_power_up);
+
 
 
   /* USER CODE END Init */
@@ -418,10 +465,12 @@ int main(void)
 	LedControl_setIntensity(&led_control, 0, 8);
 	LedControl_clearDisplay(&led_control, 0);
 	DFPlayerInit();
+	SelectInput(INPUT_INTERNAL);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // MP3 Player select
-	DFPlayerEexecCMD(0x0D, 0, 0);
+//	DFPlayerEexecCMD(0x0D, 0, 0);
 //	DFPlayerEexecCMD(0x0F, 01, 01);
 
+	play_message(1, message_power_up);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -1120,63 +1169,18 @@ void set_aquafresh(int value){
 }
 
 void set_volume(int value){
-#ifdef PCBVERSION_2
-	GPIOC->BRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
-	if (value >8)	{
-		GPIOC->BSRR = GPIO_BSRR_BS_2 | GPIO_BSRR_BS_3;
-	}
-	else if (value >5)	{
-		GPIOC->BSRR =  GPIO_BSRR_BS_3;
-	}
-	else if (value >2)	{
-		GPIOC->BSRR = GPIO_BSRR_BS_2 ;
-	}
 
-#else  //PCBVERSION_3
-//	GPIOB->BRR = GPIO_BRR_BR_6;
-//	GPIOF->BRR = GPIO_BRR_BR_6 | GPIO_BRR_BR_7;
+	volume_level = value;
 
-	if (value >9)	{
-		//GPIOB->BSRR = GPIO_BSRR_BS_6;
-		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+	if(selected_unput == INPUT_INTERNAL)
+	{
+		SelectInput(INPUT_INTERNAL);
+		DFPlayerEexecCMD(0x0F, 00, value*3);
 	}
-	else if (value >7)	{
-//		GPIOB->BSRR = GPIO_BSRR_BS_6;
-		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-		//GPIOF->BSRR = GPIO_BSRR_BS_7;
+	else
+	{
+		SelectInput(INPUT_EXTERNAL);
 	}
-	else if (value >6)	{
-		//GPIOB->BSRR = GPIO_BSRR_BS_6;
-		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-//		GPIOF->BSRR = GPIO_BSRR_BS_7;
-	}
-	else if (value >5)	{
-//		GPIOB->BSRR = GPIO_BSRR_BS_6;
-		//GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-//		GPIOF->BSRR = GPIO_BSRR_BS_7;
-		}
-	else if (value >4)	{
-		//GPIOB->BSRR = GPIO_BSRR_BS_6;
-//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-		//GPIOF->BSRR = GPIO_BSRR_BS_7;
-		}
-	else if (value >3)	{
-//		GPIOB->BSRR = GPIO_BSRR_BS_6;
-//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-		//GPIOF->BSRR = GPIO_BSRR_BS_7;
-		}
-	else if (value >1)	{
-		//GPIOB->BSRR = GPIO_BSRR_BS_6;
-//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-//		GPIOF->BSRR = GPIO_BSRR_BS_7;
-		}
-	else {
-//		GPIOB->BSRR = GPIO_BSRR_BS_6;
-//		GPIOF->BSRR = GPIO_BSRR_BS_6 ;
-//		GPIOF->BSRR = GPIO_BSRR_BS_7;
-	}
-#endif
 }
 
 void usart1_IT_handler()
@@ -1303,51 +1307,12 @@ void usart1_IT_handler()
 }
 
 
-void play_message(int index){
+void play_message(int folder_index, int file_index){
 
-//	disk_initialize(0);
-//	if(disk_status(0) == STA_NOINIT)
-//	{
-//		if(index == message_start_working)
-//		{
-//			fade_in_counter =  1000;
-//			//TIM_Cmd(TIM14, ENABLE);
-//		}
-//		return;
-//	}
-//	dac_ping_pong_state = 0;
-//	dac_current_message = index;
-//	DRESULT result;
-//	dac_out_counter = 0;
-//
-//	result = disk_read(0, &dac_buffer[dac_ping_pong_state], message_sector_offset[index], 2) ;
-//	dac_current_block = 0;
-//
-//	dac_ping_pong_state = 0;
-//	dac_prev_ping_pong_state = dac_ping_pong_state;
-//	fade_in_counter =  1000;
-//	if (result) dac_out_counter = dac_out_counter;
-//	//DAC_Cmd(DAC_Channel_1, ENABLE);
-//	//TIM6->DIER |= TIM_DIER_UIE; // Enable interrupt on update event
-//	//TIM_Cmd(TIM6, ENABLE);
-//	TIM_Cmd(TIM14, ENABLE);
-//	//while(1)
-//	{
-//		if (dac_current_block < message_sector_counts[dac_current_message]){
-//			if(dac_prev_ping_pong_state != dac_ping_pong_state)
-//			{
-//				dac_prev_ping_pong_state = dac_ping_pong_state;
-//				//TIM14->CCER &= ~TIM_OutputState_Enable;
-//				disk_read(0, &dac_buffer[dac_prev_ping_pong_state], message_sector_offset[dac_current_message] + dac_current_block, 2) ;
-//				dac_current_block++;
-//				dac_current_block++;
-//				//TIM14->CCER |= TIM_OutputState_Enable;
-//			}
-//		}
-//		//dac_current_block = 0;
-//	}
 
-//	TIM6->CR1 |= TIM_CR1_CEN;
+	DFPlayerEexecCMD(0x0F, folder_index, file_index);
+	fade_in_counter =  1000;
+
 
 }
 
@@ -1675,7 +1640,7 @@ void ProcessButtons(void)
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
 			//			set_aquafresh(percent_aquafresh);
-			play_message(message_start_working);
+			play_message(1,message_start_working);
 			set_volume(volume_level);
 		}
 		if (curr_status == STATUS_COOLING) {
@@ -1690,7 +1655,7 @@ void ProcessButtons(void)
 					}
 				}
 				write_stored_time();
-				play_message(message_stop_working);
+				play_message(1,message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
 			percent_aquafresh = 0;
@@ -2018,7 +1983,7 @@ void write_stored_time(void)
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
   {
-	//CorrectedValue = (((RawValue – RawLow) * ReferenceRange) / RawRange) + ReferenceLow
+	//CorrectedValue = (((RawValue ï¿½ RawLow) * ReferenceRange) / RawRange) + ReferenceLow
       g_ADCValue = HAL_ADC_GetValue(AdcHandle);
       g_ADCMeanValue = (g_ADCMeanValue*9 + g_ADCValue)/10;
       g_ADCValue = 1024 - g_ADCValue;
