@@ -46,7 +46,7 @@
 #include "LedControl.h"
 #include "math.h"
 #include "eeprom.h"
-
+#include "defines.h"
 
 #define STATUS_FREE    (0L)
 #define STATUS_WAITING (3L)
@@ -112,7 +112,7 @@ unsigned char controller_address = 0x0e;
 int curr_status;
 int prev_status;
 int curr_time;
-int flash_mode = 0;
+//int flash_mode = 0;
 int dac_out_counter;
 int dac_ping_pong_state;
 int dac_prev_ping_pong_state;
@@ -123,6 +123,7 @@ int fade_in_counter;
 int silence_counter;
 int colaruim_lamps_state;
 int lamps_state;
+static int auto_exit_fn = 0;
 
 uint16_t data = 0;
 unsigned char  time_to_set = 0;
@@ -214,6 +215,10 @@ void set_volume(int value);
 void play_message(int index);
 void new_read_eeprom(void);
 void new_write_eeprom(void);
+void show_digit_Ergoline(int digit);
+void ProcessButtonsErgoline(void);
+void set_clima(int value);
+void set_licevi_lamps(int value);
 typedef struct time_str{
 	 uint16_t hours_h;
 	 uint16_t hours_l;
@@ -246,6 +251,12 @@ int useUart=0;
 char key_readings[9];
 char col_index;
 char row_index;
+static int led_bits = 0x0;
+static int selected_led_bits = 0x0;
+static int percent_clima = 0; //, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+static int flash_mode = 0;
+static int last_button_ergoline = 0;
+static int prev_button_ergoline = 0;
 void scan_keys()
 {
 	for(col_index = 0; col_index < 3; col_index++)
@@ -327,6 +338,7 @@ void show_level(int level){
   }
   LedControl_setRow(&led_control, 0, 6, val);
 }
+
 void show_digit(int digit){
 	digit = digit & 0x0F;
 }
@@ -337,7 +349,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	char index = 0;
+//	char index = 0;
 
   /* USER CODE END 1 */
 
@@ -594,6 +606,7 @@ int main(void)
 			ShowBarIndicators(volume_level, fan_level);
 		}
 		show_level(aqua_fresh_level);
+		show_digit_Ergoline(display_data);
 		HAL_ADC_Start_IT(&hadc1);
 		HAL_Delay(10);
 //		display_data = 0xFFF;
@@ -986,11 +999,13 @@ void set_lamps(int value){
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS11;
 	else GPIOA->BSRR = GPIO_BSRR_BR11;
 }
+
 void set_colarium_lamps(int value){
 	colaruim_lamps_state = value;
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS12;
 	else GPIOA->BSRR = GPIO_BSRR_BR12;
 }
+
 void set_fan2(int value){
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS9;
 	else GPIOA->BSRR = GPIO_BSRR_BR9;
@@ -1151,9 +1166,9 @@ void usart1_IT_handler()
 {
 	 uint32_t isrflags   = READ_REG(USART1->SR);
 	 uint32_t cr1its     = READ_REG(USART1->CR1);
-	 uint32_t cr3its     = READ_REG(USART1->CR3);
+//	 uint32_t cr3its     = READ_REG(USART1->CR3);
 	 uint32_t errorflags = 0x00U;
-	 uint32_t dmarequest = 0x00U;
+//	 uint32_t dmarequest = 0x00U;
 	 useUart = 1;
 	 enum rxstates {rx_state_none, rx_state_pre_time, rx_state_main_time, rx_state_cool_time, rx_state_get_checksum};
 
@@ -1858,9 +1873,9 @@ void HAL_SYSTICK_Callback(void)
 
 void read_settings(void)
 {
-	uint16_t counter;
+//	uint16_t counter;
 	uint8_t result = 0;
-	flash_struct *flash_mem = &flash_data;
+//	flash_struct *flash_mem = &flash_data;
 	uint16_t  data;
 
 	result += EE_ReadVariable(ADDRESS_ADDRESSE,  &data);
@@ -1892,6 +1907,7 @@ void read_settings(void)
 		write_stored_time();
 	}
 }
+
 void read_stored_time(void)
 {
 	uint16_t  data;
@@ -1993,6 +2009,440 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
       g_MeasurementNumber++;
       g_Temperature = (g_Temperature*9 + (((g_ADCValue - ADC_0_DEGREE_VALUE)*366)/(ADC_36_6_DEGREE_VALUE - ADC_0_DEGREE_VALUE)) + 0)/10;
   }
+
+void SendData16(unsigned short data)
+{
+	unsigned short counter, i;
+	for (counter = 0; counter < 16; counter++)
+	{
+		if(data & (1<<counter))
+		{
+			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_RESET);
+		}
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
+		for (i = 0; i< 200; i++); // some delay
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
+		for (i = 0; i< 20; i++); // some delay
+	}
+}
+
+unsigned short ReceiveData16(void)
+{
+	unsigned short counter, i, data;
+	data = 0;
+	for (counter = 0; counter < 16; counter++)
+	{
+		if(HAL_GPIO_ReadPin(Data_GPIO_Port, Data_Pin) ==  GPIO_PIN_SET)
+		{
+			data |= (1<<counter);
+		}
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
+		for (i = 0; i< 200; i++); // some delay
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
+		for (i = 0; i< 20; i++); // some delay
+	}
+	return data;
+}
+
+
+
+void show_digit_Ergoline(int digit)
+{
+
+	int i,j,digit_data;
+//	volatile uint16_t status;
+	int led_bits_tmp = led_bits;
+	if(flash_mode == 2){ // DP cycling
+
+	}
+	if(((flash_mode == 3) ||(flash_mode == 1) )&&(flash_counter & 0x04)){
+		digit |= 0x00FF;
+	}
+	if(flash_counter & 0x04){
+		led_bits_tmp &= ~selected_led_bits;
+	}
+
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET); // disable shift FOR BUTTONS / Parallel load
+
+	for (i = 0; i< 2000; i++); // some delay
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);  // enable shift FOR BUTTONS
+//	while(1){ //DEBUG
+	for (i = 0; i< 2000; i++); // some delay
+	// LEDs 1
+
+	SendData16((~led_bits_tmp)>>16);
+	last_button_ergoline = 0x11111111;
+	last_button_ergoline = ReceiveData16();
+
+//	}
+
+	// LEDs 2
+	SendData16((~led_bits_tmp )& 0xFFFF);
+
+	// Rightmost 2 digits
+	if (digit & 0xFF00){ //Code for Blanking
+		digit_data = digits3[digit & 0x11] | digits4[0x11];
+	} else {
+		digit_data = digits3[digit & 0x0f];
+		if(pre_time){
+			if (flash_counter & 0x02) digit_data |= digits4[0x0F];
+			else digit_data |= digits4[0x10];
+		}
+		else if(main_time){
+			digit_data |= digits4[0x0F];
+		} else {
+			if(cool_time && (flash_counter & 0x04)) digit_data |= digits4[0x0F];
+			else digit_data |= digits4[0x10];
+		}
+	}
+	if(percent_licevi)	digit_data |= 0x0080;
+	digit_data = ~digit_data;
+	SendData16(digit_data);
+
+	// Leftmost 2 digits
+	if (digit & 0xFF00){ //Code for Blanking
+		digit_data = digits3[digit & 0x11] | digits4[0x11];
+	} else {
+		digit_data =  digits4[digit>>4];
+		if(pre_time ){
+			if(!(flash_counter & 0x02)) digit_data |= digits3[0x0F];
+			else digit_data |= digits3[0x10];
+		}
+		else if (main_time) {
+			digit_data |= digits3[0x0F];
+		} else {
+			if(cool_time && (flash_counter & 0x04)) digit_data |= digits3[0x0f];
+			else digit_data |= digits3[0x10];
+		}
+	}
+	if(percent_licevi)	digit_data |= 0x0080;
+	digit_data = ~digit_data;
+
+
+//	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
+//	for (i = 0; i< 2000; i++);
+	SendData16(digit_data);
+
+//	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
+//	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS
+	for (i = 1; i<16; i++){ // bit 0 is junk
+		j = (last_button>>i) & 1;
+		if(!j){
+			last_button = i;
+			break;
+		}
+	}
+	for (i = 0; i< 500; i++);
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);
+	for (i = 0; i< 50; i++);
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);
+}
+
+/**
+ * @brief  Manage the activity on buttons
+ * @param  None
+ * @retval None
+ */
+void ProcessButtonsErgoline(void)
+{
+
+	if (last_button < 0x1f){
+		if(last_button_ergoline != prev_button_ergoline){
+			switch(last_button){
+			case BUTTON_START:
+				if( pre_time ){
+					//send_start();
+					Gv_miliseconds = 0;
+					pre_time = 0;
+					state = state_show_time;
+					update_status();
+				}
+				if(!pre_time && ! main_time && !cool_time) {
+					if(time_to_set){
+						// Send of time moved elsewhere
+						pre_time = preset_pre_time;
+						main_time = time_to_set;
+						cool_time = preset_cool_time;
+						state = state_show_time;
+						time_to_set = 0;
+						Gv_miliseconds = 0;
+						update_status();
+					} else {
+						if (state > state_enter_service){
+							// Write EEPROM
+							if(state == state_clear_hours){
+								work_hours[0] = 0;
+								work_hours[1] = 0;
+								work_hours[2] = 0;
+							}
+							//write_eeprom();
+//							read_eeprom();
+							read_settings();
+							start_counter = 0;
+							service_mode = mode_null;
+						} else {
+							start_counter = START_COUNTER_TIME;
+						}
+						state = state_show_hours;
+					}
+				}
+
+
+				break;
+			case BUTTON_FAN1:
+				selected_led_bits &= ~(LED_BUTTONS_MASK ^ LED_FAN1_L);
+				selected_led_bits ^= LED_FAN1_L;
+				auto_exit_fn = 20;
+				break;
+			case BUTTON_FAN2:
+//				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
+//				selected_led_bits ^= LED_FAN2_L;
+				auto_exit_fn = 20;
+				break;
+			case BUTTON_LICEVI:
+				if(minute_counter){
+					selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_LICEVI_L);
+					selected_led_bits ^= LED_LICEVI_L;
+				}
+				auto_exit_fn = 20;
+				break;
+			case BUTTON_CLIMA:
+				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
+				selected_led_bits ^= LED_CLIMA_L;
+				auto_exit_fn = 20;
+				break;
+			case BUTTON_PLUS_ERGOLINE:
+			{
+				//				if(  led_bits){
+				//					led_bits = led_bits <<1;
+				//				} else {
+				//					led_bits = 0x01;
+				//				}
+				auto_exit_fn = 20;
+
+				if(state == state_show_hours) {
+					state = state_set_time;
+					start_counter = 0;
+				}
+				if(state == state_set_time){
+					if(time_to_set < 25){
+//						if(!Gv_UART_Timeout);
+							time_to_set ++;
+						//			if((time_to_set & 0x0F)>9) time_to_set +=6;
+					}
+				}
+				else if(state > state_enter_service){
+					start_counter = EXIT_SERVICE_TIME;
+					switch (service_mode){
+					case mode_set_address:
+						break;
+					case mode_set_pre_time:
+						if(preset_pre_time<9) preset_pre_time++;
+						break;
+					case mode_set_cool_time:
+						if(preset_cool_time<9) preset_cool_time++;
+						break;
+					default:
+						break;
+					}
+				} else {
+					if(selected_led_bits & LED_FAN2_L){
+						if(percent_fan2<100) percent_fan2=100;
+						set_fan2(percent_fan2);
+					} else if(selected_led_bits & LED_FAN1_L){
+						if(percent_fan1<100) percent_fan1+=25;
+						set_fan1(percent_fan1);
+					} else if(selected_led_bits & LED_CLIMA_L){
+						if(percent_clima<100) percent_clima=100;
+						set_clima(percent_clima);
+					}
+				}
+
+
+
+
+			}
+			break;
+			case BUTTON_MINUS_ERGOLINE:
+				//				if(  led_bits){
+				//					led_bits = led_bits >>1;
+				//				} else {
+				//					led_bits = 0x01 << 31;
+				//				}
+				auto_exit_fn = 20;
+
+				if(state == state_show_hours) {
+					state = state_set_time;
+					start_counter = 0;
+				}
+				if(state == state_set_time){
+					if(time_to_set) {
+						if(!Gv_UART_Timeout) time_to_set--;
+					}
+				}else if(state > state_enter_service){
+					start_counter = EXIT_SERVICE_TIME;
+					switch (service_mode){
+					case mode_set_address:
+						break;
+					case mode_set_pre_time:
+						if(preset_pre_time) preset_pre_time--;
+						break;
+					case mode_set_cool_time:
+						if(preset_cool_time) preset_cool_time--;
+						break;
+					default:
+						break;
+					}
+				}
+				if(selected_led_bits & LED_FAN2_L){
+					if(percent_fan2) percent_fan2 = 0;
+					set_fan2(percent_fan2);
+				} else if(selected_led_bits & LED_FAN1_L){
+					if(percent_fan1) percent_fan1-=25;
+					set_fan1(percent_fan1);
+				}
+				else if(selected_led_bits & LED_LICEVI_L){
+					if(percent_licevi) percent_licevi=0;
+					set_licevi_lamps(percent_licevi);
+					update_status();
+				}
+
+				break;
+			default:
+				while(0);
+			}
+			prev_button_ergoline =  last_button_ergoline;
+		}
+	} else {
+		prev_button_ergoline = last_button_ergoline;
+	}
+
+
+	if (last_button == BUTTON_START_ERGOLINE)
+	{
+		// LED1_ON;
+		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
+		if(start_counter== START_COUNTER_TIME + ENTER_SERVICE_DELAY){
+			if(curr_status == STATUS_FREE &&(state < state_enter_service))
+			{
+				state = state_enter_service;
+				service_mode = mode_clear_hours; // Clear Hours
+			}
+		}
+		if(state == state_enter_service){
+			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_address; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 2*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_pre_time; //
+			}
+			else if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 3*SERVICE_NEXT_DELAY){
+				service_mode = mode_set_cool_time; //
+			}
+		}
+		if(time_to_set && state == state_set_time && start_counter == START_DELAY){
+			// Do start
+			state = state_show_time;
+//			send_time();
+			//			start_counter = 0;
+		}
+		if(curr_status == STATUS_WAITING && start_counter == START_DELAY){
+			// Cancel start
+			state = state_show_time;
+			time_to_set = 0;
+			preset_pre_time = 0;
+			preset_cool_time = 0;
+//			send_time();
+//			read_eeprom();
+			read_settings();
+			//			start_counter = 0;
+
+		}
+	}
+	else
+	{
+		if(start_counter){
+			if(state == state_show_hours){
+				start_counter--;
+				if(!start_counter){
+					state = state_show_time;
+				}
+			}
+			else if(state >= state_enter_service){
+				if(state == state_enter_service){
+					state = service_mode + state_enter_service;
+				}
+				start_counter--;
+				if(!start_counter){
+					state = state_show_time;
+				}
+			}
+			else {
+				start_counter = 0;
+
+			}
+		}
+		if(prev_status != curr_status){
+			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
+				work_hours[2]+=time_to_set;
+				if(work_hours[2]>59){
+					work_hours[2]=work_hours[2]-60;
+					work_hours[1]++;
+					if(work_hours[1]>99){
+						work_hours[1] = 0;
+						work_hours[0]++;
+					}
+				}
+				//write_eeprom();
+				time_to_set = 0;
+				percent_clima = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
+				zero_crossed = 0;
+				set_lamps(100);
+				set_licevi_lamps(percent_licevi);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+				set_clima(percent_clima);
+			}
+			if (curr_status == STATUS_COOLING){
+				selected_led_bits = 0;
+				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
+				set_lamps(0);
+				set_licevi_lamps(percent_licevi);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+				set_clima(percent_clima);
+			}
+			if (curr_status == STATUS_FREE){
+				percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+				set_lamps(0);
+				set_licevi_lamps(percent_licevi);
+				set_fan1(percent_fan1);
+				set_fan2(percent_fan2);
+				set_clima(percent_clima);
+				selected_led_bits = 0;
+				minute_counter = 0;
+			}
+			prev_status = curr_status;
+
+		}
+		//    LED1_OFF;
+	}
+}
+
+void set_clima(int value)
+{
+	set_aquafresh(value);
+}
+
+void set_licevi_lamps(int value)
+{
+	set_colarium_lamps(value);
+}
 
 /* USER CODE END 4 */
 
