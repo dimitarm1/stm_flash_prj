@@ -2017,15 +2017,15 @@ void SendData16(unsigned short data)
 	{
 		if(data & (1<<counter))
 		{
-			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_RESET);
 		}
 		else
 		{
-			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_SET);
 		}
-		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
-		for (i = 0; i< 200; i++); // some delay
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
+		for (i = 0; i< 200; i++); // some delay
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
 		for (i = 0; i< 20; i++); // some delay
 	}
 }
@@ -2040,9 +2040,9 @@ unsigned short ReceiveData16(void)
 		{
 			data |= (1<<counter);
 		}
-		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
-		for (i = 0; i< 200; i++); // some delay
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
+		for (i = 0; i< 200; i++); // some delay
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
 		for (i = 0; i< 20; i++); // some delay
 	}
 	return data;
@@ -2065,12 +2065,14 @@ void show_digit_Ergoline(int digit)
 	if(flash_counter & 0x04){
 		led_bits_tmp &= ~selected_led_bits;
 	}
-
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET); // disable shift FOR BUTTONS / Parallel load
+	SendData16(0);  // Flush buffers
+	SendData16(0);
+	SendData16(0);
+//	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
 
 	for (i = 0; i< 2000; i++); // some delay
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);  // enable shift FOR BUTTONS
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);  // enable shift FOR BUTTONS
 //	while(1){ //DEBUG
 	for (i = 0; i< 2000; i++); // some delay
 	// LEDs 1
@@ -2140,7 +2142,7 @@ void show_digit_Ergoline(int digit)
 	for (i = 0; i< 500; i++);
 	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);
 	for (i = 0; i< 50; i++);
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);
 }
 
 /**
