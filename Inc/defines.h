@@ -66,23 +66,17 @@
 		LED_UNKNOWN_L|LED_SPRAY_BODY_L|LED_SPRAY_HEAD_L|LED_VITAL_L|LED_RELAX_L)
 
 // Bit map of 7 segment indicators
-#define S_a3 ((1<<16)>>16)
-#define S_b3 ((1<<17)>>16)
-#define S_c3 ((1<<18)>>16)
-#define S_d3 ((1<<19)>>16)
-#define S_e3 ((1<<21)>>16)
-#define S_f3 ((1<<20)>>16)
-#define S_g3 ((1<<22)>>16)
+#define S_a3 (0x80)
+#define S_b3 (0x40)
+#define S_c3 (0x20)
+#define S_d3 (0x10)
+#define S_e3 (0x04)
+#define S_f3 (0x08)
+#define S_g3 (0x02)
 
-#define S_a4 ((1<<24)>>16)
-#define S_b4 ((1<<25)>>16)
-#define S_c4 ((1<<26)>>16)
-#define S_d4 ((1<<27)>>16)
-#define S_e4 ((1<<29)>>16)
-#define S_f4 ((1<<28)>>16)
-#define S_g4 ((1<<30)>>16)
 
-const int digits3[] = {
+
+const int digits4[] = {
 // 0:
 	(S_a3 | S_b3 | S_c3 | S_d3 | S_e3 | S_f3),
 // 1:
@@ -121,44 +115,6 @@ const int digits3[] = {
 	0
 };
 
-const int digits4[] = {
-// 0:
-	(S_a4 | S_b4 | S_c4 | S_d4 | S_e4 | S_f4),
-// 1:
-	(S_b4 | S_c4),
-// 2:
-	( S_a4 | S_b4 |  S_d4 | S_e4 | S_g4),
-// 4:
-	( S_a4 | S_b4 | S_c4 | S_d4 | S_g4),
-// 4:
-	( S_b4 | S_c4 |  S_f4 | S_g4),
-// 5:
-	( S_a4 | S_c4 | S_d4 |  S_f4 | S_g4),
-// 6:
-	( S_a4 |  S_c4 | S_d4 | S_e4 | S_f4 | S_g4),
-// 7:
-	( S_a4 | S_b4 | S_c4 ),
-// 8:
-	( S_a4 | S_b4 | S_c4 | S_d4 | S_e4 | S_f4 | S_g4),
-// 9:
-	( S_a4 | S_b4 | S_c4 | S_d4 | S_f4 | S_g4),
-// 0x0A:
-	( S_a4 | S_b4 | S_c4 |  S_e4 | S_f4 | S_g4),
-// 0x0B:
-	( S_c4 | S_d4 | S_e4 | S_f4 | S_g4),
-// 0x0C:
-	( S_a4 |  S_d4 | S_e4 | S_f4 ),
-// 0x0D:
-	( S_b4 | S_c4 | S_d4 | S_e4 |  S_g4),
-// 0x0E:
-	( S_a4 |  S_d4 | S_e4 | S_f4 | S_g4),
-// 0x0F:
-	0, //(S_a4 |  S_e4 | S_f4 | S_g4),
-// 0x10: "-"
-	(S_g4),
-// 0x11: " "
-	0
-};
 
 // GPIOs
 #define Clock_Pin GPIO_PIN_7

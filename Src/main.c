@@ -465,24 +465,35 @@ int main(void)
 			if (!pre_time && !main_time && !cool_time) {
 				flash_mode = 0;
 				state = state_set_time;
-				display_data = ToBCD(time_to_set);
+				display_data = ToBCD(time_to_set) | 0xF000;
 				//				display_data = ToBCD(last_button); //Debug
 			}
 			else if (!pre_time && !main_time && cool_time)
 			{
 				if(flash_counter & 0x20)
 				{
-					display_data = 0xFFF;
+					display_data = 0xFFFF;
 				}
 				else
 				{
-					display_data = ToBCD(abs(cool_time));
+					display_data = ToBCD(abs(cool_time)) | ((Gv_miliseconds/1000)<< 16);
+				}
+			}
+			else if (pre_time)
+			{
+				if(!(flash_counter & 0x38))
+				{
+					display_data = 0xFFFF;
+				}
+				else
+				{
+					display_data = ToBCD(abs(pre_time)) | ((Gv_miliseconds/1000)<< 16);
 				}
 			}
 			else {
 				state = state_show_time;
 				//				  time_to_set = 0;
-				display_data = ToBCD(abs(main_time));
+				display_data = ToBCD(abs(main_time)) | ((Gv_miliseconds/1000)<< 16);
 				//				display_data = ToBCD(last_button); //Debug
 			}
 			break;
@@ -497,7 +508,7 @@ int main(void)
 					display_data = ToBCD(work_hours[index/2]);
 				}
 				else {
-					display_data = 0xFFF;
+					display_data = 0xFFFF;
 				}
 			}
 			break;
@@ -509,10 +520,10 @@ int main(void)
 		case state_clear_hours:
 			//			flash_mode = 3;
 			if ((flash_counter / 0x30) & 1) {
-				display_data = 0xFFC;
+				display_data = 0xFFFC;
 			}
 			else {
-				display_data = 0xFFF;
+				display_data = 0xFFFF;
 			}
 			break;
 		case state_address:
@@ -522,38 +533,38 @@ int main(void)
 					display_data = controller_address;
 				}
 				else {
-					display_data = 0xEAF;
+					display_data = 0xFEAF;
 				}
 			}
 			else {
-				display_data = 0xFFA;
+				display_data = 0xFFFA;
 			}
 			break;
 		case state_pre_time:
 			//			flash_mode = 3;
 			if ((flash_counter / 0x30) & 1) {
-				display_data = preset_pre_time;
+				display_data = preset_pre_time | 0xF000;
 			}
 			else {
-				display_data = 0xFF3;
+				display_data = 0xFFF3;
 			}
 			break;
 		case state_cool_time:
 			//			flash_mode = 3;
 			if ((flash_counter / 0x30) & 1) {
-				display_data = preset_cool_time;
+				display_data = preset_cool_time | 0xF000;
 			}
 			else {
-				display_data = 0xFF4;
+				display_data = 0xFFF4;
 			}
 			break;
 		case state_ext_mode:
 			//			flash_mode = 0;
 			if ((flash_counter / 0x30) & 1) {
-				display_data = ext_mode;
+				display_data = ext_mode | 0xF000;
 			}
 			else {
-				display_data = 0xFF5;
+				display_data = 0xFFF5;
 			}
 			break;
 
@@ -563,7 +574,7 @@ int main(void)
 				display_data = volume_message;
 			}
 			else {
-				display_data = 0xFF6;
+				display_data = 0xFFF6;
 			}
 			break;
 
@@ -573,7 +584,7 @@ int main(void)
 				display_data = temperature_threshold;
 			}
 			else {
-				display_data = 0xFF7;
+				display_data = 0xFFF7;
 			}
 			break;
 		}
@@ -2015,6 +2026,8 @@ void SendData16(unsigned short data)
 	unsigned short counter, i;
 	for (counter = 0; counter < 16; counter++)
 	{
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
+		for (i = 0; i< 200; i++); // some delay
 		if(data & (1<<counter))
 		{
 			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_RESET);
@@ -2023,9 +2036,8 @@ void SendData16(unsigned short data)
 		{
 			HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_SET);
 		}
+
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
-		for (i = 0; i< 200; i++); // some delay
-		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
 		for (i = 0; i< 20; i++); // some delay
 	}
 }
@@ -2053,15 +2065,16 @@ unsigned short ReceiveData16(void)
 void show_digit_Ergoline(int digit)
 {
 
-	int i,j,digit_data;
+	int i,j;
+	short int digit_data;
 //	volatile uint16_t status;
 	int led_bits_tmp = led_bits;
-	if(flash_mode == 2){ // DP cycling
-
-	}
-	if(((flash_mode == 3) ||(flash_mode == 1) )&&(flash_counter & 0x04)){
-		digit |= 0x00FF;
-	}
+//	if(flash_mode == 2){ // DP cycling
+//
+//	}
+//	if(((flash_mode == 3) ||(flash_mode == 1) )&&(flash_counter & 0x04)){
+//		digit |= 0x00FF;
+//	}
 	if(flash_counter & 0x04){
 		led_bits_tmp &= ~selected_led_bits;
 	}
@@ -2087,43 +2100,18 @@ void show_digit_Ergoline(int digit)
 	SendData16((~led_bits_tmp )& 0xFFFF);
 
 	// Rightmost 2 digits
-	if (digit & 0xFF00){ //Code for Blanking
-		digit_data = digits3[digit & 0x11] | digits4[0x11];
-	} else {
-		digit_data = digits3[digit & 0x0f];
-		if(pre_time){
-			if (flash_counter & 0x02) digit_data |= digits4[0x0F];
-			else digit_data |= digits4[0x10];
-		}
-		else if(main_time){
-			digit_data |= digits4[0x0F];
-		} else {
-			if(cool_time && (flash_counter & 0x04)) digit_data |= digits4[0x0F];
-			else digit_data |= digits4[0x10];
-		}
-	}
-	if(percent_licevi)	digit_data |= 0x0080;
-	digit_data = ~digit_data;
+	digit_data = digits4[(digit) & 0x0f] | (digits4[(digit>>4) & 0x0f] << 8);
+
+//	if(percent_licevi)	digit_data |= 0x0080;
+//	digit_data = digit_data<<1;
 	SendData16(digit_data);
 
 	// Leftmost 2 digits
-	if (digit & 0xFF00){ //Code for Blanking
-		digit_data = digits3[digit & 0x11] | digits4[0x11];
-	} else {
-		digit_data =  digits4[digit>>4];
-		if(pre_time ){
-			if(!(flash_counter & 0x02)) digit_data |= digits3[0x0F];
-			else digit_data |= digits3[0x10];
-		}
-		else if (main_time) {
-			digit_data |= digits3[0x0F];
-		} else {
-			if(cool_time && (flash_counter & 0x04)) digit_data |= digits3[0x0f];
-			else digit_data |= digits3[0x10];
-		}
+	{
+		digit_data =  digits4[(digit>>8) & 0x0f]; // | (digits4[(digit >> 4) & 0x0f] << 8);
 	}
-	if(percent_licevi)	digit_data |= 0x0080;
-	digit_data = ~digit_data;
+//	if(percent_licevi)	digit_data |= 0x0080;
+//	digit_data = ~digit_data;
 
 
 //	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
