@@ -459,6 +459,7 @@ int main(void)
 			}
 		}
 		ProcessButtons();
+		ProcessButtonsErgoline();
 		switch (state) {
 		case state_show_time:
 		case state_set_time:
@@ -2048,12 +2049,13 @@ unsigned short ReceiveData16(void)
 	data = 0;
 	for (counter = 0; counter < 16; counter++)
 	{
-		if(HAL_GPIO_ReadPin(Data_GPIO_Port, Data_Pin) ==  GPIO_PIN_SET)
+		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
+		for (i = 0; i< 200; i++); // some delay
+		if(HAL_GPIO_ReadPin(Read_GPIO_Port, Read_Pin) ==  GPIO_PIN_RESET)
 		{
 			data |= (1<<counter);
 		}
-		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
-		for (i = 0; i< 200; i++); // some delay
+
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
 		for (i = 0; i< 20; i++); // some delay
 	}
@@ -2084,18 +2086,24 @@ void show_digit_Ergoline(int digit)
 //	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
 	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
 
-	for (i = 0; i< 2000; i++); // some delay
+	for (i = 0; i< 200; i++); // some delay
 	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);  // enable shift FOR BUTTONS
 //	while(1){ //DEBUG
-	for (i = 0; i< 2000; i++); // some delay
+	for (i = 0; i< 200; i++); // some delay
 	// LEDs 1
 
-	SendData16((~led_bits_tmp)>>16);
-	last_button_ergoline = 0x11111111;
-	last_button_ergoline = ReceiveData16();
+//	SendData16((~led_bits_tmp)>>16);
+//	last_button_ergoline = 0x11111111;
+	last_button_ergoline = ReceiveData16() ;
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
 
+	for (i = 0; i< 200; i++); // some delay
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);  // enable shift FOR BUTTONS
+//	while(1){ //DEBUG
+	for (i = 0; i< 200; i++); // some delay
+	last_button_ergoline |= ReceiveData16() ;
 //	}
-
+	last_button_ergoline &= 0x7FFF;
 	// LEDs 2
 	SendData16((~led_bits_tmp )& 0xFFFF);
 
@@ -2141,10 +2149,11 @@ void show_digit_Ergoline(int digit)
 void ProcessButtonsErgoline(void)
 {
 
-	if (last_button < 0x1f){
+	if (last_button_ergoline)
+	{
 		if(last_button_ergoline != prev_button_ergoline){
-			switch(last_button){
-			case BUTTON_START:
+			switch(last_button_ergoline){
+			case BUTTON_START_ERGOLINE:
 				if( pre_time ){
 					//send_start();
 					Gv_miliseconds = 0;
@@ -2313,7 +2322,7 @@ void ProcessButtonsErgoline(void)
 	}
 
 
-	if (last_button == BUTTON_START_ERGOLINE)
+	if (last_button_ergoline == BUTTON_START_ERGOLINE)
 	{
 		// LED1_ON;
 		if(start_counter< (START_COUNTER_TIME+ ENTER_SERVICE_DELAY + 6*SERVICE_NEXT_DELAY)) start_counter++;
