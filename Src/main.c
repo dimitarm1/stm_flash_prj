@@ -48,15 +48,17 @@
 #include "eeprom.h"
 #include "defines.h"
 
+#define LICEVI_LAMPI_VMESTO_AQAFRESH
 #define STATUS_FREE    (0L)
 #define STATUS_WAITING (3L)
 #define STATUS_WORKING (1L)
 #define STATUS_COOLING (2L)
-#define START_COUNTER_TIME  (1000L)
-#define ENTER_SERVICE_DELAY (2000L)
-#define SERVICE_NEXT_DELAY  (400)
-#define EXIT_SERVICE_TIME   (1200L)
-#define START_DELAY         (200L)
+#define MULTIPLIER     (1)
+#define START_COUNTER_TIME  (1000L*MULTIPLIER)
+#define ENTER_SERVICE_DELAY (2000L*MULTIPLIER)
+#define SERVICE_NEXT_DELAY  (400*MULTIPLIER)
+#define EXIT_SERVICE_TIME   (1200L*MULTIPLIER)
+#define START_DELAY         (200L*MULTIPLIER)
 
 // Virtual addreses
 #define ADDRESS_HOURS_H		1
@@ -108,6 +110,8 @@ uint32_t g_ADCMeanValue;
 uint32_t g_MeasurementNumber;
 uint32_t g_Temperature;
 
+uint32_t test_data;
+
 unsigned char controller_address = 0x0e;
 int curr_status;
 int prev_status;
@@ -145,7 +149,7 @@ unsigned int Gv_miliseconds = 0;
 int Gv_UART_Timeout = 1000; // Timeout in mSec
 int pre_time_sent = 0, main_time_sent = 0, cool_time_sent = 0;
 int rx_state= 0;
-int percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+int percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 int minute_counter =0;
 int zero_crossed = 0;
 int aqua_fresh_level = 0;
@@ -504,7 +508,7 @@ int main(void)
 				flash_mode = 3; // All flashing
 			}
 			{
-				int index = ((flash_counter / 0x30)) % 8;
+				int index = ((flash_counter / 0x20)) % 8;
 				if ((index < 6) && (index & 1)) {
 					display_data = ToBCD(work_hours[index/2]);
 				}
@@ -596,7 +600,9 @@ int main(void)
 				// turn off all
 				set_lamps(OFF);
 				set_colarium_lamps(OFF);
+				percent_clima = 0;
 				percent_fan1 = 0;
+				percent_licevi = 0;
 				set_fan1(0);
 				set_fan2(0);
 				set_aquafresh(0);
@@ -1388,13 +1394,16 @@ void ProcessButtons(void)
 								work_hours[0] = 0;
 								work_hours[1] = 0;
 								work_hours[2] = 0;
+								write_stored_time();
 							}
-							write_stored_time();
+							else
+							{
+								write_settings();
+							}
+
 							start_counter = 0;
 							service_mode = mode_null;
-							if (state == state_address) {
-//								init_periph();
-							}
+
 						}
 						else {
 							start_counter = START_COUNTER_TIME;
@@ -1412,7 +1421,6 @@ void ProcessButtons(void)
 					percent_fan1 = 10;
 					set_fan1(percent_fan1);
 					aqua_fresh_level = 0;
-					percent_aquafresh = 0;
 				}
 				if (state >= state_enter_service) {
 					start_counter = 0;
@@ -1579,7 +1587,10 @@ void ProcessButtons(void)
 	if (last_button == BUTTON_START)
 	{
 		// LED1_ON;
-		if (start_counter < (START_COUNTER_TIME + ENTER_SERVICE_DELAY + 6 * SERVICE_NEXT_DELAY)) start_counter++;
+		if (start_counter < (START_COUNTER_TIME + ENTER_SERVICE_DELAY + 6 * SERVICE_NEXT_DELAY))
+		{
+			start_counter++;
+		}
 		if (start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY) {
 			if (curr_status == STATUS_FREE && (state < state_enter_service))
 			{
@@ -1651,27 +1662,34 @@ void ProcessButtons(void)
 				write_stored_time();
 			}
 			flash_mode = 0;
-			percent_aquafresh = 0, percent_licevi = 100L, percent_fan2 = 100L;
+			percent_licevi = 100L, percent_fan2 = 0;
 			zero_crossed = 0;
 			//			volume_level = 6;
 			fan_level = 7;
 			percent_fan1 = fan_level;
 			if (lamps_mode == lamps_all) {
 				set_lamps(100);
-				set_colarium_lamps(100);
+				set_colarium_lamps(0);
+				percent_clima = 0;
 			}
 			if (lamps_mode == lamps_uv) {
 				set_lamps(100);
 			}
 			if (lamps_mode == lamps_colagen) {
 				set_colarium_lamps(100);
+				percent_clima = 100;
 			}
 			zero_crossed = 0;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
-			//			set_aquafresh(percent_aquafresh);
+
 			play_message(message_start_working);
 			set_volume(volume_level);
+#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
+		if (!minute_counter)aqua_fresh_level = 2;
+		percent_licevi = 100;
+		set_aquafresh(aqua_fresh_level);
+#endif
 		}
 		if (curr_status == STATUS_COOLING) {
 			if (controller_address == 15) {
@@ -1688,7 +1706,7 @@ void ProcessButtons(void)
 				play_message(message_stop_working);
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
-			percent_aquafresh = 0;
+
 			aqua_fresh_level = 0;
 			zero_crossed = 0;
 			set_lamps(OFF);
@@ -1704,13 +1722,14 @@ void ProcessButtons(void)
 
 		}
 		if (curr_status == STATUS_FREE) {
-			percent_aquafresh = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+			percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
 			aqua_fresh_level = 0;
 			set_lamps(OFF);
 			set_colarium_lamps(OFF);
+			percent_clima = 0;
 			set_fan1(0);
 			set_fan2(OFF);
-			//			set_aquafresh(percent_aquafresh);
+
 			minute_counter = 0;
 			flash_mode = 0;
 			lamps_mode = lamps_all;
@@ -1733,9 +1752,6 @@ void update_status(void) {
 	else if (main_time) {
 		curr_time = main_time;
 		curr_status = STATUS_WORKING;
-#ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
-		if (!minute_counter)aqua_fresh_level = 2;
-#endif
 	}
 	else if (cool_time) {
 		curr_time = cool_time;
@@ -1763,12 +1779,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if(htim1.Instance->CNT > 10 )
 		{
-			tim_reload_value++;
+			//tim_reload_value++;
 		}
 		if(htim1.Instance->CNT < 5 )
 		{
-			tim_reload_value--;
+			//tim_reload_value--;
 		}
+//		test_data = htim1.Instance->CNT;
 		htim1.Instance->ARR = tim_reload_value;
 		htim1.Instance->CNT = 1;
 	}
@@ -1780,6 +1797,14 @@ void HAL_SYSTICK_Callback(void)
 	if( ++ refresh_counter>200L){
 		refresh_counter = 0;
 		flash_counter++;
+		if(auto_exit_fn && (flash_counter&1))
+		{
+			auto_exit_fn--;
+			if(!auto_exit_fn)
+			{
+				selected_led_bits &= ~(LED_BUTTONS_MASK);
+			}
+		}
 	}
 #ifndef LICEVI_LAMPI_VMESTO_AQAFRESH
 	if(aqua_fresh_level == 1){
@@ -1846,6 +1871,7 @@ void HAL_SYSTICK_Callback(void)
 		if(!startup_delay && curr_status == STATUS_WORKING)
 		{
 			set_colarium_lamps(ON);
+			percent_clima = 100;
 			set_fan1(percent_fan1);
 			set_fan2(ON);
 		}
@@ -1856,6 +1882,7 @@ void HAL_SYSTICK_Callback(void)
 		if(!stop_delay && curr_status != STATUS_WORKING)
 		{
 			set_colarium_lamps(OFF);
+			percent_clima = 0;
 		}
 	}
 
@@ -2047,6 +2074,7 @@ unsigned short ReceiveData16(void)
 {
 	unsigned short counter, i, data;
 	data = 0;
+	HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_SET);
 	for (counter = 0; counter < 16; counter++)
 	{
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
@@ -2070,17 +2098,51 @@ void show_digit_Ergoline(int digit)
 	int i,j;
 	short int digit_data;
 //	volatile uint16_t status;
-	int led_bits_tmp = led_bits;
+	static int led_bits_tmp; // = led_bits;
+	led_bits &= ~((LED_FAN1_1 |  LED_FAN1_2 |  LED_FAN1_3 |  LED_FAN1_4)|
+			(LED_FAN2_1 |  LED_FAN2_2 |  LED_FAN2_3 |  LED_FAN2_4)|
+			(LED_CLIMA_1 |  LED_CLIMA_2 |  LED_CLIMA_3 |  LED_CLIMA_4));
+	if(fan_level>8)
+	{
+		led_bits |=  LED_FAN1_1 |  LED_FAN1_2 |  LED_FAN1_3 |  LED_FAN1_4;
+	}
+	else if(fan_level>6)
+	{
+		led_bits |=   LED_FAN1_2 |  LED_FAN1_3 |  LED_FAN1_4;
+	}
+	else if(fan_level>4)
+	{
+		led_bits |=    LED_FAN1_3 |  LED_FAN1_4;
+	}
+	else if(fan_level>2)
+	{
+		led_bits |=  LED_FAN1_4;
+	}
+	if(percent_fan2)
+	{
+		led_bits |=  LED_FAN2_1 |  LED_FAN2_2 |  LED_FAN2_3 |  LED_FAN2_4;
+	}
+	if(percent_clima)
+	{
+		led_bits |=  (LED_CLIMA_1 |  LED_CLIMA_2 |  LED_CLIMA_3 |  LED_CLIMA_4);
+	}
+
+	led_bits_tmp = led_bits;
 //	if(flash_mode == 2){ // DP cycling
 //
 //	}
 //	if(((flash_mode == 3) ||(flash_mode == 1) )&&(flash_counter & 0x04)){
 //		digit |= 0x00FF;
 //	}
-	if(flash_counter & 0x04){
-		led_bits_tmp &= ~selected_led_bits;
+	if(flash_counter & 0x20){
+		led_bits_tmp |= selected_led_bits;
 	}
+	//led_bits_tmp = 1 << (time_to_set);
+//	digit = ((flash_counter>>6)%32);
+//	digit = ToBCD(digit);
+	led_bits_tmp = ~led_bits_tmp;
 	SendData16(0);  // Flush buffers
+	SendData16(0);
 	SendData16(0);
 	SendData16(0);
 //	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
@@ -2104,13 +2166,15 @@ void show_digit_Ergoline(int digit)
 	last_button_ergoline |= ReceiveData16() ;
 //	}
 	last_button_ergoline &= 0x7FFF;
+
+	SendData16((~led_bits_tmp)>>16);
 	// LEDs 2
 	SendData16((~led_bits_tmp )& 0xFFFF);
 
 	// Rightmost 2 digits
 	digit_data = digits4[(digit) & 0x0f] | (digits4[(digit>>4) & 0x0f] << 8);
 
-//	if(percent_licevi)	digit_data |= 0x0080;
+	if(percent_licevi)	digit_data |= 0x0101;
 //	digit_data = digit_data<<1;
 	SendData16(digit_data);
 
@@ -2118,8 +2182,12 @@ void show_digit_Ergoline(int digit)
 	{
 		digit_data =  digits4[(digit>>8) & 0x0f]; // | (digits4[(digit >> 4) & 0x0f] << 8);
 	}
-//	if(percent_licevi)	digit_data |= 0x0080;
+	if(percent_licevi)	digit_data |= 0x0100;
 //	digit_data = ~digit_data;
+	if((STATUS_WORKING == curr_status) && (flash_counter & 0x10))
+	{
+		digit_data |= 0x0001;
+	}
 
 
 //	GPIOB->BSRR = GPIO_BSRR_BS_2; // enable shift FOR BUTTONS
@@ -2199,8 +2267,8 @@ void ProcessButtonsErgoline(void)
 				auto_exit_fn = 20;
 				break;
 			case BUTTON_FAN2:
-//				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
-//				selected_led_bits ^= LED_FAN2_L;
+				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
+				selected_led_bits ^= LED_FAN2_L;
 				auto_exit_fn = 20;
 				break;
 			case BUTTON_LICEVI:
@@ -2229,8 +2297,8 @@ void ProcessButtonsErgoline(void)
 					start_counter = 0;
 				}
 				if(state == state_set_time){
-					if(time_to_set < 25){
-//						if(!Gv_UART_Timeout);
+					if(time_to_set < 32){
+						if(!Gv_UART_Timeout)
 							time_to_set ++;
 						//			if((time_to_set & 0x0F)>9) time_to_set +=6;
 					}
@@ -2251,14 +2319,24 @@ void ProcessButtonsErgoline(void)
 					}
 				} else {
 					if(selected_led_bits & LED_FAN2_L){
-						if(percent_fan2<100) percent_fan2=100;
-						set_fan2(percent_fan2);
+						if(percent_fan2<100)
+						{
+							percent_fan2=100;
+							set_fan2(percent_fan2);
+						}
 					} else if(selected_led_bits & LED_FAN1_L){
-						if(percent_fan1<100) percent_fan1+=25;
-						set_fan1(percent_fan1);
+						if(fan_level<10)
+						{
+							fan_level++;
+							percent_fan1 = fan_level;
+							set_fan1(percent_fan1);
+						}
 					} else if(selected_led_bits & LED_CLIMA_L){
-						if(percent_clima<100) percent_clima=100;
-						set_clima(percent_clima);
+						if(percent_clima<100)
+						{
+							percent_clima=100;
+							set_clima(percent_clima);
+						}
 					}
 				}
 
@@ -2299,17 +2377,33 @@ void ProcessButtonsErgoline(void)
 					}
 				}
 				if(selected_led_bits & LED_FAN2_L){
-					if(percent_fan2) percent_fan2 = 0;
-					set_fan2(percent_fan2);
+					if(percent_fan2)
+					{
+						percent_fan2 = 0;
+						set_fan2(percent_fan2);
+					}
 				} else if(selected_led_bits & LED_FAN1_L){
-					if(percent_fan1) percent_fan1-=25;
-					set_fan1(percent_fan1);
+					if(fan_level)
+					{
+						fan_level--;
+						percent_fan1 = fan_level;
+						set_fan1(percent_fan1);
+					}
 				}
 				else if(selected_led_bits & LED_LICEVI_L){
-					if(percent_licevi) percent_licevi=0;
-					set_licevi_lamps(percent_licevi);
-					update_status();
+					if(percent_licevi && minute_counter)
+					{
+						percent_licevi=0;
+						set_licevi_lamps(percent_licevi);
+						update_status();
+					}
 				}
+//				else if(selected_led_bits & LED_CLIMA_L){
+//				if(percent_clima)
+//				{
+//					percent_clima = 0;
+//					set_clima(percent_clima);
+//				}
 
 				break;
 			default:
@@ -2363,84 +2457,84 @@ void ProcessButtonsErgoline(void)
 
 		}
 	}
-	else
-	{
-		if(start_counter){
-			if(state == state_show_hours){
-				start_counter--;
-				if(!start_counter){
-					state = state_show_time;
-				}
-			}
-			else if(state >= state_enter_service){
-				if(state == state_enter_service){
-					state = service_mode + state_enter_service;
-				}
-				start_counter--;
-				if(!start_counter){
-					state = state_show_time;
-				}
-			}
-			else {
-				start_counter = 0;
-
-			}
-		}
-		if(prev_status != curr_status){
-			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
-				work_hours[2]+=time_to_set;
-				if(work_hours[2]>59){
-					work_hours[2]=work_hours[2]-60;
-					work_hours[1]++;
-					if(work_hours[1]>99){
-						work_hours[1] = 0;
-						work_hours[0]++;
-					}
-				}
-				//write_eeprom();
-				time_to_set = 0;
-				percent_clima = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
-				zero_crossed = 0;
-				set_lamps(100);
-				set_licevi_lamps(percent_licevi);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-				set_clima(percent_clima);
-			}
-			if (curr_status == STATUS_COOLING){
-				selected_led_bits = 0;
-				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
-				set_lamps(0);
-				set_licevi_lamps(percent_licevi);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-				set_clima(percent_clima);
-			}
-			if (curr_status == STATUS_FREE){
-				percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
-				set_lamps(0);
-				set_licevi_lamps(percent_licevi);
-				set_fan1(percent_fan1);
-				set_fan2(percent_fan2);
-				set_clima(percent_clima);
-				selected_led_bits = 0;
-				minute_counter = 0;
-			}
-			prev_status = curr_status;
-
-		}
-		//    LED1_OFF;
-	}
+//	else
+//	{
+//		if(start_counter){
+//			if(state == state_show_hours){
+//				start_counter--;
+//				if(!start_counter){
+//					state = state_show_time;
+//				}
+//			}
+//			else if(state >= state_enter_service){
+//				if(state == state_enter_service){
+//					state = service_mode + state_enter_service;
+//				}
+//				start_counter--;
+//				if(!start_counter){
+//					state = state_show_time;
+//				}
+//			}
+//			else {
+//				start_counter = 0;
+//
+//			}
+//		}
+//		if(prev_status != curr_status){
+//			if (prev_status == STATUS_WAITING && curr_status == STATUS_WORKING){
+//				work_hours[2]+=time_to_set;
+//				if(work_hours[2]>59){
+//					work_hours[2]=work_hours[2]-60;
+//					work_hours[1]++;
+//					if(work_hours[1]>99){
+//						work_hours[1] = 0;
+//						work_hours[0]++;
+//					}
+//				}
+//				//write_eeprom();
+//				time_to_set = 0;
+//				percent_clima = 0, percent_licevi = 100, percent_fan1 = 0, percent_fan2 = 100;
+//				zero_crossed = 0;
+//				set_lamps(100);
+//				set_licevi_lamps(percent_licevi);
+//				set_fan1(percent_fan1);
+//				set_fan2(percent_fan2);
+//				set_clima(percent_clima);
+//			}
+//			if (curr_status == STATUS_COOLING){
+//				selected_led_bits = 0;
+//				percent_licevi = 0, percent_fan1 = 100, percent_fan2 = 100;
+//				set_lamps(0);
+//				set_licevi_lamps(percent_licevi);
+//				set_fan1(percent_fan1);
+//				set_fan2(percent_fan2);
+//				set_clima(percent_clima);
+//			}
+//			if (curr_status == STATUS_FREE){
+//				percent_clima = 0, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+//				set_lamps(0);
+//				set_licevi_lamps(percent_licevi);
+//				set_fan1(percent_fan1);
+//				set_fan2(percent_fan2);
+//				set_clima(percent_clima);
+//				selected_led_bits = 0;
+//				minute_counter = 0;
+//			}
+//			prev_status = curr_status;
+//
+//		}
+//		//    LED1_OFF;
+//	}
 }
 
 void set_clima(int value)
 {
-	set_aquafresh(value);
+	set_colarium_lamps(value);
 }
 
 void set_licevi_lamps(int value)
 {
-	set_colarium_lamps(value);
+	set_aquafresh(value);
 }
 
 /* USER CODE END 4 */
