@@ -655,6 +655,7 @@ int main(void)
 		/* Reload IWDG counter */
 //		IWDG_ReloadCounter();
 		HAL_IWDG_Refresh(&hiwdg);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET); // Disable external reset connected to PB9
 
 	}
   /* USER CODE END 3 */
@@ -938,6 +939,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, Data_Pin|Load_Pin|GPIO_PIN_11|GPIO_PIN_12 
                           |GPIO_PIN_13|GPIO_PIN_15, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -965,9 +969,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Data_Pin Load_Pin PB11 PB12 
-                           PB13 PB15 */
+                           PB13 PB15 PB9 */
   GPIO_InitStruct.Pin = Data_Pin|Load_Pin|GPIO_PIN_11|GPIO_PIN_12 
-                          |GPIO_PIN_13|GPIO_PIN_15;
+                          |GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -2548,9 +2552,9 @@ void _Error_Handler(char * file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  while(1) 
-  {
-  }
+//  while(1)
+//  {
+//  }
   /* USER CODE END Error_Handler_Debug */ 
 }
 
