@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>C:\stm_flash_prj_Upravlenie_Ergoline_3\\Upravlenie_Solarium_Voice</ProjectName>
+<ProjectName>C:\stm_flash_prj_Upravlenie_Ergoline_3\\Upravlenie_Solarium_Ergoline3</ProjectName>
 <CMSIS>..\Drivers\CMSIS</CMSIS>
 <HAL_Driver>C:\Users\didi\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.0\Drivers\CMSIS</HAL_Driver>
 
@@ -22,7 +22,7 @@
 
 <configs>
   <config>
-    <name>Upravlenie_Solarium_Voice</name>				
+    <name>Upravlenie_Solarium_Ergoline3</name>				
     <device>STM32F103C8Tx</device>		 
     <heapSize>0x200</heapSize>
     <stackSize>0x400</stackSize>

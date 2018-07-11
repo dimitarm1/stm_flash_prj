@@ -462,6 +462,7 @@ int main(void)
 				}
 			}
 		}
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_9);
 		ProcessButtons();
 		ProcessButtonsErgoline();
 		switch (state) {
@@ -706,6 +707,10 @@ void SystemClock_Config(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+    /**Enables the Clock Security System 
+    */
+  HAL_RCC_EnableCSS();
 
     /**Configure the Systick interrupt time 
     */
