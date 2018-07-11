@@ -1018,14 +1018,14 @@ int FromBCD(int value){
 
 void set_lamps(int value){
 	lamps_state = value;
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS11;
-	else GPIOA->BSRR = GPIO_BSRR_BR11;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS12;
+	else GPIOA->BSRR = GPIO_BSRR_BR12;
 }
 
 void set_colarium_lamps(int value){
 	colaruim_lamps_state = value;
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS12;
-	else GPIOA->BSRR = GPIO_BSRR_BR12;
+	if (value)	GPIOA->BSRR = GPIO_BSRR_BS11;
+	else GPIOA->BSRR = GPIO_BSRR_BR11;
 }
 
 void set_fan2(int value){
@@ -1071,6 +1071,8 @@ void set_fan1(int value){
 		tim_base = 63;
 		break;
 	case 1:
+		value = 0;
+		break;
 	default:
 		tim_base = 65;
 		break;
@@ -1666,7 +1668,7 @@ void ProcessButtons(void)
 				write_stored_time();
 			}
 			flash_mode = 0;
-			percent_licevi = 100L, percent_fan2 = 0;
+			percent_licevi = 100L, percent_fan2 = 100;
 			zero_crossed = 0;
 			//			volume_level = 6;
 			fan_level = 7;
@@ -2323,11 +2325,11 @@ void ProcessButtonsErgoline(void)
 					}
 				} else {
 					if(selected_led_bits & LED_FAN2_L){
-						if(percent_fan2<100)
-						{
-							percent_fan2=100;
-							set_fan2(percent_fan2);
-						}
+//						if(percent_fan2<100)
+//						{
+//							percent_fan2=100;
+//							set_fan2(percent_fan2);
+//						}
 					} else if(selected_led_bits & LED_FAN1_L){
 						if(fan_level<10)
 						{
@@ -2381,11 +2383,11 @@ void ProcessButtonsErgoline(void)
 					}
 				}
 				if(selected_led_bits & LED_FAN2_L){
-					if(percent_fan2)
-					{
-						percent_fan2 = 0;
-						set_fan2(percent_fan2);
-					}
+//					if(percent_fan2)
+//					{
+//						percent_fan2 = 0;
+//						set_fan2(percent_fan2);
+//					}
 				} else if(selected_led_bits & LED_FAN1_L){
 					if(fan_level)
 					{
@@ -2398,6 +2400,7 @@ void ProcessButtonsErgoline(void)
 					if(percent_licevi && minute_counter)
 					{
 						percent_licevi=0;
+						aqua_fresh_level = 0;
 						set_licevi_lamps(percent_licevi);
 						update_status();
 					}
