@@ -31,6 +31,7 @@
 #define BUTTON_AQUA_HEAD (0x3000)
 #define BUTTON_INFO     (0x018)
 #define BUTTON_VOICE    (0x003)
+#define BUTTON_LAMPI_KRAKA    (0x0C0)
 
 // LEDs
 #define LED_CLIMA_L           (1 << 0x00)
@@ -40,8 +41,8 @@
 #define LED_SPRAY_BODY_L      (1 << 0x04)
 #define LED_FAN1_L            (1 << 0x05)
 #define LED_FAN2_L            (1 << 0x06)
-#define LED_UNKNOWN_1         (1 << 0x07)
-#define LED_UNKNOWN_L         (1 << 0x08)
+#define LED_UNKNOWN_L         (1 << 0x07)
+#define LED_UNKNOWN_1         (1 << 0x08)
 #define LED_LICEVI_L          (1 << 0x09)
 #define LED_CHANNEL_L         (1 << 0x0A)
 #define LED_VOLUME_L          (1 << 0x0B)
@@ -67,7 +68,7 @@
 #define LED_CLIMA_1           (1 << 0x1F)
 
 
-#define LED_BUTTONS_MASK (LED_FAN1_L | LED_FAN2_L | LED_CLIMA_L | LED_LICEVI_L)
+#define LED_BUTTONS_MASK (LED_FAN1_L | LED_FAN2_L | LED_CLIMA_L | LED_LICEVI_L | LED_UNKNOWN_L)
 #define LED_UNUSED_BUTTON_MASK (LED_VOICE_GUIDE_L|LED_INFO_L|LED_VOLUME_L|LED_CHANNEL_L|\
 		LED_UNKNOWN_L|LED_SPRAY_BODY_L|LED_SPRAY_HEAD_L|LED_VITAL_L|LED_RELAX_L)
 

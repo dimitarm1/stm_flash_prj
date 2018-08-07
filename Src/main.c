@@ -257,7 +257,7 @@ char col_index;
 char row_index;
 static int led_bits = 0x0;
 static int selected_led_bits = 0x0;
-static int percent_clima = 0; //, percent_licevi = 0, percent_fan1 = 0, percent_fan2 = 0;
+static int percent_clima = 0, percent_kraka = 0;//, percent_fan1 = 0, percent_fan2 = 0;
 static int flash_mode = 0;
 static int last_button_ergoline = 0;
 static int prev_button_ergoline = 0;
@@ -354,7 +354,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 //	char index = 0;
-
+	__disable_irq();
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -405,6 +405,7 @@ int main(void)
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
+  __enable_irq();
   /* Unlock the Flash Program Erase controller */
   HAL_FLASH_Unlock();
   EE_Init();
@@ -429,7 +430,7 @@ int main(void)
 	LedControl_shutdown(&led_control, 0, 0); //Turn ON
 	LedControl_setIntensity(&led_control, 0, 8);
 	LedControl_clearDisplay(&led_control, 0);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // MP3 Player select
+
 
   /* USER CODE END 2 */
 
@@ -602,6 +603,7 @@ int main(void)
 				set_lamps(OFF);
 				set_colarium_lamps(OFF);
 				percent_clima = 0;
+				percent_kraka = 0;
 				percent_fan1 = 0;
 				percent_licevi = 0;
 				set_fan1(0);
@@ -626,6 +628,7 @@ int main(void)
 		}
 		show_level(aqua_fresh_level);
 		show_digit_Ergoline(display_data);
+
 		HAL_ADC_Start_IT(&hadc1);
 		HAL_Delay(10);
 //		display_data = 0xFFF;
@@ -1034,8 +1037,17 @@ void set_colarium_lamps(int value){
 }
 
 void set_fan2(int value){
-	if (value)	GPIOA->BSRR = GPIO_BSRR_BS9;
-	else GPIOA->BSRR = GPIO_BSRR_BR9;
+	if (value)
+	{
+		GPIOA->BSRR = GPIO_BSRR_BS9;
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // Relay ON
+	}
+	else
+	{
+		GPIOA->BSRR = GPIO_BSRR_BR9;
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET); // Relay OFF
+	}
+
 }
 
 void set_fan1(int value){
@@ -1682,6 +1694,7 @@ void ProcessButtons(void)
 				set_lamps(100);
 				set_colarium_lamps(0);
 				percent_clima = 0;
+				percent_kraka = 0;
 			}
 			if (lamps_mode == lamps_uv) {
 				set_lamps(100);
@@ -1689,6 +1702,7 @@ void ProcessButtons(void)
 			if (lamps_mode == lamps_colagen) {
 				set_colarium_lamps(100);
 				percent_clima = 100;
+				percent_kraka = 100;
 			}
 			zero_crossed = 0;
 			set_fan1(percent_fan1);
@@ -1738,6 +1752,7 @@ void ProcessButtons(void)
 			set_lamps(OFF);
 			set_colarium_lamps(OFF);
 			percent_clima = 0;
+			percent_kraka = 0;
 			set_fan1(0);
 			set_fan2(OFF);
 
@@ -1883,6 +1898,7 @@ void HAL_SYSTICK_Callback(void)
 		{
 			set_colarium_lamps(ON);
 			percent_clima = 100;
+			percent_kraka = 100;
 			set_fan1(percent_fan1);
 			set_fan2(ON);
 		}
@@ -1894,6 +1910,7 @@ void HAL_SYSTICK_Callback(void)
 		{
 			set_colarium_lamps(OFF);
 			percent_clima = 0;
+			percent_kraka = 0;
 		}
 	}
 
@@ -2137,6 +2154,10 @@ void show_digit_Ergoline(int digit)
 	{
 		led_bits |=  (LED_CLIMA_1 |  LED_CLIMA_2 |  LED_CLIMA_3 |  LED_CLIMA_4);
 	}
+	if(percent_kraka)
+	{
+		led_bits |=  (LED_UNKNOWN_1 );
+	}
 
 	led_bits_tmp = led_bits;
 //	if(flash_mode == 2){ // DP cycling
@@ -2294,6 +2315,12 @@ void ProcessButtonsErgoline(void)
 				selected_led_bits ^= LED_CLIMA_L;
 				auto_exit_fn = 20;
 				break;
+			case BUTTON_LAMPI_KRAKA:
+				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_UNKNOWN_L);
+				selected_led_bits ^= LED_UNKNOWN_L;
+				auto_exit_fn = 20;
+				break;
+
 			case BUTTON_PLUS_ERGOLINE:
 			{
 				//				if(  led_bits){
@@ -2347,6 +2374,13 @@ void ProcessButtonsErgoline(void)
 						{
 							percent_clima=100;
 							set_clima(percent_clima);
+						}
+					}
+					else if(selected_led_bits & LED_UNKNOWN_L){
+						if(percent_kraka<100)
+						{
+							percent_kraka=100;
+							set_clima(percent_kraka);
 						}
 					}
 				}
