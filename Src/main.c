@@ -1040,11 +1040,21 @@ void set_fan2(int value){
 	if (value)
 	{
 		GPIOA->BSRR = GPIO_BSRR_BS9;
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // Relay ON
 	}
 	else
 	{
 		GPIOA->BSRR = GPIO_BSRR_BR9;
+	}
+
+}
+
+void set_fan3(int value){
+	if (value)
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // Relay ON
+	}
+	else
+	{
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET); // Relay OFF
 	}
 
@@ -1707,7 +1717,7 @@ void ProcessButtons(void)
 			zero_crossed = 0;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
-
+			set_fan3(1);
 			play_message(message_start_working);
 			set_volume(volume_level);
 #ifdef LICEVI_LAMPI_VMESTO_AQAFRESH
@@ -1741,6 +1751,7 @@ void ProcessButtons(void)
 			fan_level = 10;
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
+			set_fan3(1);
 			set_aquafresh(0);
 			flash_mode = 3;
 
@@ -1755,6 +1766,7 @@ void ProcessButtons(void)
 			percent_kraka = 0;
 			set_fan1(0);
 			set_fan2(OFF);
+			set_fan3(OFF);
 
 			minute_counter = 0;
 			flash_mode = 0;
@@ -2310,11 +2322,11 @@ void ProcessButtonsErgoline(void)
 				}
 				auto_exit_fn = 20;
 				break;
-			case BUTTON_CLIMA:
-				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
-				selected_led_bits ^= LED_CLIMA_L;
-				auto_exit_fn = 20;
-				break;
+//			case BUTTON_CLIMA:
+//				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
+//				selected_led_bits ^= LED_CLIMA_L;
+//				auto_exit_fn = 20;
+//				break;
 			case BUTTON_LAMPI_KRAKA:
 				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_UNKNOWN_L);
 				selected_led_bits ^= LED_UNKNOWN_L;
@@ -2357,11 +2369,11 @@ void ProcessButtonsErgoline(void)
 					}
 				} else {
 					if(selected_led_bits & LED_FAN2_L){
-//						if(percent_fan2<100)
-//						{
-//							percent_fan2=100;
-//							set_fan2(percent_fan2);
-//						}
+						if(percent_fan2<100)
+						{
+							percent_fan2=100;
+							set_fan2(percent_fan2);
+						}
 					} else if(selected_led_bits & LED_FAN1_L){
 						if(fan_level<10)
 						{
@@ -2422,11 +2434,11 @@ void ProcessButtonsErgoline(void)
 					}
 				}
 				if(selected_led_bits & LED_FAN2_L){
-//					if(percent_fan2)
-//					{
-//						percent_fan2 = 0;
-//						set_fan2(percent_fan2);
-//					}
+					if(percent_fan2)
+					{
+						percent_fan2 = 0;
+						set_fan2(percent_fan2);
+					}
 				} else if(selected_led_bits & LED_FAN1_L){
 					if(fan_level)
 					{
