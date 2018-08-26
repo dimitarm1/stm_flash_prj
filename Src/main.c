@@ -48,6 +48,7 @@
 #include "eeprom.h"
 #include "defines.h"
 
+#define LAMPI_KRAKA
 #define LICEVI_LAMPI_VMESTO_AQAFRESH
 #define STATUS_FREE    (0L)
 #define STATUS_WAITING (3L)
@@ -1097,14 +1098,16 @@ void set_fan1(int value){
 	case 2:
 		tim_base = 63;
 		break;
+#ifndef LAMPI_KRAKA
 	case 1:
-		value = 0;
-		break;
-	default:
-		tim_base = 65;
+		value = 0; // Po zelanie na Emil - da moze da se spira ventilatora
 		break;
 	case 0:
 		tim_base = 0;
+		break;
+#endif
+	default:
+		tim_base = 63;
 		break;
 	}
 //	if(value == 10) TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
@@ -1704,7 +1707,10 @@ void ProcessButtons(void)
 				set_lamps(100);
 				set_colarium_lamps(0);
 				percent_clima = 0;
-				percent_kraka = 0;
+#ifdef LAMPI_KRAKA
+				percent_kraka = 100;
+				set_clima(percent_kraka);
+#endif
 			}
 			if (lamps_mode == lamps_uv) {
 				set_lamps(100);
@@ -2162,14 +2168,18 @@ void show_digit_Ergoline(int digit)
 	{
 		led_bits |=  LED_FAN2_1 |  LED_FAN2_2 |  LED_FAN2_3 |  LED_FAN2_4;
 	}
+
+#ifdef LAMPI_KRAKA
+	if(percent_kraka)
+	{
+		led_bits |=  (LED_KRAKA_1 );
+	}
+#else
 	if(percent_clima)
 	{
 		led_bits |=  (LED_CLIMA_1 |  LED_CLIMA_2 |  LED_CLIMA_3 |  LED_CLIMA_4);
 	}
-	if(percent_kraka)
-	{
-		led_bits |=  (LED_UNKNOWN_1 );
-	}
+#endif
 
 	led_bits_tmp = led_bits;
 //	if(flash_mode == 2){ // DP cycling
@@ -2322,16 +2332,19 @@ void ProcessButtonsErgoline(void)
 				}
 				auto_exit_fn = 20;
 				break;
-//			case BUTTON_CLIMA:
-//				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
-//				selected_led_bits ^= LED_CLIMA_L;
-//				auto_exit_fn = 20;
-//				break;
+#ifdef LAMPI_KRAKA
 			case BUTTON_LAMPI_KRAKA:
-				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_UNKNOWN_L);
-				selected_led_bits ^= LED_UNKNOWN_L;
+					selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_KRAKA_L);
+					selected_led_bits ^= LED_KRAKA_L;
+					auto_exit_fn = 20;
+					break;
+#else
+			case BUTTON_CLIMA:
+				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_CLIMA_L);
+				selected_led_bits ^= LED_CLIMA_L;
 				auto_exit_fn = 20;
 				break;
+#endif
 
 			case BUTTON_PLUS_ERGOLINE:
 			{
@@ -2388,7 +2401,7 @@ void ProcessButtonsErgoline(void)
 							set_clima(percent_clima);
 						}
 					}
-					else if(selected_led_bits & LED_UNKNOWN_L){
+					else if(selected_led_bits & LED_KRAKA_L){
 						if(percent_kraka<100)
 						{
 							percent_kraka=100;
@@ -2434,13 +2447,15 @@ void ProcessButtonsErgoline(void)
 					}
 				}
 				if(selected_led_bits & LED_FAN2_L){
+#ifndef LAMPI_KRAKA
 					if(percent_fan2)
 					{
 						percent_fan2 = 0;
 						set_fan2(percent_fan2);
 					}
+#endif
 				} else if(selected_led_bits & LED_FAN1_L){
-					if(fan_level)
+					if(fan_level>1)
 					{
 						fan_level--;
 						percent_fan1 = fan_level;
@@ -2462,6 +2477,13 @@ void ProcessButtonsErgoline(void)
 //					percent_clima = 0;
 //					set_clima(percent_clima);
 //				}
+				else if(selected_led_bits & LED_KRAKA_L){
+					if(percent_kraka)
+					{
+						percent_kraka = 0;
+						set_clima(percent_kraka);
+					}
+				}
 
 				break;
 			default:
@@ -2484,6 +2506,7 @@ void ProcessButtonsErgoline(void)
 				state = state_enter_service;
 				service_mode = mode_clear_hours; // Clear Hours
 			}
+
 		}
 		if(state == state_enter_service){
 			if(start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 1*SERVICE_NEXT_DELAY){
@@ -2513,6 +2536,18 @@ void ProcessButtonsErgoline(void)
 			read_settings();
 			//			start_counter = 0;
 
+		}
+		else if (curr_status == STATUS_WORKING && start_counter == START_DELAY)
+		{
+			main_time = 0;
+			pre_time = 0;
+			update_status();
+			percent_fan1 = 10;
+			set_fan1(percent_fan1);
+			aqua_fresh_level = 0;
+			percent_kraka = 0;
+			percent_clima = 0;
+			set_clima(percent_kraka);
 		}
 	}
 //	else
