@@ -48,7 +48,7 @@
 #include "eeprom.h"
 #include "defines.h"
 
-#define LAMPI_KRAKA
+//#define LAMPI_KRAKA
 #define LICEVI_LAMPI_VMESTO_AQAFRESH
 #define STATUS_FREE    (0L)
 #define STATUS_WAITING (3L)
@@ -215,6 +215,7 @@ void set_lamps(int value);
 void set_colarium_lamps(int value);
 void set_fan1(int value);
 void set_fan2(int value);
+void set_fan3(int value);
 void set_aquafresh(int value);
 void set_volume(int value);
 void play_message(int index);
@@ -609,6 +610,7 @@ int main(void)
 				percent_licevi = 0;
 				set_fan1(0);
 				set_fan2(0);
+				set_fan3(0);
 				set_aquafresh(0);
 				lamps_mode = lamps_all;
 
