@@ -420,6 +420,8 @@ int main(void)
 //  HAL_TIM_Base_Start(&htim1);
 //  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
   set_fan1(0);
+  set_fan2(0);
+  set_fan3(0);
   /* Enable the UART Parity Error Interrupt */
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_PE);
 
@@ -1921,6 +1923,7 @@ void HAL_SYSTICK_Callback(void)
 			percent_kraka = 100;
 			set_fan1(percent_fan1);
 			set_fan2(ON);
+			set_fan3(1);
 		}
 	}
 	if(stop_delay)
@@ -2550,6 +2553,7 @@ void ProcessButtonsErgoline(void)
 			percent_kraka = 0;
 			percent_clima = 0;
 			set_clima(percent_kraka);
+			set_fan3(1);
 		}
 	}
 //	else
