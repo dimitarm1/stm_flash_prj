@@ -2194,7 +2194,11 @@ void show_digit_Ergoline(int digit)
 //		digit |= 0x00FF;
 //	}
 	if(flash_counter & 0x20){
-		led_bits_tmp |= selected_led_bits;
+		led_bits_tmp |= LED_BUTTONS_MASK;
+	}
+	else
+	{
+		led_bits_tmp |= (~selected_led_bits) & LED_BUTTONS_MASK;
 	}
 	//led_bits_tmp = 1 << (time_to_set);
 //	digit = ((flash_counter>>6)%32);
