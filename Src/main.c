@@ -194,7 +194,6 @@ static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
-                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -246,7 +245,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
 states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume, mode_set_max_temp}modes;
 modes service_mode;
-typedef enum voice_messages { message_power_up, message_start_working, message_stop_working }voice_messages;
+typedef enum voice_messages { message_power_up, message_start_working, message_hurry_up, message_stop_working }voice_messages;
 int useUart=0;
 
 char key_readings[9];
@@ -381,12 +380,7 @@ int main(void)
 	main_time = 0;
 	cool_time = 0;
 	dac_current_message = -1;
-	//	read_eeprom();
-	if (!preset_pre_time || !preset_cool_time) {
-		preset_pre_time = 7;
-		preset_cool_time = 3;
-		write_settings();// Paranoia check
-	}
+
 	update_status();
 	set_volume(0);
 
@@ -422,6 +416,11 @@ int main(void)
 
   read_settings();
   read_stored_time();
+  if (!preset_pre_time || !preset_cool_time) {
+	  preset_pre_time = 7;
+	  preset_cool_time = 3;
+	  write_settings();// Paranoia check
+  }
 
   __HAL_UART_ENABLE(&huart1);
   __HAL_UART_ENABLE(&huart3);
@@ -451,7 +450,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	HAL_Delay(2000);
+	HAL_Delay(5000);
 //	SelectInput(INPUT_EXTERNAL);
 	while (1)
 	{
@@ -849,7 +848,6 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_OC_InitTypeDef sConfigOC;
 
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 16;
@@ -868,28 +866,12 @@ static void MX_TIM2_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
-
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 4000;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -931,21 +913,6 @@ static void MX_USART3_UART_Init(void)
 
 }
 
-/** 
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void) 
-{
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
-}
-
 /** Configure pins as 
         * Analog 
         * Input 
@@ -972,7 +939,7 @@ static void MX_GPIO_Init(void)
                           |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_3, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PC13 PC14 */
   GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14;
@@ -994,8 +961,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB12 PB13 PB15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15;
+  /*Configure GPIO pins : PB12 PB13 PB15 PB3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -1152,7 +1119,7 @@ void set_volume(int value){
 
 	if(selected_unput == INPUT_INTERNAL)
 	{
-		DFPlayerEexecCMD(0x0F, 00, value*3);
+	//	DFPlayerEexecCMD(0x0F, 00, value*3);
 	}
 	else
 	{
@@ -1677,7 +1644,7 @@ void ProcessButtons(void)
 					}
 				}
 				write_stored_time();
-				play_message(1,message_stop_working);
+
 			}
 			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
 			percent_aquafresh = 0;
@@ -1692,7 +1659,7 @@ void ProcessButtons(void)
 			set_fan2(percent_fan2);
 			set_aquafresh(0);
 			flash_mode = 3;
-
+			play_message(1,message_stop_working);
 
 		}
 		if (curr_status == STATUS_FREE) {
@@ -1853,7 +1820,11 @@ void HAL_SYSTICK_Callback(void)
 
 	if(Gv_miliseconds++>60000L){
 		Gv_miliseconds = 0;
-		if (pre_time)pre_time--;
+		if (pre_time)
+		{
+			play_message(1,message_hurry_up);
+			pre_time--;
+		}
 		else if (main_time) {
 			main_time--;
 			minute_counter ++;
