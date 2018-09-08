@@ -344,40 +344,15 @@ void SelectInput(unsigned char input)
 	if(input == INPUT_INTERNAL)
 	{
 		selected_unput = INPUT_INTERNAL;
-		v = 0;
-	}
-	else
-	{
-		v = volume_level;
-		if(v > 1) v -= 1;
-		if(v > 1) v -= 1;
-		if(v > 6) volume_level = 6;
-		v++;
-		selected_unput = INPUT_EXTERNAL;
-	}
-	if(v & 1)
-	{
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-	}
-	else
-	{
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-	}
-	if(v & 2)
-	{
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
-	}
-	else
-	{
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
-	}
-	if(v & 4)
-	{
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-	}
-	else
-	{
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+
+	}
+	else
+	{
+		selected_unput = INPUT_EXTERNAL;
+
 	}
 }
 
@@ -388,7 +363,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 	char index = 0;
-
+	__disable_irq();
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -413,7 +388,7 @@ int main(void)
 		write_settings();// Paranoia check
 	}
 	update_status();
-	//set_volume(0);
+	set_volume(0);
 
 
 
@@ -440,6 +415,7 @@ int main(void)
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
+  __enable_irq();
   /* Unlock the Flash Program Erase controller */
   HAL_FLASH_Unlock();
   EE_Init();
@@ -475,6 +451,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	HAL_Delay(2000);
+//	SelectInput(INPUT_EXTERNAL);
 	while (1)
 	{
   /* USER CODE END WHILE */
@@ -1174,12 +1152,54 @@ void set_volume(int value){
 
 	if(selected_unput == INPUT_INTERNAL)
 	{
-		SelectInput(INPUT_INTERNAL);
 		DFPlayerEexecCMD(0x0F, 00, value*3);
 	}
 	else
 	{
-		SelectInput(INPUT_EXTERNAL);
+		switch(volume_level){
+		case 10:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+			break;
+		case 9:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+			break;
+		case 8:
+		case 7:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+			break;
+		case 6:
+		case 5:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+			break;
+		case 4:
+		case 3:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+			break;
+		case 1:
+		case 0:
+		default:
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+			break;
+			break;
+
+		}
 	}
 }
 
@@ -1309,11 +1329,13 @@ void usart1_IT_handler()
 
 void play_message(int folder_index, int file_index){
 
-
+	SelectInput(INPUT_INTERNAL);
+	set_volume(volume_message);
 	DFPlayerEexecCMD(0x0F, folder_index, file_index);
 	fade_in_counter =  1000;
-
-
+	HAL_Delay(4000);
+	SelectInput(INPUT_EXTERNAL);
+	set_volume(volume_level);
 }
 
 
