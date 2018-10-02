@@ -909,8 +909,9 @@ void TimingDelay_Decrement(void)
 		if(digit_num>2) digit_num = 0;
 		GPIOA->BSRR = GPIO_BSRR_BR_0  | GPIO_BSRR_BR_2; // Turn off the lights while changing them
 		GPIOC->BSRR = GPIO_BSRR_BR_3;
-		show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
+
 		if(flash_mode < 3 ||(flash_counter & 0x40)){
+			show_digit(((display_data & 0xFFF)& (0x0F<<(digit_num*4)))>>(digit_num*4));
 			switch (digit_num){
 			case 2:
 				GPIOA->BSRR = GPIO_BSRR_BS_2 ;
@@ -930,13 +931,19 @@ void TimingDelay_Decrement(void)
 				break;
 			}
 		}
-		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
-			GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
+		else {
+			GPIOA->BSRR = GPIO_BSRR_BR_3 | GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
+				GPIOB->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1 | GPIO_BSRR_BR_2 | GPIO_BSRR_BR_10 | GPIO_BSRR_BR_11;
+				GPIOC->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5 | GPIO_BSRR_BR_6 | GPIO_BSRR_BR_7;
+				GPIOF->BSRR = GPIO_BSRR_BR_4 | GPIO_BSRR_BR_5;
 		}
-		else
-		{
-			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
-		}
+//		if (((flash_mode == 1)&& digit_num == 0 && (flash_counter & 0x40)) || ((flash_mode == 2) && (digit_num == 2))){
+//			GPIOC->BSRR = GPIO_BSRR_BS_0 | GPIO_BSRR_BS_1;
+//		}
+//		else
+//		{
+//			GPIOC->BSRR = GPIO_BSRR_BR_0 | GPIO_BSRR_BR_1;
+//		}
 
 	}
 }
