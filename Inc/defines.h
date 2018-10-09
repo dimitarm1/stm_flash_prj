@@ -8,6 +8,7 @@
 #ifndef DEFINES_H_
 #define DEFINES_H_
 
+#define LAMPI_KRAKA
 //#define STATUS_FREE    (0)
 //#define STATUS_WAITING (3)
 //#define STATUS_WORKING (1)

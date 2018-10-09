@@ -48,7 +48,7 @@
 #include "eeprom.h"
 #include "defines.h"
 
-//#define LAMPI_KRAKA
+
 #define LICEVI_LAMPI_VMESTO_AQAFRESH
 #define STATUS_FREE    (0L)
 #define STATUS_WAITING (3L)
@@ -946,7 +946,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|Clock_Pin 
-                          |GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, Data_Pin|Load_Pin|GPIO_PIN_11|GPIO_PIN_12 
@@ -968,9 +968,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 Clock_Pin 
-                           PA9 PA11 PA12 PA15 */
+                           PA11 PA12 PA15 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|Clock_Pin 
-                          |GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -1129,19 +1129,27 @@ void set_fan1(int value){
 //	if (value) TIM_Cmd(TIM2, ENABLE);
 //	else TIM_Cmd(TIM2, DISABLE);
 //	TIM_Cmd(TIM2, ENABLE);
-	if(value == 0)
+	if((value == 0) && (percent_fan2 == 0))
 	{
 		GPIO_InitStruct.Pin = GPIO_PIN_10;
 		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+
+		GPIO_InitStruct.Pin = GPIO_PIN_9;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+
 	}
 	else
 	{
 		MX_TIM1_Init();
 		HAL_TIM_Base_Start(&htim1);
 		HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
+		HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
 		if(value == 10)
 		{
 			TIM1->CCR3 = TIM1->ARR -1;
@@ -1152,6 +1160,56 @@ void set_fan1(int value){
 		}
 	}
 
+	// Test for Fan2 reguliran
+	switch(percent_fan2){
+		case 10:
+			tim_base = 60; //Reverse polarity
+			break;
+		case 9:
+			tim_base = 37;
+			break;
+		case 8:
+			tim_base = 43;
+			break;
+		case 7:
+			tim_base = 48;
+			break;
+		case 6:
+			tim_base = 52;
+			break;
+		case 5:
+			tim_base = 56;
+			break;
+		case 4:
+			tim_base = 59;
+			break;
+		case 3:
+			tim_base = 62;
+			break;
+		case 2:
+			tim_base = 63;
+			break;
+	#ifndef LAMPI_KRAKA
+		case 1:
+			value = 0; // Po zelanie na Emil - da moze da se spira ventilatora
+			break;
+		case 0:
+			tim_base = 0;
+			break;
+	#endif
+		default:
+			tim_base = 63;
+			break;
+		}
+
+		if(value == 10)
+		{
+			TIM1->CCR2 = TIM1->ARR -1;
+		}
+		else
+		{
+			TIM1->CCR2 = TIM1->ARR -(multiplier*tim_base);
+		}
 }
 
 void set_aquafresh(int value){
@@ -1702,10 +1760,10 @@ void ProcessButtons(void)
 				write_stored_time();
 			}
 			flash_mode = 0;
-			percent_licevi = 100L, percent_fan2 = 100;
+			percent_licevi = 100L, percent_fan2 = 10;
 			zero_crossed = 0;
 			//			volume_level = 6;
-			fan_level = 7;
+			fan_level = 4;
 			percent_fan1 = fan_level;
 			if (lamps_mode == lamps_all) {
 				set_lamps(100);
@@ -1726,7 +1784,7 @@ void ProcessButtons(void)
 			}
 			zero_crossed = 0;
 			set_fan1(percent_fan1);
-			set_fan2(percent_fan2);
+//			set_fan2(percent_fan2);
 			set_fan3(1);
 			play_message(message_start_working);
 			set_volume(volume_level);
@@ -1750,7 +1808,7 @@ void ProcessButtons(void)
 				write_stored_time();
 				play_message(message_stop_working);
 			}
-			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 100L;
+			percent_licevi = 0, percent_fan1 = 10L, percent_fan2 = 10L;
 
 			aqua_fresh_level = 0;
 			zero_crossed = 0;
@@ -1760,7 +1818,7 @@ void ProcessButtons(void)
 			//			set_colarium_lamps(0);
 			fan_level = 10;
 			set_fan1(percent_fan1);
-			set_fan2(percent_fan2);
+//			set_fan2(percent_fan2);
 			set_fan3(1);
 			set_aquafresh(0);
 			flash_mode = 3;
@@ -2169,9 +2227,22 @@ void show_digit_Ergoline(int digit)
 	{
 		led_bits |=  LED_FAN1_4;
 	}
-	if(percent_fan2)
+
+	if(percent_fan2>8)
 	{
 		led_bits |=  LED_FAN2_1 |  LED_FAN2_2 |  LED_FAN2_3 |  LED_FAN2_4;
+	}
+	else if(percent_fan2>6)
+	{
+		led_bits |=   LED_FAN2_2 |  LED_FAN2_3 |  LED_FAN2_4;
+	}
+	else if(percent_fan2>4)
+	{
+		led_bits |=    LED_FAN2_3 |  LED_FAN2_4;
+	}
+	else if(percent_fan2>2)
+	{
+		led_bits |=  LED_FAN2_4;
 	}
 
 #ifdef LAMPI_KRAKA
@@ -2391,10 +2462,12 @@ void ProcessButtonsErgoline(void)
 					}
 				} else {
 					if(selected_led_bits & LED_FAN2_L){
-						if(percent_fan2<100)
+						if(percent_fan2<10)
 						{
-							percent_fan2=100;
-							set_fan2(percent_fan2);
+							percent_fan2++;
+//							set_fan2(percent_fan2);
+							percent_fan1 = fan_level;
+							set_fan1(percent_fan1);
 						}
 					} else if(selected_led_bits & LED_FAN1_L){
 						if(fan_level<10)
@@ -2456,13 +2529,15 @@ void ProcessButtonsErgoline(void)
 					}
 				}
 				if(selected_led_bits & LED_FAN2_L){
-#ifndef LAMPI_KRAKA
+//#ifndef LAMPI_KRAKA
 					if(percent_fan2)
 					{
-						percent_fan2 = 0;
-						set_fan2(percent_fan2);
+						percent_fan2--;
+//						set_fan2(percent_fan2);
+						percent_fan1 = fan_level;
+						set_fan1(percent_fan1);
 					}
-#endif
+//#endif
 				} else if(selected_led_bits & LED_FAN1_L){
 					if(fan_level>1)
 					{
