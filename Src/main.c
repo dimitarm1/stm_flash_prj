@@ -193,7 +193,7 @@ static void MX_IWDG_Init(void);
 static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-unsigned short ReceiveData16(void);
+                                
                                 
 
 /* USER CODE BEGIN PFP */
@@ -835,6 +835,11 @@ static void MX_TIM1_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
   if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -1165,7 +1170,7 @@ void set_fan1(int value){
 	// Test for Fan2 reguliran
 	switch(percent_fan2){
 		case 10:
-			tim_base = 60; //Reverse polarity
+			tim_base = 63; //Reverse polarity
 			break;
 		case 9:
 			tim_base = 37;
@@ -1204,7 +1209,7 @@ void set_fan1(int value){
 			break;
 		}
 
-		if(value == 10)
+		if(percent_fan2 == 10)
 		{
 			TIM1->CCR2 = TIM1->ARR -1;
 		}
@@ -1762,7 +1767,12 @@ void ProcessButtons(void)
 				write_stored_time();
 			}
 			flash_mode = 0;
-			percent_licevi = 100L, percent_fan2 = 10;
+			percent_licevi = 100L;
+#ifdef LAMPI_KRAKA
+			percent_fan2 = 5;
+#else
+			percent_fan2 = 10;
+#endif
 			zero_crossed = 0;
 			//			volume_level = 6;
 			fan_level = 4;
@@ -1773,7 +1783,8 @@ void ProcessButtons(void)
 				percent_clima = 0;
 #ifdef LAMPI_KRAKA
 				percent_kraka = 100;
-				set_clima(percent_kraka);
+//				set_clima(percent_kraka);
+				set_clima(100);
 #endif
 			}
 			if (lamps_mode == lamps_uv) {
@@ -1973,19 +1984,7 @@ void HAL_SYSTICK_Callback(void)
 		}
 	}
 
-	if(startup_delay)
-	{
-		startup_delay--;
-		if(!startup_delay && curr_status == STATUS_WORKING)
-		{
-			set_colarium_lamps(ON);
-			percent_clima = 100;
-			percent_kraka = 100;
-			set_fan1(percent_fan1);
-			set_fan2(ON);
-			set_fan3(1);
-		}
-	}
+
 	if(stop_delay)
 	{
 		stop_delay--;
@@ -2412,11 +2411,13 @@ void ProcessButtonsErgoline(void)
 				selected_led_bits ^= LED_FAN1_L;
 				auto_exit_fn = 20;
 				break;
+#ifdef LAMPI_KRAKA
 			case BUTTON_FAN2:
 				selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_FAN2_L);
 				selected_led_bits ^= LED_FAN2_L;
 				auto_exit_fn = 20;
 				break;
+#endif
 			case BUTTON_LICEVI:
 				if(minute_counter){
 					selected_led_bits &=  ~(LED_BUTTONS_MASK ^ LED_LICEVI_L);
@@ -2567,19 +2568,24 @@ void ProcessButtonsErgoline(void)
 						update_status();
 					}
 				}
-//				else if(selected_led_bits & LED_CLIMA_L){
-//				if(percent_clima)
-//				{
-//					percent_clima = 0;
-//					set_clima(percent_clima);
-//				}
+#ifndef LAMPI_KRAKA
+				else if(selected_led_bits & LED_CLIMA_L){
+					if(percent_clima)
+					{
+						percent_clima = 0;
+					}
+					set_clima(percent_clima);
+				}
+#else
 				else if(selected_led_bits & LED_KRAKA_L){
 					if(percent_kraka)
 					{
 						percent_kraka = 0;
-						set_clima(percent_kraka);
+
 					}
+					set_clima(percent_kraka);
 				}
+#endif
 
 				break;
 			default:
