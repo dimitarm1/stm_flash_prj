@@ -193,7 +193,7 @@ static void MX_IWDG_Init(void);
 static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
+unsigned short ReceiveData16(void);
                                 
 
 /* USER CODE BEGIN PFP */
@@ -262,6 +262,7 @@ static int selected_led_bits = 0x0;
 static int percent_clima = 0, percent_kraka = 0;//, percent_fan1 = 0, percent_fan2 = 0;
 static int flash_mode = 0;
 static int last_button_ergoline = 0;
+
 static int prev_button_ergoline = 0;
 void scan_keys()
 {
@@ -445,6 +446,7 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+
 		scan_keys();
 		if ((state < state_enter_service) && ((flash_counter >> 4) & 1))
 		{
@@ -2184,18 +2186,27 @@ unsigned short ReceiveData16(void)
 	unsigned short counter, i, data;
 	data = 0;
 	HAL_GPIO_WritePin(Data_GPIO_Port, Data_Pin, GPIO_PIN_SET);
-	for (counter = 0; counter < 16; counter++)
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
+	for (i = 0; i< 200; i++); // some delay
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);  // enable shift FOR BUTTONS
+	if(HAL_GPIO_ReadPin(Read_GPIO_Port, Read_Pin) ==  GPIO_PIN_RESET)
+	{
+		data |= 1;
+	}
+
+	for (counter = 1; counter < 16; counter++)
 	{
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_RESET);
-		for (i = 0; i< 200; i++); // some delay
+		for (i = 0; i< 50; i++); // some delay
 		if(HAL_GPIO_ReadPin(Read_GPIO_Port, Read_Pin) ==  GPIO_PIN_RESET)
 		{
 			data |= (1<<counter);
 		}
 
 		HAL_GPIO_WritePin(Clock_GPIO_Port, Clock_Pin, GPIO_PIN_SET);
-		for (i = 0; i< 20; i++); // some delay
+		for (i = 0; i< 50; i++); // some delay
 	}
+//	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
 	return data;
 }
 
@@ -2208,6 +2219,7 @@ void show_digit_Ergoline(int digit)
 	short int digit_data;
 //	volatile uint16_t status;
 	static int led_bits_tmp; // = led_bits;
+
 	led_bits &= ~((LED_FAN1_1 |  LED_FAN1_2 |  LED_FAN1_3 |  LED_FAN1_4)|
 			(LED_FAN2_1 |  LED_FAN2_2 |  LED_FAN2_3 |  LED_FAN2_4)|
 			(LED_CLIMA_1 |  LED_CLIMA_2 |  LED_CLIMA_3 |  LED_CLIMA_4));
@@ -2279,27 +2291,27 @@ void show_digit_Ergoline(int digit)
 	SendData16(0);
 	SendData16(0);
 	SendData16(0);
-//	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
+	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // enable shift FOR BUTTONS
+	for (i = 0; i< 50; i++); // some delay
 	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
-
-	for (i = 0; i< 200; i++); // some delay
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);  // enable shift FOR BUTTONS
 //	while(1){ //DEBUG
-	for (i = 0; i< 200; i++); // some delay
+	for (i = 0; i< 500; i++); // some delay
 	// LEDs 1
 
 //	SendData16((~led_bits_tmp)>>16);
 //	last_button_ergoline = 0x11111111;
-	last_button_ergoline = ReceiveData16() ;
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET); // disable shift FOR BUTTONS / Parallel load
-
-	for (i = 0; i< 200; i++); // some delay
-	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_RESET);  // enable shift FOR BUTTONS
-//	while(1){ //DEBUG
+//	last_button_ergoline = ReceiveData16() ; // Dummy
+	last_button_ergoline = 0;
 	for (i = 0; i< 200; i++); // some delay
 	last_button_ergoline |= ReceiveData16() ;
-//	}
-	last_button_ergoline &= 0x7FFF;
+	for (i = 0; i < 16; i++)
+	{
+		if((1<<i) == last_button_ergoline)
+		{
+			last_button_ergoline = i;
+			break;
+		}
+	}
 
 	SendData16((~led_bits_tmp)>>16);
 	// LEDs 2
@@ -2307,6 +2319,9 @@ void show_digit_Ergoline(int digit)
 
 	// Rightmost 2 digits
 	digit_data = digits4[(digit) & 0x0f] | (digits4[(digit>>4) & 0x0f] << 8);
+
+	//DEBUG to check pressed buttons
+//	digit_data = digits4[(last_button_ergoline) & 0x0f] | (digits4[(last_button_ergoline>>4) & 0x0f] << 8);
 
 	if(percent_licevi)	digit_data |= 0x0101;
 //	digit_data = digit_data<<1;
@@ -2316,6 +2331,10 @@ void show_digit_Ergoline(int digit)
 	{
 		digit_data =  digits4[(digit>>8) & 0x0f]; // | (digits4[(digit >> 4) & 0x0f] << 8);
 	}
+
+	//DEBUG
+//	digit_data =  digits4[(last_button_ergoline>>8) & 0x0f]; // | (digits4[(digit >> 4) & 0x0f] << 8);
+
 	if(percent_licevi)	digit_data |= 0x0100;
 //	digit_data = ~digit_data;
 	if((STATUS_WORKING == curr_status) && (flash_counter & 0x10))
@@ -2330,13 +2349,7 @@ void show_digit_Ergoline(int digit)
 
 //	while(SPI_GetReceptionFIFOStatus(SPI1)) last_button = SPI_I2S_ReceiveData16(SPI1);
 //	GPIOB->BRR = GPIO_BSRR_BS_2; // disable shift FOR BUTTONS
-	for (i = 1; i<16; i++){ // bit 0 is junk
-		j = (last_button>>i) & 1;
-		if(!j){
-			last_button = i;
-			break;
-		}
-	}
+
 	for (i = 0; i< 500; i++);
 	HAL_GPIO_WritePin(Load_GPIO_Port, Load_Pin, GPIO_PIN_SET);
 	for (i = 0; i< 50; i++);
@@ -2350,7 +2363,6 @@ void show_digit_Ergoline(int digit)
  */
 void ProcessButtonsErgoline(void)
 {
-
 	if (last_button_ergoline)
 	{
 		if(last_button_ergoline != prev_button_ergoline){

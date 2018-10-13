@@ -20,19 +20,19 @@
 //#define START_DELAY         200
 
 // Buttons
-#define BUTTON_START_ERGOLINE    (0x1800)
-#define BUTTON_FAN2     (0x0300)
-#define BUTTON_FAN1     (0x0600)
-#define BUTTON_LICEVI   (0x001)
-#define BUTTON_CLIMA    (0x0C00)
-#define BUTTON_PLUS_ERGOLINE     (0x030)
-#define BUTTON_MINUS_ERGOLINE    (0x060)
-#define BUTTON_VOLUME    (0x00C)
-#define BUTTON_AQUA_BODY (0x6000)
-#define BUTTON_AQUA_HEAD (0x3000)
-#define BUTTON_INFO     (0x018)
-#define BUTTON_VOICE    (0x003)
-#define BUTTON_LAMPI_KRAKA    (0x0C0)
+#define BUTTON_START_ERGOLINE    0x0D
+#define BUTTON_FAN1              0x0B
+#define BUTTON_FAN2              0x0A
+#define BUTTON_LICEVI            0x03
+#define BUTTON_CLIMA             0x0C
+#define BUTTON_PLUS_ERGOLINE     0x06
+#define BUTTON_MINUS_ERGOLINE    0x07
+#define BUTTON_VOLUME            0x04
+#define BUTTON_AQUA_BODY         0x0F
+#define BUTTON_AQUA_HEAD         0x0E
+#define BUTTON_INFO              0x05
+#define BUTTON_VOICE             0x02
+#define BUTTON_LAMPI_KRAKA       0x08
 
 // LEDs
 #define LED_CLIMA_L           (1 << 0x00)
@@ -42,8 +42,8 @@
 #define LED_SPRAY_BODY_L      (1 << 0x04)
 #define LED_FAN1_L            (1 << 0x05)
 #define LED_FAN2_L            (1 << 0x06)
-#define LED_KRAKA_L         (1 << 0x07)
-#define LED_KRAKA_1         (1 << 0x08)
+#define LED_KRAKA_L           (1 << 0x07)
+#define LED_KRAKA_1           (1 << 0x08)
 #define LED_LICEVI_L          (1 << 0x09)
 #define LED_CHANNEL_L         (1 << 0x0A)
 #define LED_VOLUME_L          (1 << 0x0B)
