@@ -1166,6 +1166,16 @@ void set_fan1(int value){
 			TIM1->CCR3 = TIM1->ARR -(multiplier*tim_base);
 		}
 	}
+#ifndef LAMPI_KRAKA
+	if(value == 0)
+	{
+		GPIO_InitStruct.Pin = GPIO_PIN_10;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+	}
+#endif
 
 	// Test for Fan2 reguliran
 	switch(percent_fan2){
