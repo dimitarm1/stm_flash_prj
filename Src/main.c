@@ -54,11 +54,12 @@
 #define STATUS_WAITING (3L)
 #define STATUS_WORKING (1L)
 #define STATUS_COOLING (2L)
-#define START_COUNTER_TIME  (1000L)
-#define ENTER_SERVICE_DELAY (2000L)
-#define SERVICE_NEXT_DELAY  (400)
-#define EXIT_SERVICE_TIME   (1200L)
-#define START_DELAY         (200L)
+#define MULTIPLIER     (1)
+#define START_COUNTER_TIME  (1000L*MULTIPLIER)
+#define ENTER_SERVICE_DELAY (2000L*MULTIPLIER)
+#define SERVICE_NEXT_DELAY  (400*MULTIPLIER)
+#define EXIT_SERVICE_TIME   (1200L*MULTIPLIER)
+#define START_DELAY         (200L*MULTIPLIER)
 
 // Virtual addreses
 #define ADDRESS_HOURS_H		1
@@ -479,6 +480,7 @@ int main(void)
 				}
 			}
 		}
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_9);
 		ProcessButtons();
 		switch (state) {
 		case state_show_time:
@@ -657,6 +659,7 @@ int main(void)
 		/* Reload IWDG counter */
 //		IWDG_ReloadCounter();
 		HAL_IWDG_Refresh(&hiwdg);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET); // Disable external reset connected to PB9
 
 	}
   /* USER CODE END 3 */
@@ -707,6 +710,10 @@ void SystemClock_Config(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+    /**Enables the Clock Security System 
+    */
+  HAL_RCC_EnableCSS();
 
     /**Configure the Systick interrupt time 
     */
@@ -848,6 +855,7 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
 
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 16;
@@ -866,12 +874,28 @@ static void MX_TIM2_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 4000;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -1722,12 +1746,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if(htim1.Instance->CNT > 10 )
 		{
-			tim_reload_value++;
+			//tim_reload_value++;
 		}
 		if(htim1.Instance->CNT < 5 )
 		{
-			tim_reload_value--;
+			//tim_reload_value--;
 		}
+//		test_data = htim1.Instance->CNT;
 		htim1.Instance->ARR = tim_reload_value;
 		htim1.Instance->CNT = 1;
 	}
