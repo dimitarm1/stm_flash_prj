@@ -1031,12 +1031,12 @@ int FromBCD(int value){
 	return result;
 }
 
-void set_lamps(int value){
+void set_colarium_lamps(int value){
 	lamps_state = value;
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS11;
 	else GPIOA->BSRR = GPIO_BSRR_BR11;
 }
-void set_colarium_lamps(int value){
+void set_lamps(int value){
 	colaruim_lamps_state = value;
 	if (value)	GPIOA->BSRR = GPIO_BSRR_BS12;
 	else GPIOA->BSRR = GPIO_BSRR_BR12;
@@ -1365,19 +1365,26 @@ void ProcessButtons(void)
 						//						play_message(0);
 					}
 					else {
-						if (state > state_enter_service) {
+
 							// Write EEPROM
-							if (state == state_clear_hours) {
-								work_hours[0] = 0;
-								work_hours[1] = 0;
-								work_hours[2] = 0;
-							}
+						if (state == state_clear_hours)
+						{
+							work_hours[0] = 0;
+							work_hours[1] = 0;
+							work_hours[2] = 0;
+
 							write_stored_time();
 							start_counter = 0;
+							service_mode = mode_null;
+						}
+						else if (state > state_enter_service)
+						{
+							write_settings();
 							service_mode = mode_null;
 							if (state == state_address) {
 //								init_periph();
 							}
+							start_counter = 0;
 						}
 						else {
 							start_counter = START_COUNTER_TIME;
@@ -1400,7 +1407,7 @@ void ProcessButtons(void)
 				if (state >= state_enter_service) {
 					start_counter = 0;
 					state = state_show_time;
-					write_settings();
+					service_mode = mode_null;
 				}
 				break;
 			case BUTTON_FAN_PLUS:
