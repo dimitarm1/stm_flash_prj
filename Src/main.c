@@ -9,7 +9,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * COPYRIGHT(c) 2018 STMicroelectronics
+  * COPYRIGHT(c) 2019 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -410,7 +410,7 @@ int main(void)
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
-  __enable_irq();
+
   /* Unlock the Flash Program Erase controller */
   HAL_FLASH_Unlock();
   EE_Init();
@@ -427,7 +427,7 @@ int main(void)
   __HAL_UART_ENABLE(&huart3);
 //  HAL_TIM_Base_Start(&htim1);
 //  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
-  set_fan1(0);
+    set_fan1(0);
   /* Enable the UART Parity Error Interrupt */
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_PE);
 
@@ -436,10 +436,16 @@ int main(void)
 
     /* Enable the UART Data Register not empty Interrupt */
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+    HAL_NVIC_SetPriority(USART1_IRQn, 3, 0);
+    __enable_irq();
 	LedControl_init(&led_control, 15, GPIOB, 13, GPIOB, 12, GPIOB, 1);
 	LedControl_shutdown(&led_control, 0, 0); //Turn ON
 	LedControl_setIntensity(&led_control, 0, 8);
 	LedControl_clearDisplay(&led_control, 0);
+	LedControl_setDigit(&led_control, 0, 0, display_data & 0x0f, 0);
+	LedControl_setDigit(&led_control, 0, 1, (display_data>>4) & 0x0f, 0);
+	LedControl_setDigit(&led_control, 0, 2, (display_data>>8) & 0x0f, 0);
+	HAL_Delay(1000);
 	DFPlayerInit();
 	SelectInput(INPUT_INTERNAL);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET); // MP3 Player select
@@ -451,7 +457,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	HAL_Delay(5000);
+	HAL_Delay(6000);
 //	SelectInput(INPUT_EXTERNAL);
 	while (1)
 	{
@@ -631,6 +637,7 @@ int main(void)
 		show_level(aqua_fresh_level);
 		HAL_ADC_Start_IT(&hadc1);
 		HAL_Delay(10);
+
 //		display_data = 0xFFF;
 //		for(int i = 0; i < 9; i++)
 //		{
@@ -677,14 +684,13 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -711,10 +717,6 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Enables the Clock Security System 
-    */
-  HAL_RCC_EnableCSS();
-
     /**Configure the Systick interrupt time 
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
@@ -724,7 +726,7 @@ void SystemClock_Config(void)
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(SysTick_IRQn, 5, 0);
 }
 
 /** NVIC Configuration
@@ -732,7 +734,7 @@ void SystemClock_Config(void)
 static void MX_NVIC_Init(void)
 {
   /* ADC1_2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(ADC1_2_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
 }
 
@@ -855,7 +857,6 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_OC_InitTypeDef sConfigOC;
 
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 16;
@@ -874,28 +875,12 @@ static void MX_TIM2_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
-
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 4000;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -1314,11 +1299,15 @@ void usart1_IT_handler()
 	 else
 	 {
 		 rx_state= 0;
+		 USART1->SR = 0; // Clear Errors
 	 }
 }
 
 
 void play_message(int folder_index, int file_index){
+
+	HAL_IWDG_Refresh(&hiwdg);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET); // Disable external reset connected to PB9
 
 	SelectInput(INPUT_INTERNAL);
 	set_volume(volume_message);
@@ -1854,7 +1843,7 @@ void HAL_SYSTICK_Callback(void)
 		Gv_miliseconds = 0;
 		if (pre_time)
 		{
-			play_message(1,message_hurry_up);
+//			play_message(1,message_hurry_up);
 			pre_time--;
 		}
 		else if (main_time) {

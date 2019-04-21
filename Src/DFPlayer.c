@@ -144,7 +144,7 @@ void DFPlayerInit (UART_HandleTypeDef *huart)
 // delay(30); // Pretty long delays between succesive commands needed (not always the same)
 
  // Initialize sound to very low volume. Adapt according used speaker and wanted volume
- DFPlayerEexecCMD(0x06, 0, 0x30); // Set the volume (0x00~0x30)
+ DFPlayerEexecCMD(0x06, 0, 0x15); // Set the volume (0x00~0x30)
  HAL_Delay(10);
 }
 
