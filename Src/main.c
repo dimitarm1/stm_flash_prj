@@ -69,7 +69,7 @@
 #define ADDRESS_PRE_TIME	5
 #define ADDRESS_COOL_TIME	6
 #define ADDRESS_EXT_MODE	7
-#define ADDRESS_VOLUME		8
+#define ADDRESS_TEMP_MIN	8
 #define ADDRESS_TEMP_MAX	9
 
 // Buttons
@@ -107,8 +107,9 @@ LedControl led_control;
 __IO uint32_t TimingDelay;
 int tim_reload_value = 31000;
 int Gv_SystickCounter;
-uint32_t g_ADCValue;
-uint32_t g_ADCMeanValue;
+volatile uint32_t g_ADCValue;
+volatile uint32_t raw_temp;
+volatile uint32_t g_ADCMeanValue;
 uint32_t g_MeasurementNumber;
 uint32_t g_Temperature;
 unsigned char selected_unput;
@@ -134,8 +135,8 @@ unsigned char  time_to_set = 0;
 unsigned int   work_hours[3] = {0,0,0}; //HH HL MM - Hours[2], Minutes[1]
 unsigned char  preset_pre_time = 7;
 unsigned char  preset_cool_time = 3;
-unsigned char  volume_message;
-unsigned char  temperature_threshold;
+unsigned char  temp_min_threshold;
+unsigned char  temp_max_threshold;
 unsigned char  ext_mode = 0;
 unsigned char  lamps_mode = 0;
 unsigned char  temperature_current;
@@ -194,6 +195,7 @@ static void MX_IWDG_Init(void);
 static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+float analog2tempBed(int raw);
                                 
 
 /* USER CODE BEGIN PFP */
@@ -242,9 +244,9 @@ uint16_t VirtAddVarTab[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};//sizeof(flash_dat
 
 typedef enum ext_modes {ext_mode_none, ext_mode_colarium}ext_modes;
 typedef enum lamps_modes {lamps_all, lamps_uv, lamps_colagen}lamps_modes;
-typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode, state_volume, state_max_temp}states;
+typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter_service,state_clear_hours,state_address,state_pre_time,state_cool_time,state_ext_mode, state_min_temp, state_max_temp}states;
 states state;
-typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_volume, mode_set_max_temp}modes;
+typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_min_temp, mode_set_max_temp}modes;
 modes service_mode;
 typedef enum voice_messages { message_power_up, message_start_working, message_hurry_up, message_stop_working }voice_messages;
 int useUart=0;
@@ -457,7 +459,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	HAL_Delay(6000);
+//	HAL_Delay(1000);
 //	SelectInput(INPUT_EXTERNAL);
 	while (1)
 	{
@@ -586,10 +588,10 @@ int main(void)
 			}
 			break;
 
-		case state_volume:
+		case state_min_temp:
 			//			flash_mode = 0;
 			if ((flash_counter / 0x30) & 1) {
-				display_data = volume_message;
+				display_data = ToBCD(temp_min_threshold);
 			}
 			else {
 				display_data = 0xFF6;
@@ -599,7 +601,7 @@ int main(void)
 		case state_max_temp:
 			//			flash_mode = 0;
 			if ((flash_counter / 0x30) & 1) {
-				display_data = temperature_threshold;
+				display_data = ToBCD(temp_max_threshold);
 			}
 			else {
 				display_data = 0xFF7;
@@ -650,19 +652,48 @@ int main(void)
 //		}
 
 		//Uncomment to check temperature
-//		if(aqua_fresh_level == 0)
-//		{
-//		display_data = ToBCD(g_Temperature);
-//		}
-//		else
-//		{
-//			display_data = g_ADCMeanValue;
-//		}
+		if ((last_button == BUTTON_STOP) && (curr_status == STATUS_FREE))
+		{
+			if(aqua_fresh_level == 0)
+			{
+				display_data = ToBCD(g_Temperature);
+			}
+			else
+			{
+				display_data = g_ADCMeanValue;
+			}
+		}
 		LedControl_setDigit(&led_control, 0, 0, display_data & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 1, (display_data>>4) & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 2, (display_data>>8) & 0x0f, 0);
 		flash_counter++;
-
+		if(	(temp_max_threshold > 0) && (g_Temperature > 0))
+		{
+			if((g_Temperature > temp_max_threshold))
+			{
+				percent_fan1 = 10;
+				set_fan1(percent_fan1);
+				if(curr_status == STATUS_WORKING)
+				{
+					main_time = 0;
+					pre_time = 0;
+					update_status();
+				}
+			}
+			else
+			{
+				if((main_time == 0) && (cool_time == 0) && (percent_fan1 > 0))
+				{
+					percent_fan1 = 0;
+					set_fan1(0);
+				}
+			}
+		}
+		if((curr_status == STATUS_WORKING) && (percent_fan1 == 0) && (temp_min_threshold > 0) && (g_Temperature > temp_min_threshold))
+		{
+			percent_fan1 = 3;
+			set_fan1(percent_fan1);
+		}
 		/* Reload IWDG counter */
 //		IWDG_ReloadCounter();
 		HAL_IWDG_Refresh(&hiwdg);
@@ -1310,10 +1341,10 @@ void play_message(int folder_index, int file_index){
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET); // Disable external reset connected to PB9
 
 	SelectInput(INPUT_INTERNAL);
-	set_volume(volume_message);
+	set_volume(7);
 	DFPlayerEexecCMD(0x0F, folder_index, file_index);
 	fade_in_counter =  1000;
-	HAL_Delay(4000);
+	HAL_Delay(6000);
 	SelectInput(INPUT_EXTERNAL);
 	set_volume(volume_level);
 }
@@ -1338,7 +1369,14 @@ void ProcessButtons(void)
 					state = state_show_time;
 					update_status();
 					fan_level = 7;
-					percent_fan1 = fan_level;
+					if((temp_min_threshold > 0) && (g_Temperature > 0) && (g_Temperature < temp_min_threshold))
+					{
+						percent_fan1 = 0;
+					}
+					else
+					{
+						percent_fan1 = fan_level;
+					}
 					set_fan1(percent_fan1);
 				}
 				if (!pre_time && !main_time && !cool_time) {
@@ -1481,11 +1519,11 @@ void ProcessButtons(void)
 					case mode_set_ext_mode:
 						if (ext_mode < ext_mode_colarium) ext_mode++;
 						break;
-					case mode_set_volume:
-						if (volume_message < 9) volume_message++;
+					case mode_set_min_temp:
+						if (temp_min_threshold < 30) temp_min_threshold++;
 						break;
 					case mode_set_max_temp:
-						if (temperature_threshold < 99) temperature_threshold++;
+						if (temp_max_threshold < 99) temp_max_threshold++;
 						break;
 					default:
 						break;
@@ -1524,11 +1562,11 @@ void ProcessButtons(void)
 					case mode_set_ext_mode:
 						if (ext_mode > 0) ext_mode--;
 						break;
-					case mode_set_volume:
-						if (volume_message > 0) volume_message--;
+					case mode_set_min_temp:
+						if (temp_min_threshold > 0) temp_min_threshold--;
 						break;
 					case mode_set_max_temp:
-						if (temperature_threshold > 10) temperature_threshold--;
+						if (temp_max_threshold > 0) temp_max_threshold--;
 						break;
 					default:
 						break;
@@ -1580,7 +1618,7 @@ void ProcessButtons(void)
 				service_mode = mode_set_ext_mode; //
 			}
 			else if (start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 5 * SERVICE_NEXT_DELAY) {
-				service_mode = mode_set_volume; //
+				service_mode = mode_set_min_temp; //
 			}
 			else if (start_counter == START_COUNTER_TIME + ENTER_SERVICE_DELAY + 6 * SERVICE_NEXT_DELAY) {
 				service_mode = mode_set_max_temp; //
@@ -1615,6 +1653,7 @@ void ProcessButtons(void)
 			}
 		}
 	}
+
 	if (prev_status != curr_status) {
 		if (curr_status == STATUS_WORKING) {
 			if (controller_address != 15) {
@@ -1646,6 +1685,10 @@ void ProcessButtons(void)
 				set_colarium_lamps(100);
 			}
 			zero_crossed = 0;
+			if((temp_min_threshold > 0) && (g_Temperature > 0) && (g_Temperature < temp_min_threshold))
+			{
+				percent_fan1 = 0;
+			}
 			set_fan1(percent_fan1);
 			set_fan2(percent_fan2);
 			//			set_aquafresh(percent_aquafresh);
@@ -1882,10 +1925,10 @@ void read_settings(void)
 	preset_cool_time = data;
 	result += EE_ReadVariable(ADDRESS_EXT_MODE,  &data);
 	ext_mode = data;
-	result += EE_ReadVariable(ADDRESS_VOLUME,  &data);
-	volume_message = data;
+	result += EE_ReadVariable(ADDRESS_TEMP_MIN,  &data);
+	temp_min_threshold = data;
 	result += EE_ReadVariable(ADDRESS_TEMP_MAX,  &data);
-	temperature_threshold = data;
+	temp_max_threshold = data;
 
 	if(result)
 	{
@@ -1893,8 +1936,8 @@ void read_settings(void)
 		preset_pre_time = 7;
 		preset_cool_time = 3;
 		controller_address = 14;
-		volume_message = 5;
-		temperature_threshold = 80;
+		temp_min_threshold = 17;
+		temp_max_threshold = 85;
 		ext_mode = 0;
 		work_hours[0] = 0;
 		work_hours[1] = 0;
@@ -1957,12 +2000,12 @@ void write_settings(void)
 			// Second chance
 			continue;
 		}
-		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_VOLUME,  volume_message))
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_TEMP_MIN,  temp_min_threshold))
 		{
 			// Second chance
 			continue;
 		}
-		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_TEMP_MAX,  temperature_threshold))
+		if(FLASH_COMPLETE != EE_WriteVariable(ADDRESS_TEMP_MAX,  temp_max_threshold))
 		{
 			// Second chance
 			continue;
@@ -2000,10 +2043,143 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 	//CorrectedValue = (((RawValue � RawLow) * ReferenceRange) / RawRange) + ReferenceLow
       g_ADCValue = HAL_ADC_GetValue(AdcHandle);
       g_ADCMeanValue = (g_ADCMeanValue*9 + g_ADCValue)/10;
-      g_ADCValue = 1024 - g_ADCValue;
+      raw_temp = 1024 - g_ADCValue;
       g_MeasurementNumber++;
-      g_Temperature = (g_Temperature*9 + (((g_ADCValue - ADC_0_DEGREE_VALUE)*366)/(ADC_36_6_DEGREE_VALUE - ADC_0_DEGREE_VALUE)) + 0)/10;
+      g_Temperature = analog2tempBed(g_ADCValue); // Must be an error...
+      if(g_Temperature > 200)
+      {
+    	  g_Temperature = 0;
+      }
+//      g_Temperature = (g_Temperature*9 + (((g_ADCValue - ADC_0_DEGREE_VALUE)*366)/(ADC_36_6_DEGREE_VALUE - ADC_0_DEGREE_VALUE)) + 0)/10;
   }
+
+#define OVERSAMPLENR 4.00 //3.53
+
+// 100k bed thermistor
+const float temptable_1[][2]  = {
+  {   23 * OVERSAMPLENR, 300 },
+  {   25 * OVERSAMPLENR, 295 },
+  {   27 * OVERSAMPLENR, 290 },
+  {   28 * OVERSAMPLENR, 285 },
+  {   31 * OVERSAMPLENR, 280 },
+  {   33 * OVERSAMPLENR, 275 },
+  {   35 * OVERSAMPLENR, 270 },
+  {   38 * OVERSAMPLENR, 265 },
+  {   41 * OVERSAMPLENR, 260 },
+  {   44 * OVERSAMPLENR, 255 },
+  {   48 * OVERSAMPLENR, 250 },
+  {   52 * OVERSAMPLENR, 245 },
+  {   56 * OVERSAMPLENR, 240 },
+  {   61 * OVERSAMPLENR, 235 },
+  {   66 * OVERSAMPLENR, 230 },
+  {   71 * OVERSAMPLENR, 225 },
+  {   78 * OVERSAMPLENR, 220 },
+  {   84 * OVERSAMPLENR, 215 },
+  {   92 * OVERSAMPLENR, 210 },
+  {  100 * OVERSAMPLENR, 205 },
+  {  109 * OVERSAMPLENR, 200 },
+  {  120 * OVERSAMPLENR, 195 },
+  {  131 * OVERSAMPLENR, 190 },
+  {  143 * OVERSAMPLENR, 185 },
+  {  156 * OVERSAMPLENR, 180 },
+  {  171 * OVERSAMPLENR, 175 },
+  {  187 * OVERSAMPLENR, 170 },
+  {  205 * OVERSAMPLENR, 165 },
+  {  224 * OVERSAMPLENR, 160 },
+  {  245 * OVERSAMPLENR, 155 },
+  {  268 * OVERSAMPLENR, 150 },
+  {  293 * OVERSAMPLENR, 145 },
+  {  320 * OVERSAMPLENR, 140 },
+  {  348 * OVERSAMPLENR, 135 },
+  {  379 * OVERSAMPLENR, 130 },
+  {  411 * OVERSAMPLENR, 125 },
+  {  445 * OVERSAMPLENR, 120 },
+  {  480 * OVERSAMPLENR, 115 },
+  {  516 * OVERSAMPLENR, 110 },
+  {  553 * OVERSAMPLENR, 105 },
+  {  591 * OVERSAMPLENR, 100 },
+  {  628 * OVERSAMPLENR,  95 },
+  {  665 * OVERSAMPLENR,  90 },
+  {  702 * OVERSAMPLENR,  85 },
+  {  737 * OVERSAMPLENR,  80 },
+  {  770 * OVERSAMPLENR,  75 },
+  {  801 * OVERSAMPLENR,  70 },
+  {  830 * OVERSAMPLENR,  65 },
+  {  857 * OVERSAMPLENR,  60 },
+  {  881 * OVERSAMPLENR,  55 },
+  {  903 * OVERSAMPLENR,  50 },
+  {  922 * OVERSAMPLENR,  45 },
+  {  939 * OVERSAMPLENR,  40 },
+  {  954 * OVERSAMPLENR,  35 },
+  {  966 * OVERSAMPLENR,  30 },
+  {  977 * OVERSAMPLENR,  25 },
+  {  985 * OVERSAMPLENR,  20 },
+  {  993 * OVERSAMPLENR,  15 },
+  {  999 * OVERSAMPLENR,  10 },
+  { 1004 * OVERSAMPLENR,   5 },
+  { 1008 * OVERSAMPLENR,   0 },
+  { 1012 * OVERSAMPLENR,  -5 },
+  { 1016 * OVERSAMPLENR, -10 },
+  { 1020 * OVERSAMPLENR, -15 }
+};
+
+// 10k thermistor
+const float temptable_4[][2] = {
+  {    1 * OVERSAMPLENR, 430 },
+  {   54 * OVERSAMPLENR, 137 },
+  {  107 * OVERSAMPLENR, 107 },
+  {  160 * OVERSAMPLENR,  91 },
+  {  213 * OVERSAMPLENR,  80 },
+  {  266 * OVERSAMPLENR,  71 },
+  {  319 * OVERSAMPLENR,  64 },
+  {  372 * OVERSAMPLENR,  57 },
+  {  425 * OVERSAMPLENR,  51 },
+  {  478 * OVERSAMPLENR,  46 },
+  {  531 * OVERSAMPLENR,  41 },
+  {  584 * OVERSAMPLENR,  35 },
+  {  637 * OVERSAMPLENR,  30 },
+  {  690 * OVERSAMPLENR,  25 },
+  {  743 * OVERSAMPLENR,  20 },
+  {  796 * OVERSAMPLENR,  14 },
+  {  849 * OVERSAMPLENR,   7 },
+  {  902 * OVERSAMPLENR,   0 },
+  {  955 * OVERSAMPLENR, -11 },
+  { 1008 * OVERSAMPLENR, -35 }
+};
+
+// 10k thermistor Chineese
+const float temptable_10[][2] = {
+  {    1 , 430 },
+  {   0x67A , 100 },
+  {  0x835, 36 },
+  {  0xA0A,  20 },
+  {  0xAA0,  13 },
+};
+#define COUNT(a) (sizeof(a)/sizeof(*a))
+#define BEDTEMPTABLE temptable_10
+#define BEDTEMPTABLE_LEN COUNT(BEDTEMPTABLE)
+float analog2tempBed(int raw) {
+
+    float celsius = 0;
+    unsigned char i;
+
+    for (i = 1; i < BEDTEMPTABLE_LEN; i++) {
+      if ((BEDTEMPTABLE[i][0]) > raw) {
+        celsius  = BEDTEMPTABLE[i - 1][1] +
+                   (raw - BEDTEMPTABLE[i - 1][0]) *
+                   (float)(BEDTEMPTABLE[i][1] - BEDTEMPTABLE[i - 1][1]) /
+                   (float)(BEDTEMPTABLE[i][0] - BEDTEMPTABLE[i - 1][0]);
+        break;
+      }
+    }
+
+    // Overflow: Set to last value in the table
+    if (i == BEDTEMPTABLE_LEN) celsius = BEDTEMPTABLE[i - 1][1];
+
+    return celsius;
+
+}
+
 
 /* USER CODE END 4 */
 
