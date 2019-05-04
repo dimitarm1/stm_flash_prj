@@ -141,6 +141,7 @@ unsigned char  ext_mode = 0;
 unsigned char  lamps_mode = 0;
 unsigned char  temperature_current;
 unsigned char  last_rx_address;
+unsigned int   error_code;
 int start_counter = 0;
 int last_button = 0;
 int prev_button = 0;
@@ -663,6 +664,10 @@ int main(void)
 				display_data = g_ADCMeanValue;
 			}
 		}
+		if(error_code)
+		{
+			display_data = error_code;
+		}
 		LedControl_setDigit(&led_control, 0, 0, display_data & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 1, (display_data>>4) & 0x0f, 0);
 		LedControl_setDigit(&led_control, 0, 2, (display_data>>8) & 0x0f, 0);
@@ -679,6 +684,7 @@ int main(void)
 					pre_time = 0;
 					update_status();
 				}
+				error_code = 0xFE1;
 			}
 			else
 			{
@@ -1362,6 +1368,10 @@ void ProcessButtons(void)
 		if (last_button != prev_button) {
 			switch (last_button) {
 			case BUTTON_START:
+				if(error_code)
+				{
+					error_code = 0;
+				}
 				if (pre_time) {
 					//send_start();
 					Gv_miliseconds = 0;
@@ -2154,6 +2164,7 @@ const float temptable_10[][2] = {
   {  0x835, 36 },
   {  0xA0A,  20 },
   {  0xAA0,  13 },
+  {  0xCCC,  0 },
 };
 #define COUNT(a) (sizeof(a)/sizeof(*a))
 #define BEDTEMPTABLE temptable_10
