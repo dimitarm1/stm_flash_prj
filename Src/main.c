@@ -1390,6 +1390,17 @@ void ProcessButtons(void)
 					set_fan1(percent_fan1);
 				}
 				if (!pre_time && !main_time && !cool_time) {
+					if (controller_address == 15)
+					{
+						volatile static int counter;
+						counter = 0x100000;
+
+						while (counter)
+						{
+							counter--;
+							USART1->DR = 0x00; // Send Start signal to Remote Control
+						}
+					}
 					if (time_to_set) {
 						// Send of time moved elsewhere
 						pre_time = preset_pre_time;
