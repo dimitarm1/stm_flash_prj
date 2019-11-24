@@ -249,7 +249,7 @@ typedef enum states {state_show_time,state_set_time,state_show_hours,state_enter
 states state;
 typedef enum modes {mode_null,mode_clear_hours,mode_set_address,mode_set_pre_time,mode_set_cool_time, mode_set_ext_mode, mode_set_min_temp, mode_set_max_temp}modes;
 modes service_mode;
-typedef enum voice_messages { message_power_up, message_start_working, message_hurry_up, message_stop_working }voice_messages;
+typedef enum voice_messages { message_none, message_power_up, message_start_working, message_hurry_up, message_stop_working }voice_messages;
 int useUart=0;
 
 char key_readings[9];
