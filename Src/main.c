@@ -101,7 +101,6 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-const uint32_t eeprom_array[512];
 int key_states;
 LedControl led_control;
 __IO uint32_t TimingDelay;
