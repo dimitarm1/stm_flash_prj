@@ -2169,12 +2169,12 @@ const float temptable_4[][2] = {
 
 // 10k thermistor Chineese
 const float temptable_10[][2] = {
-  {    1 , 430 },
-  {   0x67A , 100 },
-  {  0x835, 36 },
-  {  0xA0A,  20 },
-  {  0xAA0,  13 },
-  {  0xCCC,  0 },
+  {  1 , 430 },
+  { 0x3B8,  100 },
+  {  0x978, 36 },
+  {  0xCC0,  20 },
+  {  0xD81,  13 },
+  {  0xE50,  0 },
 };
 #define COUNT(a) (sizeof(a)/sizeof(*a))
 #define BEDTEMPTABLE temptable_10
