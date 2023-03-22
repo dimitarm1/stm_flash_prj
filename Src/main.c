@@ -1349,9 +1349,6 @@ void play_message(int folder_index, int file_index){
 	set_volume(7);
 	DFPlayerEexecCMD(0x0F, folder_index, file_index);
 	fade_in_counter =  1000;
-	HAL_Delay(6000);
-	SelectInput(INPUT_EXTERNAL);
-	set_volume(volume_level);
 }
 
 
@@ -1713,7 +1710,7 @@ void ProcessButtons(void)
 			set_fan2(percent_fan2);
 			//			set_aquafresh(percent_aquafresh);
 			play_message(1,message_start_working);
-			set_volume(volume_level);
+
 		}
 		if (curr_status == STATUS_COOLING) {
 			if (controller_address == 15) {
@@ -1860,7 +1857,7 @@ void HAL_SYSTICK_Callback(void)
 //		}
 		if(!fade_in_counter){
 			//GPIOC->BSRR =  GPIO_BSRR_BS_3; // Internal sound
-			silence_counter = 100;
+			silence_counter = 6000;
 		}
 	}
 
@@ -1871,6 +1868,8 @@ void HAL_SYSTICK_Callback(void)
 //		}
 		if(fade_out_counter<=0){
 			//TIM_Cmd(TIM14, DISABLE);
+			SelectInput(INPUT_EXTERNAL);
+			set_volume(volume_level);
 		}
 		//GPIOC->BRR =  GPIO_BRR_BR_3; // External sound
 	}
