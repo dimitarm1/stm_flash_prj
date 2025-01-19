@@ -15,6 +15,7 @@
   *
   ******************************************************************************
   */
+void HAL_SYSTICK_Callback(void);
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
